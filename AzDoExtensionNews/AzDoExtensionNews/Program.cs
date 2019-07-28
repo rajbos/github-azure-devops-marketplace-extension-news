@@ -62,13 +62,17 @@ namespace AzDoExtensionNews
 
         private static async Task<ExtensionDataResult> LoadExtensionDataAsync(int pageNumber, int pageSize)
         {
-            var httpClient = new HttpClient();
-            httpClient.BaseAddress = new Uri("https://marketplace.visualstudio.com");
+            var httpClient = new HttpClient
+            {
+                BaseAddress = new Uri("https://marketplace.visualstudio.com")
+            };
 
             httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.Add("accept", "application/json; api-version=5.2-preview.1; excludeUrls=true");
 
-            var body = JsonConvert.SerializeObject(RequestBody.GetDefault(pageNumber, pageSize));
+            //var body = JsonConvert.SerializeObject(RequestBody.GetDefault(pageNumber, pageSize));
+            var body = RequestBody.GetRawBody(pageNumber, pageSize);
+            //var body = RequestBody.RawBody;
             var stringContent = new StringContent(body, Encoding.ASCII, "application/json");
 
             Log("Loading data from Azure DevOps");
