@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,7 +37,7 @@ namespace AzDoExtensionNews
                 allExtensions.AddRange(data.results[0].extensions);
             }
 
-            Log($"{allExtensions.Count}");
+            Log($"Total Extensions found: {allExtensions.Count}, Distinct items by name: {allExtensions.GroupBy(item => item.displayName).Distinct().Count()}");
 
             // check with stored data
             // store new data
