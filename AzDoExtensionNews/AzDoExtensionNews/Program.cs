@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Text;
@@ -21,21 +22,31 @@ namespace AzDoExtensionNews
 
         private static async Task CheckForUpdates()
         {
-            var maxPages = 22;
-            // get data
+            var maxPages = 50;
+            var allExtensions = new List<Extension>();
+            // get all data
             for (int i = 0; i < maxPages; i++)
             {
                 var data = await LoadExtensionDataAsync(pageNumber: i, pageSize: 50);
 
-                if (data == null || data.results[0].extensions.Length == 0) return;
+                if (data == null || data.results[0].extensions.Length == 0) break;
+
                 LogDataResult(data, pageNumber: i);
+
+                allExtensions.AddRange(data.results[0].extensions);
             }
+
+            Log($"{allExtensions.Count}");
+
+            // check with stored data
+            // store new data
+            // tweet updates
         }
 
         private static void LogDataResult(ExtensionDataResult data, int pageNumber)
         {
             var extensions = data.results[0].extensions;
-            Log($"Found {extensions.Length} extensions");
+            Log($"Found {extensions.Length} extensions on page number {pageNumber}");
             Log("");
 
             for (var i = 0; i < extensions.Length; i++)
@@ -43,11 +54,8 @@ namespace AzDoExtensionNews
                 var extension = extensions[i];
                 Log($"{(pageNumber * 50 + i):D3} {extension.lastUpdated} {extension.displayName}");
             }
-            // check with stored data
-            // store new data
-            // tweet updates
 
-            Log($"pagingToken: {data.results[0].pagingToken}");
+            // pagingToken: {data.results[0].pagingToken} is always empty
             foreach (var resultMetadata in data.results[0].resultMetadata)
             {
                 var itemText = new StringBuilder();
