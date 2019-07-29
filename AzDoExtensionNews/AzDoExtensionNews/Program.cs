@@ -23,8 +23,10 @@ namespace AzDoExtensionNews
 
         private static async Task CheckForUpdates()
         {
-            // get all data
+            // load previously saved data
+            var previousExtensions = ReadFromJson();
 
+            // get all new data
             var maxPages = 50;
             var pageSize = 100;
             var allExtensions = new List<Extension>();            
@@ -44,11 +46,96 @@ namespace AzDoExtensionNews
             Log($"Total Extensions found: {allExtensions.Count}, Distinct items by extensionId: {uniqueExtensionIds.Count}");
 
             var extensions = DeduplicateExtensions(allExtensions);
-            SaveCSV(extensions);
-
+            
             // check with stored data
-            // store new data
+            (var newExtensions, var updateExtension) = Diff(extensions, previousExtensions);
             // tweet updates
+            PostUpdates(newExtensions, updateExtension);
+
+            // store new data
+            //SaveCSV(extensions);
+            //temp disable SaveJson(extensions);
+        }
+
+        private static void PostUpdates(List<Extension> newExtensions, List<Extension> updateExtension)
+        {
+            Log($"Found {newExtensions.Count} new extension(s) and {updateExtension.Count} updated extension(s)");
+            foreach (var extension in newExtensions)
+            {
+                TweetNewExtension(extension);
+            }
+
+            foreach (var extension in updateExtension)
+            {
+                TweetUpdateExtension(extension);
+            }
+        }
+
+        private static void TweetUpdateExtension(Extension extension)
+        {
+            var tweetText = $"Extension has been updated {extension.displayName}"; // include version?
+            Tweet(tweetText);
+        }
+        private static void TweetNewExtension(Extension extension)
+        {
+            var tweetText = $"A new extension available in the Marketplace! {extension.displayName}";
+            Tweet(tweetText);
+        }
+
+        private static void Tweet(string tweetText)
+        {
+            Log($"{tweetText}");
+        }
+
+        private static (List<Extension> newExtensions, List<Extension> updatedExtensions) Diff(List<Extension> extensions, List<Extension> previousExtensions)
+        {
+            var newExtensionList = new List<Extension>();
+            var updatedExtensionList = new List<Extension>();
+
+            var oldExtensions = previousExtensions.OrderByDescending(item => item.publishedDate);
+
+            var newExtensions = extensions.OrderByDescending(item => item.publishedDate);
+
+            foreach (var extension in newExtensions)
+            {
+                var oldExtension = oldExtensions.FirstOrDefault(item => item.extensionId == extension.extensionId);
+                if (oldExtension == null)
+                {
+                    // new extension
+                    newExtensionList.Add(extension);
+                }
+                else
+                {
+                    if (oldExtension.publishedDate < extension.publishedDate)
+                    {
+                        // updated extension
+                        updatedExtensionList.Add(extension);
+                    }
+                }
+            }
+
+            return (newExtensionList, updatedExtensionList);
+        }
+
+        private static void SaveJson(List<Extension> extensions)
+        {
+            var text = JsonConvert.SerializeObject(extensions);
+            var path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Extensions.Json");
+            path = "Extensions.Json";
+            System.IO.File.WriteAllText(path, text);
+        }
+
+        private static List<Extension> ReadFromJson()
+        {
+            var path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Extensions.Json");
+            path = "Extensions.Json";
+            
+            var text = System.IO.File.ReadAllText(path);
+                        
+            
+            var extensions = JsonConvert.DeserializeObject<List<Extension>>(text);
+            return extensions;
+
         }
 
         private static List<Extension> DeduplicateExtensions(List<Extension> allExtensions)
