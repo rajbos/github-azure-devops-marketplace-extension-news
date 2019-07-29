@@ -53,7 +53,7 @@ namespace AzDoExtensionNews
             PostUpdates(newExtensions, updateExtension);
 
             // store new data
-            //SaveCSV(extensions);
+            SaveCSV(extensions);
             //temp disable SaveJson(extensions);
         }
 
@@ -92,9 +92,9 @@ namespace AzDoExtensionNews
             var newExtensionList = new List<Extension>();
             var updatedExtensionList = new List<Extension>();
 
-            var oldExtensions = previousExtensions.OrderByDescending(item => item.publishedDate);
-
-            var newExtensions = extensions.OrderByDescending(item => item.publishedDate);
+            // order the list to make sure the first one found is the correct one
+            var oldExtensions = previousExtensions.OrderByDescending(item => item.lastUpdated);
+            var newExtensions = extensions.OrderByDescending(item => item.lastUpdated);
 
             foreach (var extension in newExtensions)
             {
@@ -106,7 +106,7 @@ namespace AzDoExtensionNews
                 }
                 else
                 {
-                    if (oldExtension.publishedDate < extension.publishedDate)
+                    if (oldExtension.lastUpdated < extension.lastUpdated)
                     {
                         // updated extension
                         updatedExtensionList.Add(extension);
@@ -147,7 +147,7 @@ namespace AzDoExtensionNews
             {
                 var extension = allExtensions
                     .Where(item => item.extensionId == extensionId.Key)
-                    .OrderByDescending(item => item.publishedDate)
+                    .OrderByDescending(item => item.lastUpdated)
                     .FirstOrDefault();
 
                 if (extension != null)
@@ -256,7 +256,7 @@ namespace AzDoExtensionNews
 
                 var stringResponse = await response.Content.ReadAsStringAsync();
                 var dataResult = JsonConvert.DeserializeObject<ExtensionDataResult>(stringResponse);
-
+                
                 return dataResult;
             }
             catch (Exception e)
