@@ -73,7 +73,8 @@ namespace AzDoExtensionNews
 
         private static void TweetUpdateExtension(Extension extension)
         {
-            var tweetText = $"Extension has been updated {extension.displayName}"; // include version?
+            var version = extension.versions.OrderByDescending(item => item.lastUpdated).FirstOrDefault().version;
+            var tweetText = $"Extension has been updated {extension.displayName} to version {version}"; // include version?
             Tweet(tweetText);
         }
         private static void TweetNewExtension(Extension extension)
