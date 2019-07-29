@@ -2,8 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -23,9 +25,10 @@ namespace AzDoExtensionNews
 
         private static async Task CheckForUpdates()
         {
-            var maxPages = 50;
-            var allExtensions = new List<Extension>();
             // get all data
+
+            var maxPages = 50;
+            var allExtensions = new List<Extension>();            
             for (int i = 0; i < maxPages; i++)
             {
                 var data = await LoadExtensionDataAsync(pageNumber: i, pageSize: 50);
@@ -36,13 +39,84 @@ namespace AzDoExtensionNews
 
                 allExtensions.AddRange(data.results[0].extensions);
             }
+            
+            var uniqueExtensionIds = allExtensions.GroupBy(item => item.extensionId).ToList();
 
-            Log($"Total Extensions found: {allExtensions.Count}, Distinct items by name: {allExtensions.GroupBy(item => item.displayName).Distinct().Count()}");
+            Log($"Total Extensions found: {allExtensions.Count}, Distinct items by extensionId: {uniqueExtensionIds.Count}");
+
+            var extensions = DeduplicateExtensions(allExtensions);
+            SaveCSV(extensions);
 
             // check with stored data
             // store new data
             // tweet updates
         }
+
+        private static List<Extension> DeduplicateExtensions(List<Extension> allExtensions)
+        {
+            var uniqueList = new List<Extension>();
+            var uniqueExtensionIds = allExtensions.GroupBy(item => item.extensionId).ToList();
+
+            foreach (var extensionId in uniqueExtensionIds)
+            {
+                var extension = allExtensions
+                    .Where(item => item.extensionId == extensionId.Key)
+                    .OrderByDescending(item => item.publishedDate)
+                    .FirstOrDefault();
+
+                if (extension != null)
+                {
+                    uniqueList.Add(extension);
+                }
+            }
+
+            return uniqueList;
+        }
+
+        #region Save to CSV
+        private static void SaveCSV(List<Extension> allExtensions)
+        {
+            if (1 == 2)
+            {
+                CreateCSV(allExtensions, "extensions.csv");
+            }
+        }
+
+        private static void CreateHeader<T>(List<T> list, StreamWriter sw)
+        {
+            PropertyInfo[] properties = typeof(T).GetProperties();
+            for (int i = 0; i < properties.Length - 1; i++)
+            {
+                sw.Write(properties[i].Name + ",");
+            }
+            var lastProp = properties[properties.Length - 1].Name;
+            sw.Write(lastProp + sw.NewLine);
+        }
+
+        private static void CreateRows<T>(List<T> list, StreamWriter sw)
+        {
+            foreach (var item in list)
+            {
+                PropertyInfo[] properties = typeof(T).GetProperties();
+                for (int i = 0; i < properties.Length - 1; i++)
+                {
+                    var prop = properties[i];
+                    sw.Write(prop.GetValue(item) + ",");
+                }
+                var lastProp = properties[properties.Length - 1];
+                sw.Write(lastProp.GetValue(item) + sw.NewLine);
+            }
+        }
+
+        public static void CreateCSV<T>(List<T> list, string filePath)
+        {
+            using (StreamWriter sw = new StreamWriter(filePath))
+            {
+                CreateHeader(list, sw);
+                CreateRows(list, sw);
+            }
+        }
+        #endregion
 
         private static void LogDataResult(ExtensionDataResult data, int pageNumber)
         {
