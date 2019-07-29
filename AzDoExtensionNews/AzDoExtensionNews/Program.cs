@@ -15,12 +15,10 @@ namespace AzDoExtensionNews
     {
         static void Main(string[] args)
         {
+            var started = DateTime.Now;
             CheckForUpdates().GetAwaiter().GetResult();
 
-            if (Debugger.IsAttached)
-            {
-                Log("Hit the return key to close the application");
-            }
+            Log($"Duration: {(DateTime.Now - started).TotalSeconds:N2} seconds");
         }
 
         private static async Task CheckForUpdates()
@@ -28,14 +26,15 @@ namespace AzDoExtensionNews
             // get all data
 
             var maxPages = 50;
+            var pageSize = 100;
             var allExtensions = new List<Extension>();            
             for (int i = 0; i < maxPages; i++)
             {
-                var data = await LoadExtensionDataAsync(pageNumber: i, pageSize: 50);
+                var data = await LoadExtensionDataAsync(pageNumber: i, pageSize);
 
                 if (data == null || data.results[0].extensions.Length == 0) break;
 
-                LogDataResult(data, pageNumber: i);
+                LogDataResult(data, pageNumber: i, pageSize);
 
                 allExtensions.AddRange(data.results[0].extensions);
             }
@@ -118,27 +117,30 @@ namespace AzDoExtensionNews
         }
         #endregion
 
-        private static void LogDataResult(ExtensionDataResult data, int pageNumber)
+        private static void LogDataResult(ExtensionDataResult data, int pageNumber, int pageSize)
         {
             var extensions = data.results[0].extensions;
-            Log($"Found {extensions.Length} extensions on page number {pageNumber}");
-            Log("");
+            //Log($"Found {extensions.Length} extensions on page number {pageNumber}");
+            //Log("");
 
             for (var i = 0; i < extensions.Length; i++)
             {
                 var extension = extensions[i];
-                Log($"{(pageNumber * 50 + i):D3} {extension.lastUpdated} {extension.displayName}");
+                Log($"{(pageNumber * pageSize + i):D3} {extension.lastUpdated} {extension.displayName}");
             }
 
-            // pagingToken: {data.results[0].pagingToken} is always empty
-            foreach (var resultMetadata in data.results[0].resultMetadata)
+            if (extensions.Length < pageSize)
             {
-                var itemText = new StringBuilder();
-                foreach (var items in resultMetadata.metadataItems)
+                // pagingToken: {data.results[0].pagingToken} is always empty
+                foreach (var resultMetadata in data.results[0].resultMetadata)
                 {
-                    itemText.AppendLine($"name: {items.name}= count:{items.count};");
+                    var itemText = new StringBuilder();
+                    foreach (var items in resultMetadata.metadataItems)
+                    {
+                        itemText.AppendLine($"name: {items.name}= count:{items.count};");
+                    }
+                    Log($"metadataType: {resultMetadata.metadataType} itemText = {itemText.ToString()}");
                 }
-                Log($"metadataType: {resultMetadata.metadataType} itemText = {itemText.ToString()}");
             }
             Log("");
         }
