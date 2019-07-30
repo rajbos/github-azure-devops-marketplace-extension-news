@@ -33,6 +33,14 @@ namespace AzDoExtensionNews
         public Statistic[] statistics { get; set; }
         public Installationtarget[] installationTargets { get; set; }
         public int deploymentType { get; set; }
+
+        public string Url
+        {
+            get
+            {
+                return $"https://marketplace.visualstudio.com/items?itemName={publisher?.publisherName}.{extensionName}";
+            }
+        }
     }
 
     public class Publisher

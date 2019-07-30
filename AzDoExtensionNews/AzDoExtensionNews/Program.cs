@@ -1,13 +1,17 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.FileExtensions;
+using Microsoft.Extensions.Configuration.Json;
 
 namespace AzDoExtensionNews
 {
@@ -16,9 +20,35 @@ namespace AzDoExtensionNews
         static void Main(string[] args)
         {
             var started = DateTime.Now;
+            GetSettings();
             CheckForUpdates().GetAwaiter().GetResult();
 
             Log($"Duration: {(DateTime.Now - started).TotalSeconds:N2} seconds");
+        }
+
+        private static string TWConsumerAPIKey = "";
+        private static string TWConsumerAPISecretKey = "";
+        private static string TWAccessToken = "";
+        private static string TWAccessTokenSecret = "";
+
+        private static void GetSettings()
+        {
+            IConfiguration config = new ConfigurationBuilder()
+                                            .AddJsonFile("appsettings.json", true, false)
+                                            .AddJsonFile("appsettings.secrets.json", true, false)
+                                            .Build();
+
+            // load the variables
+            TWConsumerAPIKey = config["TWConsumerAPIKey"];
+            TWConsumerAPISecretKey = config["TWConsumerAPISecretKey"];
+            TWAccessToken = config["TWAccessToken"];
+            TWAccessTokenSecret = config["TWAccessTokenSecret"];
+
+            // check them all
+            if (String.IsNullOrEmpty(TWConsumerAPIKey)) throw new Exception($"Error loading value for {nameof(TWConsumerAPIKey)}");
+            if (String.IsNullOrEmpty(TWConsumerAPISecretKey)) throw new Exception($"Error loading value for {nameof(TWConsumerAPISecretKey)}");
+            if (String.IsNullOrEmpty(TWAccessToken)) throw new Exception($"Error loading value for {nameof(TWAccessToken)}");
+            if (String.IsNullOrEmpty(TWAccessTokenSecret)) throw new Exception($"Error loading value for {nameof(TWAccessTokenSecret)}");
         }
 
         private static async Task CheckForUpdates()
@@ -28,7 +58,7 @@ namespace AzDoExtensionNews
 
             // get all new data
             var maxPages = 50;
-            var pageSize = 100;
+            var pageSize = 250;
             var allExtensions = new List<Extension>();            
             for (int i = 0; i < maxPages; i++)
             {
@@ -49,43 +79,137 @@ namespace AzDoExtensionNews
             
             // check with stored data
             (var newExtensions, var updateExtension) = Diff(extensions, previousExtensions);
-            // tweet updates
-            PostUpdates(newExtensions, updateExtension);
+            // show updates
+            Log($"Found {newExtensions.Count} new extension(s) and {updateExtension.Count} updated extension(s)");
 
-            // store new data
-            SaveCSV(extensions);
-            //temp disable SaveJson(extensions);
+            // tweet updates
+            if (newExtensions.Any() && PostUpdates(newExtensions, updateExtension))
+            {
+                // store new data
+                SaveCSV(extensions);
+                //temp disable 
+                SaveJson(extensions);
+            }
         }
 
-        private static void PostUpdates(List<Extension> newExtensions, List<Extension> updateExtension)
+        private static bool PostUpdates(List<Extension> newExtensions, List<Extension> updateExtension)
         {
-            Log($"Found {newExtensions.Count} new extension(s) and {updateExtension.Count} updated extension(s)");
+            // maybe only store successfully tweeted extensions
+            var success = true;
             foreach (var extension in newExtensions)
             {
-                TweetNewExtension(extension);
+                if (!TweetNewExtension(extension))
+                {
+                    success = false;
+                }
             }
 
             foreach (var extension in updateExtension)
             {
-                TweetUpdateExtension(extension);
+                if (TweetUpdateExtension(extension))
+                {
+                    success = false;
+                }
             }
+
+            return success;
         }
 
-        private static void TweetUpdateExtension(Extension extension)
+        private static bool TweetUpdateExtension(Extension extension)
         {
             var version = extension.versions.OrderByDescending(item => item.lastUpdated).FirstOrDefault().version;
-            var tweetText = $"Extension has been updated {extension.displayName} to version {version}"; // include version?
-            Tweet(tweetText);
+            var tweetText = $"Extension has been updated {extension.displayName} to version {version}. Link: {extension.Url}"; // include version?
+            return Tweet(tweetText);
         }
-        private static void TweetNewExtension(Extension extension)
+        private static bool TweetNewExtension(Extension extension)
         {
-            var tweetText = $"A new extension available in the Marketplace! {extension.displayName}";
-            Tweet(tweetText);
+            var tweetText = $"There is a new extension available in the Azure DevOps Marketplace! {extension.displayName}. Link: {extension.Url}";
+            return Tweet(tweetText);
         }
 
-        private static void Tweet(string tweetText)
+        private static bool Tweet(string tweetText)
         {
-            Log($"{tweetText}");
+            Log(tweetText);
+            try
+            {
+                string twitterURL = "https://api.twitter.com/1.1/statuses/update.json";
+
+                string oauth_consumer_key = TWConsumerAPIKey; //  GlobalConstants.TWConsumerAPIKey;
+                string oauth_consumer_secret = TWConsumerAPISecretKey; //GlobalConstants.TWConsumerAPISecretKey;
+                string oauth_token = TWAccessToken;  //GlobalConstants.TWAccessToken;
+                string oauth_token_secret = TWAccessTokenSecret; //GlobalConstants.TWAccessTokenSecret;
+                
+                // set the oauth version and signature method
+                string oauth_version = "1.0";
+                string oauth_signature_method = "HMAC-SHA1";
+
+                // create unique request details
+                string oauth_nonce = Convert.ToBase64String(new ASCIIEncoding().GetBytes(DateTime.Now.Ticks.ToString()));
+                System.TimeSpan timeSpan = (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc));
+                string oauth_timestamp = Convert.ToInt64(timeSpan.TotalSeconds).ToString();
+
+                // create oauth signature
+                string baseFormat = "oauth_consumer_key={0}&oauth_nonce={1}&oauth_signature_method={2}" + "&oauth_timestamp={3}&oauth_token={4}&oauth_version={5}&status={6}";
+
+                string baseString = string.Format(
+                    baseFormat,
+                    oauth_consumer_key,
+                    oauth_nonce,
+                    oauth_signature_method,
+                    oauth_timestamp, oauth_token,
+                    oauth_version,
+                    Uri.EscapeDataString(tweetText)
+                );
+
+                string oauth_signature = null;
+                using (HMACSHA1 hasher = new HMACSHA1(ASCIIEncoding.ASCII.GetBytes(Uri.EscapeDataString(oauth_consumer_secret) + "&" + Uri.EscapeDataString(oauth_token_secret))))
+                {
+                    oauth_signature = Convert.ToBase64String(hasher.ComputeHash(ASCIIEncoding.ASCII.GetBytes("POST&" + Uri.EscapeDataString(twitterURL) + "&" + Uri.EscapeDataString(baseString))));
+                }
+
+                // create the request header
+                string authorizationFormat = "OAuth oauth_consumer_key=\"{0}\", oauth_nonce=\"{1}\", " + "oauth_signature=\"{2}\", oauth_signature_method=\"{3}\", " + "oauth_timestamp=\"{4}\", oauth_token=\"{5}\", " + "oauth_version=\"{6}\"";
+
+                string authorizationHeader = string.Format(
+                    authorizationFormat,
+                    Uri.EscapeDataString(oauth_consumer_key),
+                    Uri.EscapeDataString(oauth_nonce),
+                    Uri.EscapeDataString(oauth_signature),
+                    Uri.EscapeDataString(oauth_signature_method),
+                    Uri.EscapeDataString(oauth_timestamp),
+                    Uri.EscapeDataString(oauth_token),
+                    Uri.EscapeDataString(oauth_version)
+                );
+
+                HttpWebRequest objHttpWebRequest = (HttpWebRequest)WebRequest.Create(twitterURL);
+                objHttpWebRequest.Headers.Add("Authorization", authorizationHeader);
+                objHttpWebRequest.Method = "POST";
+                objHttpWebRequest.ContentType = "application/x-www-form-urlencoded";
+                using (Stream objStream = objHttpWebRequest.GetRequestStream())
+                {
+                    byte[] content = ASCIIEncoding.ASCII.GetBytes("status=" + Uri.EscapeDataString(tweetText));
+                    objStream.Write(content, 0, content.Length);
+                }
+
+                try
+                {
+                    //success posting
+                    WebResponse objWebResponse = objHttpWebRequest.GetResponse();
+                    StreamReader objStreamReader = new StreamReader(objWebResponse.GetResponseStream());
+                    //Log(objStreamReader.ReadToEnd().ToString());
+                }
+                catch (Exception ex)
+                {
+                    Log("Twitter Post Error: " + ex.Message.ToString() + ", authHeader: " + authorizationHeader);
+                    throw;
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private static (List<Extension> newExtensions, List<Extension> updatedExtensions) Diff(List<Extension> extensions, List<Extension> previousExtensions)
@@ -120,10 +244,18 @@ namespace AzDoExtensionNews
 
         private static void SaveJson(List<Extension> extensions)
         {
+            // rename the old file
+            System.IO.File.Move("Extensions.Json", $"{GetFileNameTimeStampPrefix()}_Extensions.Json");
+
             var text = JsonConvert.SerializeObject(extensions);
             var path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Extensions.Json");
             path = "Extensions.Json";
             System.IO.File.WriteAllText(path, text);
+        }
+
+        private static string GetFileNameTimeStampPrefix()
+        {
+            return DateTime.UtcNow.ToString("yyyyMMdd_HHmm");
         }
 
         private static List<Extension> ReadFromJson()
