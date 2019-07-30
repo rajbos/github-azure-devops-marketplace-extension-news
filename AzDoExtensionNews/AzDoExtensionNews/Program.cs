@@ -74,7 +74,7 @@ namespace AzDoExtensionNews
             var uniqueExtensionIds = allExtensions.GroupBy(item => item.extensionId).ToList();
 
             Log($"Total Extensions found: {allExtensions.Count}, Distinct items by extensionId: {uniqueExtensionIds.Count}");
-
+            // deduplicate the list
             var extensions = DeduplicateExtensions(allExtensions);
             
             // check with stored data
@@ -86,15 +86,14 @@ namespace AzDoExtensionNews
             if (newExtensions.Any() && PostUpdates(newExtensions, updateExtension))
             {
                 // store new data
-                SaveCSV(extensions);
-                //temp disable 
+                //SaveCSV(extensions);
                 SaveJson(extensions);
             }
         }
 
         private static bool PostUpdates(List<Extension> newExtensions, List<Extension> updateExtension)
         {
-            // maybe only store successfully tweeted extensions
+            // todo: maybe only store successfully tweeted extensions?
             var success = true;
             foreach (var extension in newExtensions)
             {
@@ -138,7 +137,7 @@ namespace AzDoExtensionNews
                 string oauth_consumer_secret = TWConsumerAPISecretKey; //GlobalConstants.TWConsumerAPISecretKey;
                 string oauth_token = TWAccessToken;  //GlobalConstants.TWAccessToken;
                 string oauth_token_secret = TWAccessTokenSecret; //GlobalConstants.TWAccessTokenSecret;
-                
+
                 // set the oauth version and signature method
                 string oauth_version = "1.0";
                 string oauth_signature_method = "HMAC-SHA1";
@@ -191,18 +190,21 @@ namespace AzDoExtensionNews
                     objStream.Write(content, 0, content.Length);
                 }
 
+                var responseResult = "";
+
                 try
                 {
                     //success posting
                     WebResponse objWebResponse = objHttpWebRequest.GetResponse();
                     StreamReader objStreamReader = new StreamReader(objWebResponse.GetResponseStream());
-                    //Log(objStreamReader.ReadToEnd().ToString());
+                    responseResult = objStreamReader.ReadToEnd().ToString();
                 }
                 catch (Exception ex)
                 {
-                    Log("Twitter Post Error: " + ex.Message.ToString() + ", authHeader: " + authorizationHeader);
+                    responseResult = "Twitter Post Error: " + ex.Message.ToString() + ", authHeader: " + authorizationHeader;
+                    Log(responseResult);
                     throw;
-                }
+                }           
 
                 return true;
             }
@@ -283,7 +285,7 @@ namespace AzDoExtensionNews
                     .OrderByDescending(item => item.lastUpdated)
                     .FirstOrDefault();
 
-                if (extension != null)
+                if (extension != null && (extension.flags.Split(", ").FirstOrDefault(item => item.Equals("public")) != null))
                 {
                     uniqueList.Add(extension);
                 }
