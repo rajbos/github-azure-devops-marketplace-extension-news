@@ -93,12 +93,12 @@ namespace AzDoExtensionNews
         private static bool TweetUpdateExtension(Extension extension)
         {
             var version = extension.versions.OrderByDescending(item => item.lastUpdated).FirstOrDefault().version;
-            var tweetText = $"Extension has been updated {extension.displayName} to version {version}. Link: {extension.Url}"; // include version?
+            var tweetText = $"This extension has been updated: \"{extension.displayName}\" to version {version}. Link: {extension.Url}"; // include version?
             return Tweet(tweetText);
         }
         private static bool TweetNewExtension(Extension extension)
         {
-            var tweetText = $"There is a new extension available in the Azure DevOps Marketplace! {extension.displayName}. Link: {extension.Url}";
+            var tweetText = $"There is a new extension available in the Azure DevOps Marketplace! Check out \"{extension.displayName}\". Link: {extension.Url}";
             return Tweet(tweetText);
         }
 
