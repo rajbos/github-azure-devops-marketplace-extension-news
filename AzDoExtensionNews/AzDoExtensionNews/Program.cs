@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.FileExtensions;
 using Microsoft.Extensions.Configuration.Json;
+using AzDoExtensionNews.Helpers;
 
 namespace AzDoExtensionNews
 {
@@ -20,36 +21,11 @@ namespace AzDoExtensionNews
         static void Main(string[] args)
         {
             var started = DateTime.Now;
-            GetSettings();
+            Configuration.LoadSettings();
             CheckForUpdates().GetAwaiter().GetResult();
 
             Log($"Duration: {(DateTime.Now - started).TotalSeconds:N2} seconds");
-        }
-
-        private static string TwitterConsumerAPIKey = "";
-        private static string TwitterConsumerAPISecretKey = "";
-        private static string TwitterAccessToken = "";
-        private static string TwitterAccessTokenSecret = "";
-
-        private static void GetSettings()
-        {
-            IConfiguration config = new ConfigurationBuilder()
-                                            .AddJsonFile("appsettings.json", true, false)
-                                            .AddJsonFile("appsettings.secrets.json", true, false)
-                                            .Build();
-
-            // load the variables
-            TwitterConsumerAPIKey = config["TwitterConsumerAPIKey"];
-            TwitterConsumerAPISecretKey = config["TwitterConsumerAPISecretKey"];
-            TwitterAccessToken = config["TwitterAccessToken"];
-            TwitterAccessTokenSecret = config["TwitterAccessTokenSecret"];
-
-            // check them all
-            if (String.IsNullOrEmpty(TwitterConsumerAPIKey)) throw new Exception($"Error loading value for {nameof(TwitterConsumerAPIKey)}");
-            if (String.IsNullOrEmpty(TwitterConsumerAPISecretKey)) throw new Exception($"Error loading value for {nameof(TwitterConsumerAPISecretKey)}");
-            if (String.IsNullOrEmpty(TwitterAccessToken)) throw new Exception($"Error loading value for {nameof(TwitterAccessToken)}");
-            if (String.IsNullOrEmpty(TwitterAccessTokenSecret)) throw new Exception($"Error loading value for {nameof(TwitterAccessTokenSecret)}");
-        }
+        }               
 
         private static async Task CheckForUpdates()
         {
@@ -133,10 +109,10 @@ namespace AzDoExtensionNews
             {
                 string twitterURL = "https://api.twitter.com/1.1/statuses/update.json";
 
-                string oauth_consumer_key = TwitterConsumerAPIKey;
-                string oauth_consumer_secret = TwitterConsumerAPISecretKey; 
-                string oauth_token = TwitterAccessToken;  
-                string oauth_token_secret = TwitterAccessTokenSecret;
+                string oauth_consumer_key = Configuration.TwitterConsumerAPIKey;
+                string oauth_consumer_secret = Configuration.TwitterConsumerAPISecretKey; 
+                string oauth_token = Configuration.TwitterAccessToken;  
+                string oauth_token_secret = Configuration.TwitterAccessTokenSecret;
 
                 // set the oauth version and signature method
                 string oauth_version = "1.0";
