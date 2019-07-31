@@ -111,9 +111,9 @@ namespace AzDoExtensionNews
             foreach (var tag in extension.tags)
             {
                 // add # and TitleCase the tag
-                hashtagList.Add($"#{HashtagCasing(tag)} ");
+                hashtagList.Add($"#{HashtagCasing(tag)}");
             }
-            return string.Join(",", hashtagList);
+            return string.Join("", hashtagList);
         }
 
         private static string HashtagCasing(string text)
