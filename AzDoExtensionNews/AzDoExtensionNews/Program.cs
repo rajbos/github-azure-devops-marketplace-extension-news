@@ -83,7 +83,7 @@ namespace AzDoExtensionNews
             Log($"Found {newExtensions.Count} new extension(s) and {updateExtension.Count} updated extension(s)");
 
             // tweet updates
-            if (newExtensions.Any() && PostUpdates(newExtensions, updateExtension))
+            if ((newExtensions.Any() || updateExtension.Any()) && PostUpdates(newExtensions, updateExtension))
             {
                 // store new data
                 //SaveCSV(extensions);
@@ -128,15 +128,15 @@ namespace AzDoExtensionNews
 
         private static bool Tweet(string tweetText)
         {
-            Log(tweetText);
+            Log($"Sending tweet: {tweetText}");
             try
             {
                 string twitterURL = "https://api.twitter.com/1.1/statuses/update.json";
 
-                string oauth_consumer_key = TWConsumerAPIKey; //  GlobalConstants.TWConsumerAPIKey;
-                string oauth_consumer_secret = TWConsumerAPISecretKey; //GlobalConstants.TWConsumerAPISecretKey;
-                string oauth_token = TWAccessToken;  //GlobalConstants.TWAccessToken;
-                string oauth_token_secret = TWAccessTokenSecret; //GlobalConstants.TWAccessTokenSecret;
+                string oauth_consumer_key = TWConsumerAPIKey;
+                string oauth_consumer_secret = TWConsumerAPISecretKey; 
+                string oauth_token = TWAccessToken;  
+                string oauth_token_secret = TWAccessTokenSecret;
 
                 // set the oauth version and signature method
                 string oauth_version = "1.0";
