@@ -82,7 +82,7 @@ namespace AzDoExtensionNews
 
             foreach (var extension in updateExtension)
             {
-                if (TweetUpdateExtension(extension))
+                if (!TweetUpdateExtension(extension))
                 {
                     success = false;
                 }

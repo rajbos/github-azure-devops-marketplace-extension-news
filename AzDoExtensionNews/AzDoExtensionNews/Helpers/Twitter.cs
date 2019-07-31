@@ -84,9 +84,12 @@ namespace AzDoExtensionNews.Helpers
                 }
                 catch (Exception ex)
                 {
-                    responseResult = "Twitter Post Error: " + ex.Message.ToString() + ", authHeader: " + authorizationHeader;
-                    Log.Message(responseResult);
-                    throw;
+                    if (!ex.Message.Contains("(403) Forbidden")) // probably a duplicate tweet
+                    {
+                        responseResult = "Twitter Post Error: " + ex.Message.ToString() + ", authHeader: " + authorizationHeader;
+                        Log.Message(responseResult);
+                        throw;
+                    }
                 }
 
                 return true;
