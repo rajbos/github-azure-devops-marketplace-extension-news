@@ -14,9 +14,6 @@ namespace AzDoExtensionNews
     {
         static void Main(string[] args)
         {
-            TestCasing();
-            return;
-
             var started = DateTime.Now;
             Configuration.LoadSettings();
             CheckForUpdates().GetAwaiter().GetResult();
