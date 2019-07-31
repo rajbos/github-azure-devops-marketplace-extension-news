@@ -113,7 +113,7 @@ namespace AzDoExtensionNews
                 // add # and TitleCase the tag
                 hashtagList.Add($"#{HashtagCasing(tag)}");
             }
-            return string.Join("", hashtagList);
+            return string.Join(" ", hashtagList);
         }
 
         private static string HashtagCasing(string text)
