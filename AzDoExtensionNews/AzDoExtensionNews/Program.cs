@@ -1,18 +1,12 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Reflection;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.FileExtensions;
-using Microsoft.Extensions.Configuration.Json;
 using AzDoExtensionNews.Helpers;
+using System.Globalization;
 
 namespace AzDoExtensionNews
 {
@@ -20,6 +14,9 @@ namespace AzDoExtensionNews
     {
         static void Main(string[] args)
         {
+            TestCasing();
+            return;
+
             var started = DateTime.Now;
             Configuration.LoadSettings();
             CheckForUpdates().GetAwaiter().GetResult();
@@ -59,11 +56,18 @@ namespace AzDoExtensionNews
             Log.Message($"Found {newExtensions.Count} new extension(s) and {updateExtension.Count} updated extension(s)");
 
             // tweet updates
-            if ((newExtensions.Any() || updateExtension.Any()) && PostUpdates(newExtensions, updateExtension))
+            if (newExtensions.Any() || updateExtension.Any())
             {
-                // store new data
-                CSV.SaveCSV(extensions);
-                SaveJson(extensions);
+                if (PostUpdates(newExtensions, updateExtension))
+                {
+                    // store new data
+                    CSV.SaveCSV(extensions);
+                    SaveJson(extensions);
+                }
+                else
+                {
+                    Log.Message("Something went wrong while sending the tweets, not updated the data file!");
+                }
             }
         }
 
@@ -93,13 +97,35 @@ namespace AzDoExtensionNews
         private static bool TweetUpdateExtension(Extension extension)
         {
             var version = extension.versions.OrderByDescending(item => item.lastUpdated).FirstOrDefault().version;
-            var tweetText = $"This extension has been updated: \"{extension.displayName}\" to version {version}. Link: {extension.Url}"; // include version?
+            var hashtags = GetHashTags(extension);
+            var tweetText = $"This extension has been updated: \"{extension.displayName}\" to version {version}. Link: {extension.Url} {hashtags}";
             return Twitter.Tweet(tweetText);
         }
         private static bool TweetNewExtension(Extension extension)
         {
-            var tweetText = $"There is a new extension available in the Azure DevOps Marketplace! Check out \"{extension.displayName}\". Link: {extension.Url}";
+            var hashtags = GetHashTags(extension);
+            var tweetText = $"There is a new extension available in the Azure DevOps Marketplace! Check out \"{extension.displayName}\". Link: {extension.Url} {hashtags}";
             return Twitter.Tweet(tweetText);
+        }
+
+        private static string GetHashTags(Extension extension)
+        {
+            var hashtagList = new List<string>();
+            foreach (var tag in extension.tags)
+            {
+                // add # and TitleCase the tag
+                hashtagList.Add($"#{HashtagCasing(tag)} ");
+            }
+            return string.Join(",", hashtagList);
+        }
+
+        private static string HashtagCasing(string text)
+        {
+            // Creates a TextInfo based on the "en-US" culture.
+            TextInfo myTI = new CultureInfo("en-US", false).TextInfo;
+
+            var titleCasedText = myTI.ToTitleCase(text).Replace(" ", String.Empty);
+            return titleCasedText;
         }
 
         private static (List<Extension> newExtensions, List<Extension> updatedExtensions) Diff(List<Extension> extensions, List<Extension> previousExtensions)

@@ -11,7 +11,7 @@ namespace AzDoExtensionNews.Helpers
     {
         public static bool Tweet(string tweetText)
         {
-            Log.Message($"Sending tweet: {tweetText}");
+            Log.Message($"Sending tweet: {tweetText}. Tweet.Length: {tweetText.Length}");
             try
             {
                 string twitterURL = "https://api.twitter.com/1.1/statuses/update.json";
