@@ -24,7 +24,7 @@ namespace AzDoExtensionNews
             Configuration.LoadSettings();
             CheckForUpdates().GetAwaiter().GetResult();
 
-            Log($"Duration: {(DateTime.Now - started).TotalSeconds:N2} seconds");
+            Log.Message($"Duration: {(DateTime.Now - started).TotalSeconds:N2} seconds");
         }               
 
         private static async Task CheckForUpdates()
@@ -49,14 +49,14 @@ namespace AzDoExtensionNews
             
             var uniqueExtensionIds = allExtensions.GroupBy(item => item.extensionId).ToList();
 
-            Log($"Total Extensions found: {allExtensions.Count}, Distinct items by extensionId: {uniqueExtensionIds.Count}");
+            Log.Message($"Total Extensions found: {allExtensions.Count}, Distinct items by extensionId: {uniqueExtensionIds.Count}");
             // deduplicate the list
             var extensions = DeduplicateExtensions(allExtensions);
             
             // check with stored data
             (var newExtensions, var updateExtension) = Diff(extensions, previousExtensions);
             // show updates
-            Log($"Found {newExtensions.Count} new extension(s) and {updateExtension.Count} updated extension(s)");
+            Log.Message($"Found {newExtensions.Count} new extension(s) and {updateExtension.Count} updated extension(s)");
 
             // tweet updates
             if ((newExtensions.Any() || updateExtension.Any()) && PostUpdates(newExtensions, updateExtension))
@@ -94,100 +94,12 @@ namespace AzDoExtensionNews
         {
             var version = extension.versions.OrderByDescending(item => item.lastUpdated).FirstOrDefault().version;
             var tweetText = $"This extension has been updated: \"{extension.displayName}\" to version {version}. Link: {extension.Url}"; // include version?
-            return Tweet(tweetText);
+            return Twitter.Tweet(tweetText);
         }
         private static bool TweetNewExtension(Extension extension)
         {
             var tweetText = $"There is a new extension available in the Azure DevOps Marketplace! Check out \"{extension.displayName}\". Link: {extension.Url}";
-            return Tweet(tweetText);
-        }
-
-        private static bool Tweet(string tweetText)
-        {
-            Log($"Sending tweet: {tweetText}");
-            try
-            {
-                string twitterURL = "https://api.twitter.com/1.1/statuses/update.json";
-
-                string oauth_consumer_key = Configuration.TwitterConsumerAPIKey;
-                string oauth_consumer_secret = Configuration.TwitterConsumerAPISecretKey; 
-                string oauth_token = Configuration.TwitterAccessToken;  
-                string oauth_token_secret = Configuration.TwitterAccessTokenSecret;
-
-                // set the oauth version and signature method
-                string oauth_version = "1.0";
-                string oauth_signature_method = "HMAC-SHA1";
-
-                // create unique request details
-                string oauth_nonce = Convert.ToBase64String(new ASCIIEncoding().GetBytes(DateTime.Now.Ticks.ToString()));
-                System.TimeSpan timeSpan = (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc));
-                string oauth_timestamp = Convert.ToInt64(timeSpan.TotalSeconds).ToString();
-
-                // create oauth signature
-                string baseFormat = "oauth_consumer_key={0}&oauth_nonce={1}&oauth_signature_method={2}" + "&oauth_timestamp={3}&oauth_token={4}&oauth_version={5}&status={6}";
-
-                string baseString = string.Format(
-                    baseFormat,
-                    oauth_consumer_key,
-                    oauth_nonce,
-                    oauth_signature_method,
-                    oauth_timestamp, oauth_token,
-                    oauth_version,
-                    Uri.EscapeDataString(tweetText)
-                );
-
-                string oauth_signature = null;
-                using (HMACSHA1 hasher = new HMACSHA1(ASCIIEncoding.ASCII.GetBytes(Uri.EscapeDataString(oauth_consumer_secret) + "&" + Uri.EscapeDataString(oauth_token_secret))))
-                {
-                    oauth_signature = Convert.ToBase64String(hasher.ComputeHash(ASCIIEncoding.ASCII.GetBytes("POST&" + Uri.EscapeDataString(twitterURL) + "&" + Uri.EscapeDataString(baseString))));
-                }
-
-                // create the request header
-                string authorizationFormat = "OAuth oauth_consumer_key=\"{0}\", oauth_nonce=\"{1}\", " + "oauth_signature=\"{2}\", oauth_signature_method=\"{3}\", " + "oauth_timestamp=\"{4}\", oauth_token=\"{5}\", " + "oauth_version=\"{6}\"";
-
-                string authorizationHeader = string.Format(
-                    authorizationFormat,
-                    Uri.EscapeDataString(oauth_consumer_key),
-                    Uri.EscapeDataString(oauth_nonce),
-                    Uri.EscapeDataString(oauth_signature),
-                    Uri.EscapeDataString(oauth_signature_method),
-                    Uri.EscapeDataString(oauth_timestamp),
-                    Uri.EscapeDataString(oauth_token),
-                    Uri.EscapeDataString(oauth_version)
-                );
-
-                HttpWebRequest objHttpWebRequest = (HttpWebRequest)WebRequest.Create(twitterURL);
-                objHttpWebRequest.Headers.Add("Authorization", authorizationHeader);
-                objHttpWebRequest.Method = "POST";
-                objHttpWebRequest.ContentType = "application/x-www-form-urlencoded";
-                using (Stream objStream = objHttpWebRequest.GetRequestStream())
-                {
-                    byte[] content = ASCIIEncoding.ASCII.GetBytes("status=" + Uri.EscapeDataString(tweetText));
-                    objStream.Write(content, 0, content.Length);
-                }
-
-                var responseResult = "";
-
-                try
-                {
-                    //success posting
-                    WebResponse objWebResponse = objHttpWebRequest.GetResponse();
-                    StreamReader objStreamReader = new StreamReader(objWebResponse.GetResponseStream());
-                    responseResult = objStreamReader.ReadToEnd().ToString();
-                }
-                catch (Exception ex)
-                {
-                    responseResult = "Twitter Post Error: " + ex.Message.ToString() + ", authHeader: " + authorizationHeader;
-                    Log(responseResult);
-                    throw;
-                }           
-
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return Twitter.Tweet(tweetText);
         }
 
         private static (List<Extension> newExtensions, List<Extension> updatedExtensions) Diff(List<Extension> extensions, List<Extension> previousExtensions)
@@ -318,13 +230,13 @@ namespace AzDoExtensionNews
         private static void LogDataResult(ExtensionDataResult data, int pageNumber, int pageSize)
         {
             var extensions = data.results[0].extensions;
-            //Log($"Found {extensions.Length} extensions on page number {pageNumber}");
-            //Log("");
+            //Log.Message($"Found {extensions.Length} extensions on page number {pageNumber}");
+            //Log.Message("");
 
             for (var i = 0; i < extensions.Length; i++)
             {
                 var extension = extensions[i];
-                Log($"{(pageNumber * pageSize + i):D3} {extension.lastUpdated} {extension.displayName}");
+                Log.Message($"{(pageNumber * pageSize + i):D3} {extension.lastUpdated} {extension.displayName}");
             }
 
             if (extensions.Length < pageSize)
@@ -337,10 +249,10 @@ namespace AzDoExtensionNews
                     {
                         itemText.AppendLine($"name: {items.name}= count:{items.count};");
                     }
-                    Log($"metadataType: {resultMetadata.metadataType} itemText = {itemText.ToString()}");
+                    Log.Message($"metadataType: {resultMetadata.metadataType} itemText = {itemText.ToString()}");
                 }
             }
-            Log("");
+            Log.Message("");
         }
 
         private static async Task<ExtensionDataResult> LoadExtensionDataAsync(int pageNumber, int pageSize)
@@ -358,7 +270,7 @@ namespace AzDoExtensionNews
             //var body = RequestBody.RawBody;
             var stringContent = new StringContent(body, Encoding.ASCII, "application/json");
 
-            Log("Loading data from Azure DevOps");
+            Log.Message("Loading data from Azure DevOps");
             try
             {
                 var response = await httpClient.PostAsync("_apis/public/gallery/extensionquery", stringContent);
@@ -372,14 +284,9 @@ namespace AzDoExtensionNews
             }
             catch (Exception e)
             {
-                Log($"Error loading data: {e.Message}{e.InnerException?.Message}");
+                Log.Message($"Error loading data: {e.Message}{e.InnerException?.Message}");
                 return null;
             }
-        }
-
-        private static void Log(string message)
-        {
-            Console.WriteLine(message);
         }
     }
 }
