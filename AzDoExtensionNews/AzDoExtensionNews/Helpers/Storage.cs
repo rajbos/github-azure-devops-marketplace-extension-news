@@ -1,4 +1,5 @@
-﻿using Microsoft.Azure.Storage;
+﻿using AzDoExtensionNews.Models;
+using Microsoft.Azure.Storage;
 using Microsoft.Azure.Storage.Blob;
 using Newtonsoft.Json;
 using System;
@@ -122,6 +123,9 @@ namespace AzDoExtensionNews.Helpers
             // Get a reference to the blob address, then upload the file to the blob.
             // Use the value of localFileName for the blob name.
             CloudBlockBlob cloudBlockBlob = CloudBlobContainer.GetBlockBlobReference(localFileName);
+
+            // todo: check if the file is newer then the local file, else do not download!
+            var cloudLastModified = cloudBlockBlob.Properties.LastModified;
             await cloudBlockBlob.DownloadToFileAsync(filePath, FileMode.OpenOrCreate);
         }
 

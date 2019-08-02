@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AzDoExtensionNews.Helpers;
 using System.Globalization;
+using AzDoExtensionNews.Models;
 
 namespace AzDoExtensionNews
 {
@@ -25,6 +26,7 @@ namespace AzDoExtensionNews
         {
             // load previously saved data
             var previousExtensions = Storage.ReadFromJson();
+            var publisherHandles = LoadPublisherHandles.GetPublisherHandles();
 
             // get all new data
             var maxPages = 50;
@@ -55,7 +57,7 @@ namespace AzDoExtensionNews
             // tweet updates
             if (newExtensions.Any() || updateExtension.Any())
             {
-                if (PostUpdates(newExtensions, updateExtension))
+                if (PostUpdates(newExtensions, updateExtension, publisherHandles))
                 {
                     // store new data
                     CSV.SaveCSV(extensions);
@@ -68,13 +70,13 @@ namespace AzDoExtensionNews
             }
         }
 
-        private static bool PostUpdates(List<Extension> newExtensions, List<Extension> updateExtension)
+        private static bool PostUpdates(List<Extension> newExtensions, List<Extension> updateExtension, List<PublisherHandles> publisherHandles)
         {
             // todo: maybe only store successfully tweeted extensions?
             var success = true;
             foreach (var extension in newExtensions)
             {
-                if (!TweetNewExtension(extension))
+                if (!TweetNewExtension(extension, publisherHandles))
                 {
                     success = false;
                 }
@@ -82,7 +84,7 @@ namespace AzDoExtensionNews
 
             foreach (var extension in updateExtension)
             {
-                if (!TweetUpdateExtension(extension))
+                if (!TweetUpdateExtension(extension, publisherHandles))
                 {
                     success = false;
                 }
@@ -91,17 +93,31 @@ namespace AzDoExtensionNews
             return success;
         }
 
-        private static bool TweetUpdateExtension(Extension extension)
+        private static string GetPublisher(Extension extension, List<PublisherHandles> publisherHandles)
+        {
+            var handle = publisherHandles.FirstOrDefault(item => item.PublisherName == extension.publisher.publisherName);
+            if (handle != null)
+            {
+                return handle.TwitterHandle;
+            }
+
+            return extension.publisher.displayName;
+        }
+
+        private static bool TweetUpdateExtension(Extension extension, List<PublisherHandles> publisherHandles)
         {
             var version = extension.versions.OrderByDescending(item => item.lastUpdated).FirstOrDefault().version;
             var hashtags = GetHashTags(extension);
-            var tweetText = $"This extension from {extension.publisher.displayName} has been updated: \"{extension.displayName}\" to version {version}. Link: {extension.Url} {hashtags}";
+            var publisher = GetPublisher(extension, publisherHandles);
+            var tweetText = $"This extension from {publisher} has been updated: \"{extension.displayName}\" to version {version}. Link: {extension.Url} {hashtags}";
             return Twitter.Tweet(tweetText);
         }
-        private static bool TweetNewExtension(Extension extension)
+
+        private static bool TweetNewExtension(Extension extension, List<PublisherHandles> publisherHandles)
         {
             var hashtags = GetHashTags(extension);
-            var tweetText = $"There is a new extension from {extension.publisher.displayName} available in the Azure DevOps Marketplace! Check out \"{extension.displayName}\". Link: {extension.Url} {hashtags}";
+            var publisher = GetPublisher(extension, publisherHandles);
+            var tweetText = $"There is a new extension from {publisher} available in the Azure DevOps Marketplace! Check out \"{extension.displayName}\". Link: {extension.Url} {hashtags}";
             return Twitter.Tweet(tweetText);
         }
 
