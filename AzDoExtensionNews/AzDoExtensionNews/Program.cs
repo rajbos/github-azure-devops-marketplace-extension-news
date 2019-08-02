@@ -95,13 +95,13 @@ namespace AzDoExtensionNews
         {
             var version = extension.versions.OrderByDescending(item => item.lastUpdated).FirstOrDefault().version;
             var hashtags = GetHashTags(extension);
-            var tweetText = $"This extension has been updated: \"{extension.displayName}\" to version {version}. Link: {extension.Url} {hashtags}";
+            var tweetText = $"This extension from {extension.publisher.displayName} has been updated: \"{extension.displayName}\" to version {version}. Link: {extension.Url} {hashtags}";
             return Twitter.Tweet(tweetText);
         }
         private static bool TweetNewExtension(Extension extension)
         {
             var hashtags = GetHashTags(extension);
-            var tweetText = $"There is a new extension available in the Azure DevOps Marketplace! Check out \"{extension.displayName}\". Link: {extension.Url} {hashtags}";
+            var tweetText = $"There is a new extension from {extension.publisher.displayName} available in the Azure DevOps Marketplace! Check out \"{extension.displayName}\". Link: {extension.Url} {hashtags}";
             return Twitter.Tweet(tweetText);
         }
 
