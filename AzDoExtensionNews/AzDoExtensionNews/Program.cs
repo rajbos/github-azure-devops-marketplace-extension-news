@@ -185,9 +185,11 @@ namespace AzDoExtensionNews
             for (var i = 0; i < extensions.Length; i++)
             {
                 var extension = extensions[i];
-                Log.Message($"{(pageNumber * pageSize + i):D3} {extension.lastUpdated} {extension.displayName}");
+                //only on verbose?
+                //Log.Message($"{(pageNumber * pageSize + i):D3} {extension.lastUpdated} {extension.displayName}");
             }
 
+            // log the last batch's information
             if (extensions.Length < pageSize)
             {
                 // pagingToken: {data.results[0].pagingToken} is always empty
@@ -196,7 +198,7 @@ namespace AzDoExtensionNews
                     var itemText = new StringBuilder();
                     foreach (var items in resultMetadata.metadataItems)
                     {
-                        itemText.AppendLine($"name: {items.name}= count:{items.count};");
+                        itemText.AppendLine($"name: {items.name} count:{items.count};");
                     }
                     Log.Message($"metadataType: {resultMetadata.metadataType} itemText = {itemText.ToString()}");
                 }
@@ -216,10 +218,9 @@ namespace AzDoExtensionNews
 
             //var body = JsonConvert.SerializeObject(RequestBody.GetDefault(pageNumber, pageSize));
             var body = RequestBody.GetRawBody(pageNumber, pageSize);
-            //var body = RequestBody.RawBody;
             var stringContent = new StringContent(body, Encoding.ASCII, "application/json");
 
-            Log.Message("Loading data from Azure DevOps");
+            Log.Message("Loading data from the Azure DevOps Marketplace");
             try
             {
                 var response = await httpClient.PostAsync("_apis/public/gallery/extensionquery", stringContent);

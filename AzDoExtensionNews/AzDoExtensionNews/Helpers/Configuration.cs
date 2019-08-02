@@ -7,10 +7,48 @@ namespace AzDoExtensionNews.Helpers
 {
     internal static class Configuration
     {
-        public static string TwitterConsumerAPIKey;
+        private static string _TwitterConsumerAPIKey;
+        public static string TwitterConsumerAPIKey
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_TwitterConsumerAPIKey))
+                {
+                    LoadSettings();
+                }
+
+                return _TwitterConsumerAPIKey;
+            }
+
+            set
+            {
+                _TwitterConsumerAPIKey = value;
+            }
+        }
+
         public static string TwitterConsumerAPISecretKey;
         public static string TwitterAccessToken;
         public static string TwitterAccessTokenSecret;
+
+        private static string _BlobStorageConnectionString;
+
+        public static string BlobStorageConnectionString
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_BlobStorageConnectionString))
+                {
+                    LoadSettings();
+                }
+
+                return _BlobStorageConnectionString;
+            }
+
+            set
+            {
+                _BlobStorageConnectionString = value;
+            }
+        }
 
         public static void LoadSettings()
         {
@@ -24,6 +62,7 @@ namespace AzDoExtensionNews.Helpers
             TwitterConsumerAPISecretKey = config["TwitterConsumerAPISecretKey"];
             TwitterAccessToken = config["TwitterAccessToken"];
             TwitterAccessTokenSecret = config["TwitterAccessTokenSecret"];
+            BlobStorageConnectionString = config["BlobStorageConnectionString"];
 
             // check them all
             if (String.IsNullOrEmpty(TwitterConsumerAPIKey)) throw new ConfigurationException($"Error loading value for {nameof(TwitterConsumerAPIKey)}");
