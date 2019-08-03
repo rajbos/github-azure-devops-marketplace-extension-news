@@ -34,11 +34,11 @@ namespace AzDoExtensionNews
             var allExtensions = new List<Extension>();            
             for (int i = 0; i < maxPages; i++)
             {
-                var data = await LoadExtensionDataAsync(pageNumber: i, pageSize);
+                var data = await LoadExtensionDataAsync(pageNumber: i, pageSize: pageSize);
 
                 if (data == null || data.results[0].extensions.Length == 0) break;
 
-                LogDataResult(data, pageNumber: i, pageSize);
+                LogDataResult(data: data, pageNumber: i, pageSize: pageSize);
 
                 allExtensions.AddRange(data.results[0].extensions);
             }
