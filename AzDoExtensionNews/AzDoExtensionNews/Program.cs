@@ -121,15 +121,42 @@ namespace AzDoExtensionNews
             return Twitter.Tweet(tweetText);
         }
 
+        /// <summary>
+        /// Get the tags from the publisher as twitter hashTags
+        /// </summary>
+        /// <param name="extension">The extension to load the tags from</param>
         private static string GetHashTags(Extension extension)
         {
+            if (extension == null) throw new ArgumentNullException(nameof(extension));
+
             var hashtagList = new List<string>();
             foreach (var tag in extension.tags)
             {
                 // add # and TitleCase the tag
-                hashtagList.Add($"#{HashtagCasing(tag)}");
+                if (!HideTag(tag))
+                {
+                    hashtagList.Add($"#{HashtagCasing(tag)}");
+                }
             }
             return string.Join(" ", hashtagList);
+        }
+
+        private static readonly string[] HiddenTags = new string[3] { "$Donotdownload","$Ispaid", "__BYOLENFORCED"};
+
+        /// <summary>
+        /// Checks a list of tags to hide that are used by the marketplace and not shown as tags
+        /// </summary>
+        /// <param name="tag">Text of the tag to inspect</param>
+        private static bool HideTag(string tag)
+        {
+            var hideTag = HiddenTags.FirstOrDefault(item => item.Equals(tag, StringComparison.InvariantCultureIgnoreCase)) != null;
+            if (!hideTag)
+            {
+                // check for "__Trialdays" or just even __
+                hideTag = tag.StartsWith("__Trialdays") || tag.StartsWith("__");
+            }
+
+            return hideTag;
         }
 
         private static string HashtagCasing(string text)
@@ -143,6 +170,9 @@ namespace AzDoExtensionNews
 
         private static (List<Extension> newExtensions, List<Extension> updatedExtensions) Diff(List<Extension> extensions, List<Extension> previousExtensions)
         {
+            if (extensions == null) throw new ArgumentNullException(nameof(extensions));
+            if (previousExtensions == null) throw new ArgumentNullException(nameof(previousExtensions));
+
             var newExtensionList = new List<Extension>();
             var updatedExtensionList = new List<Extension>();
 
@@ -173,6 +203,8 @@ namespace AzDoExtensionNews
         
         private static List<Extension> DeduplicateExtensions(List<Extension> allExtensions)
         {
+            if (allExtensions == null) throw new ArgumentNullException(nameof(allExtensions));
+
             var uniqueList = new List<Extension>();
             var uniqueExtensionIds = allExtensions.GroupBy(item => item.extensionId).ToList();
 
@@ -194,14 +226,16 @@ namespace AzDoExtensionNews
 
         private static void LogDataResult(ExtensionDataResult data, int pageNumber, int pageSize)
         {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+
             var extensions = data.results[0].extensions;
             //Log.Message($"Found {extensions.Length} extensions on page number {pageNumber}");
             //Log.Message("");
 
             for (var i = 0; i < extensions.Length; i++)
             {
-                var extension = extensions[i];
-                //only on verbose?
+                //Todo: only on verbose?
+                //var extension = extensions[i];
                 //Log.Message($"{(pageNumber * pageSize + i):D3} {extension.lastUpdated} {extension.displayName}");
             }
 
