@@ -37,7 +37,7 @@ namespace AzDoExtensionNews.Helpers
             // check for trial period
             if (trailPeriod > 0)
             {
-                hashtagList.Add($"{trailPeriod}Days");
+                hashtagList.Add($"Trial: {trailPeriod} Days");
             }
 
             return string.Join(" ", hashtagList);
