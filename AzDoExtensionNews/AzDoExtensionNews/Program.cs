@@ -95,7 +95,7 @@ namespace AzDoExtensionNews
 
         private static string GetPublisher(Extension extension, List<PublisherHandles> publisherHandles)
         {
-            var handle = publisherHandles.FirstOrDefault(item => item.PublisherName == extension.publisher.publisherName);
+            var handle = publisherHandles.FirstOrDefault(item => item.PublisherName.Equals(extension.publisher.publisherName, StringComparison.InvariantCultureIgnoreCase));
             if (handle != null)
             {
                 return handle.TwitterHandle;
