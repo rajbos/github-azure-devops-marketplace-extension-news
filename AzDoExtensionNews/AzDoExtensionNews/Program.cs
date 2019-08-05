@@ -138,23 +138,63 @@ namespace AzDoExtensionNews
                     hashtagList.Add($"#{HashtagCasing(tag)}");
                 }
             }
+
+            // check for paid extension
+            if (IsPaidExtension(extension))
+            {
+                hashtagList.Add(paidEmoticon);
+            }
+
+            var trailPeriod = GetTrailPeriod(extension);
+            // check for trial period
+            if (trailPeriod > 0)
+            {
+                hashtagList.Add($"{trailPeriod}Days");
+            }
+
             return string.Join(" ", hashtagList);
         }
 
+        /// <summary>
+        /// Get the trials period in days
+        /// </summary>
+        /// <param name="extension">The extension to check</param>
+        private static int GetTrailPeriod(Extension extension)
+        {
+            var tag = extension.tags?.FirstOrDefault(item => item.StartsWith(TrialTag, StringComparison.InvariantCultureIgnoreCase));
+            if (tag == null)
+            {
+                return 0;
+            }
+
+            var splitted = tag.Split(":");
+            if (splitted.Length < 2)
+            {
+                return 0;
+            }
+
+            var dayValue = splitted[1];
+            if (int.TryParse(dayValue, out int days))
+            {
+                return days;
+            }
+
+            return 0;
+        }
+
         private const string IsPaidTag = "$ISPAID";
+        private const string TrialTag = "__Trialdays";
         private static readonly string[] HiddenTags = new string[3] { "$DONOTDOWNLOAD", IsPaidTag, "__BYOLENFORCED"};
         private static readonly string paidEmoticon = char.ConvertFromUtf32(0x1F4B3); // credit card emoji
 
         private static string GetExtensionText(Extension extension)
         {
-            if (IsPaidExtension(extension))
-            {
-                return $"extension ({paidEmoticon})";
-            }
-
             return "extension";
         }
 
+        /// <summary>
+        /// Check if the extension is paid or not
+        /// </summary>
         private static bool IsPaidExtension(Extension extension)
         {
             return extension.tags?.FirstOrDefault(item => item.Equals(IsPaidTag, StringComparison.InvariantCultureIgnoreCase)) != null;
@@ -170,7 +210,7 @@ namespace AzDoExtensionNews
             if (!hideTag)
             {
                 // check for "__Trialdays" or just even __
-                hideTag = tag.StartsWith("__Trialdays") || tag.StartsWith("__");
+                hideTag = tag.StartsWith(TrialTag) || tag.StartsWith("__");
             }
 
             return hideTag;
