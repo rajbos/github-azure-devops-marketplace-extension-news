@@ -109,7 +109,7 @@ namespace AzDoExtensionNews
             var version = extension.versions.OrderByDescending(item => item.lastUpdated).FirstOrDefault().version;
             var hashtags = GetHashTags(extension);
             var publisher = GetPublisher(extension, publisherHandles);
-            var tweetText = $"This extension from {publisher} has been updated: \"{extension.displayName}\" to version {version}. Link: {extension.Url} {hashtags}";
+            var tweetText = $"This {GetExtensionText(extension)} from {publisher} has been updated: \"{extension.displayName}\" to version {version}. Link: {extension.Url} {hashtags}";
             return Twitter.Tweet(tweetText);
         }
 
@@ -117,7 +117,7 @@ namespace AzDoExtensionNews
         {
             var hashtags = GetHashTags(extension);
             var publisher = GetPublisher(extension, publisherHandles);
-            var tweetText = $"There is a new extension from {publisher} available in the Azure DevOps Marketplace! Check out \"{extension.displayName}\". Link: {extension.Url} {hashtags}";
+            var tweetText = $"There is a new {GetExtensionText(extension)} from {publisher} available in the Azure DevOps Marketplace! Check out \"{extension.displayName}\". Link: {extension.Url} {hashtags}";
             return Twitter.Tweet(tweetText);
         }
 
@@ -141,7 +141,24 @@ namespace AzDoExtensionNews
             return string.Join(" ", hashtagList);
         }
 
-        private static readonly string[] HiddenTags = new string[3] { "$Donotdownload","$Ispaid", "__BYOLENFORCED"};
+        private const string IsPaidTag = "$ISPAID";
+        private static readonly string[] HiddenTags = new string[3] { "$DONOTDOWNLOAD", IsPaidTag, "__BYOLENFORCED"};
+        private static readonly string paidEmoticon = char.ConvertFromUtf32(0x1F4B3); // credit card emoji
+
+        private static string GetExtensionText(Extension extension)
+        {
+            if (IsPaidExtension(extension))
+            {
+                return $"extension ({paidEmoticon})";
+            }
+
+            return "extension";
+        }
+
+        private static bool IsPaidExtension(Extension extension)
+        {
+            return extension.tags?.FirstOrDefault(item => item.Equals(IsPaidTag, StringComparison.InvariantCultureIgnoreCase)) != null;
+        }
 
         /// <summary>
         /// Checks a list of tags to hide that are used by the marketplace and not shown as tags
