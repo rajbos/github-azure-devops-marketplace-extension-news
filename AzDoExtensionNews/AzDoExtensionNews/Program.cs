@@ -109,7 +109,7 @@ namespace AzDoExtensionNews
             var version = extension.versions.OrderByDescending(item => item.lastUpdated).FirstOrDefault().version;
             var hashtags = Tags.GetHashTags(extension);
             var publisher = GetPublisher(extension, publisherHandles);
-            var tweetText = $"This {GetExtensionText(extension)} from {publisher} has been updated: \"{extension.displayName}\" to version {version}. Link: {extension.Url} {hashtags}";
+            var tweetText = $"The {GetExtensionText(extension)} \"{extension.displayName}\" from {publisher} has been updated to version {version}. Link: {extension.Url} {hashtags}";
             return Twitter.Tweet(tweetText);
         }
 
