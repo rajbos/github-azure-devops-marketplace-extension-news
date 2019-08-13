@@ -56,11 +56,11 @@
     "TwitterHandle": "@jaspergilhuis"
   },
   {
-    "PublisherName": "",
-    "TwitterHandle": "@",
-  },
-  {  
     "PublisherName": "stephane-eyskens",
     "TwitterHandle": "@stephaneeyskens"
+  },
+  {
+    "PublisherName": "",
+    "TwitterHandle": "@"
   }
 ]
