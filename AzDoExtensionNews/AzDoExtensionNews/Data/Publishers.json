@@ -60,6 +60,14 @@
     "TwitterHandle": "@stephaneeyskens"
   },
   {
+    "PublisherName": "SonarSource",
+    "TwitterHandle": "@SonarSource"
+  },
+  {
+    "PublisherName": "octopusdeploy",
+    "TwitterHandle": "@OctopusDeploy"
+  },
+  {
     "PublisherName": "",
     "TwitterHandle": "@"
   }
