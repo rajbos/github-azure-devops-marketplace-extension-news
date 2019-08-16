@@ -33,8 +33,8 @@ namespace AzDoExtensionNews.Helpers
                 hashtagList.Add(paidEmoticon);
             }
 
-            var trailPeriod = GetTrailPeriod(extension);
             // check for trial period
+            var trailPeriod = GetTrailPeriod(extension);
             if (trailPeriod > 0)
             {
                 hashtagList.Add($"Trial: {trailPeriod} Days");
@@ -104,7 +104,9 @@ namespace AzDoExtensionNews.Helpers
             // Creates a TextInfo based on the "en-US" culture.
             TextInfo myTI = new CultureInfo("en-US", false).TextInfo;
 
-            var titleCasedText = myTI.ToTitleCase(text).Replace(" ", String.Empty);
+            var titleCasedText = myTI.ToTitleCase(text)
+                .Replace(" ", String.Empty)  // remove spaces
+                .Replace("-", String.Empty); // remove dashes
             return titleCasedText;
         }
 
