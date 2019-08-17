@@ -2,26 +2,36 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
+using Tweetinvi;
+using Tweetinvi.Parameters;
 
 namespace AzDoExtensionNews.Helpers
 {
     internal static class Twitter
     {
-        public static bool Tweet(string tweetText)
+        private static readonly string oauth_consumer_key = Configuration.TwitterConsumerAPIKey;
+        private static readonly string oauth_consumer_secret = Configuration.TwitterConsumerAPISecretKey;
+        private static readonly string oauth_token = Configuration.TwitterAccessToken;
+        private static readonly string oauth_token_secret = Configuration.TwitterAccessTokenSecret;
+
+        public static bool SendTweet(string tweetText, string imageUrl)
         {
             Log.Message($"Sending tweet: {tweetText}. Tweet.Length: {tweetText.Length}");
-            
+
+            return TweetWithNuget(tweetText, imageUrl);
+            // return TweetWithHttp(tweetText);
+        }
+
+        private static bool TweetWithHttp(string tweetText)
+        {
             try
             {
                 string twitterURL = "https://api.twitter.com/1.1/statuses/update.json";
-
-                string oauth_consumer_key = Configuration.TwitterConsumerAPIKey;
-                string oauth_consumer_secret = Configuration.TwitterConsumerAPISecretKey;
-                string oauth_token = Configuration.TwitterAccessToken;
-                string oauth_token_secret = Configuration.TwitterAccessTokenSecret;
-
+                
                 // set the oauth version and signature method
                 string oauth_version = "1.0";
                 string oauth_signature_method = "HMAC-SHA1";
@@ -68,7 +78,7 @@ namespace AzDoExtensionNews.Helpers
                 objHttpWebRequest.Headers.Add("Authorization", authorizationHeader);
                 objHttpWebRequest.Method = "POST";
                 objHttpWebRequest.ContentType = "application/x-www-form-urlencoded";
-                using (Stream objStream = objHttpWebRequest.GetRequestStream())
+                using (System.IO.Stream objStream = objHttpWebRequest.GetRequestStream())
                 {
                     byte[] content = ASCIIEncoding.ASCII.GetBytes("status=" + Uri.EscapeDataString(tweetText));
                     objStream.Write(content, 0, content.Length);
@@ -81,7 +91,7 @@ namespace AzDoExtensionNews.Helpers
                     //success posting
                     WebResponse objWebResponse = objHttpWebRequest.GetResponse();
                     StreamReader objStreamReader = new StreamReader(objWebResponse.GetResponseStream());
-                    responseResult = objStreamReader.ReadToEnd().ToString();
+                    //responseResult = objStreamReader.ReadToEnd().ToString();
                 }
                 catch (Exception ex)
                 {
@@ -99,6 +109,67 @@ namespace AzDoExtensionNews.Helpers
             {
                 return false;
             }
+        }
+
+        private static bool TweetWithNuget(string tweetText, string imageUrl)
+        {
+            try
+            {
+                // setup authentication with Twitter
+                Auth.SetUserCredentials(
+                    consumerKey: oauth_consumer_key,
+                    consumerSecret: oauth_consumer_secret,
+                    userAccessToken: oauth_token,
+                    userAccessSecret: oauth_token_secret);
+
+                // download image URL in memory
+                var mediaFile = DownloadImageAsync(imageUrl).GetAwaiter().GetResult();
+                if (mediaFile != null)
+                {
+                    // upload it to twitter
+                    var media = Upload.UploadBinary(mediaFile);
+
+                    if (media != null)
+                    {
+                        // publish the tweet with the media
+                        Tweet.PublishTweet(tweetText, new PublishTweetOptionalParameters
+                        {
+                            Medias = new List<Tweetinvi.Models.IMedia> { media }
+                        });
+
+                        return true;
+                    }
+                }
+
+                // just publish the tweet without the media
+                Tweet.PublishTweet(tweetText);
+
+                return true;
+
+            }
+            catch (Exception e)
+            {
+                Log.Message($"Error tweeting: {e.Message}");
+                throw;
+            }
+        }
+
+        private static async Task<byte[]> DownloadImageAsync(string imageUrl)
+        {
+            using (var client = new HttpClient())
+            {
+
+                using (var result = await client.GetAsync(imageUrl))
+                {
+                    if (result.IsSuccessStatusCode)
+                    {
+                        return await result.Content.ReadAsByteArrayAsync();
+                    }
+
+                }
+            }
+
+            return null;
         }
     }
 }

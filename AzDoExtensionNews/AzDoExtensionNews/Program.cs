@@ -106,21 +106,38 @@ namespace AzDoExtensionNews
 
         private static bool TweetUpdateExtension(Extension extension, List<PublisherHandles> publisherHandles)
         {
-            var version = extension.versions.OrderByDescending(item => item.lastUpdated).FirstOrDefault().version;
+            var version = GetVersion(extension);
             var hashtags = Tags.GetHashTags(extension);
             var publisher = GetPublisher(extension, publisherHandles);
-            var tweetText = $"The {GetExtensionText(extension)} \"{extension.displayName}\" from {publisher} has been updated to version {version}. Link: {extension.Url} {hashtags}";
-            return Twitter.Tweet(tweetText);
-        }
+            var tweetText = $"The {GetExtensionText(extension)} \"{extension.displayName}\" from {publisher} has been updated to version {version.version}. Link: {extension.Url} {hashtags}";
+            string imageUrl = GetImageUrl(version);
 
+            return Twitter.SendTweet(tweetText, imageUrl);
+        }
+        
         private static bool TweetNewExtension(Extension extension, List<PublisherHandles> publisherHandles)
         {
+            var version = GetVersion(extension);
             var hashtags = Tags.GetHashTags(extension);
             var publisher = GetPublisher(extension, publisherHandles);
             var tweetText = $"There is a new {GetExtensionText(extension)} from {publisher} available in the Azure DevOps Marketplace! Check out \"{extension.displayName}\". Link: {extension.Url} {hashtags}";
-            return Twitter.Tweet(tweetText);
-        }        
-                
+            string imageUrl = GetImageUrl(version);
+
+            return Twitter.SendTweet(tweetText, imageUrl);
+        }
+
+        private static string GetImageUrl(Models.Version version)
+        {
+            var asset = version.files.FirstOrDefault(item => item.assetType == "Microsoft.VisualStudio.Services.Icons.Default");
+            var imageUrl = asset == null ? "" : asset.source;
+            return imageUrl;
+        }
+
+        private static Models.Version GetVersion(Extension extension)
+        {
+            return extension.versions.OrderByDescending(item => item.lastUpdated).FirstOrDefault();
+        }
+
         private static string GetExtensionText(Extension extension)
         {
             return "extension";
