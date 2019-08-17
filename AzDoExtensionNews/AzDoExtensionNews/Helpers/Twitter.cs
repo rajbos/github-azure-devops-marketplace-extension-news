@@ -127,7 +127,11 @@ namespace AzDoExtensionNews.Helpers
                 if (mediaFile != null)
                 {
                     // upload it to twitter
-                    var media = Upload.UploadBinary(mediaFile);
+                    var media = Upload.UploadBinary(mediaFile, new UploadParameters {
+                        MediaCategory= Tweetinvi.Core.Public.Models.Enum.MediaCategory.Image,
+                        MediaType= Tweetinvi.Core.Public.Models.Enum.MediaType.Media,
+                        WaitForTwitterProcessing = true,
+                    });
 
                     if (media != null)
                     {

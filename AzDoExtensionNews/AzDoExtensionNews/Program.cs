@@ -13,6 +13,8 @@ namespace AzDoExtensionNews
 {
     class Program
     {
+        private const bool TestingTweet = false;
+
         static void Main(string[] args)
         {
             var started = DateTime.Now;
@@ -67,6 +69,12 @@ namespace AzDoExtensionNews
                 {
                     Log.Message("Something went wrong while sending the tweets, not updated the data file!");
                 }
+            }
+            else if (TestingTweet)
+            {
+                // send out a test tweet for 1 extension
+                updateExtension.Add(extensions.First());
+                PostUpdates(newExtensions, updateExtension, publisherHandles);
             }
         }
 
@@ -225,27 +233,34 @@ namespace AzDoExtensionNews
                     {
                         itemText.AppendLine($"name: {items.name} count:{items.count};");
                     }
-                    Log.Message($"metadataType: {resultMetadata.metadataType} itemText = {itemText.ToString()}");
+                    Log.Message($"metadataType: {resultMetadata.metadataType}");
+                    Log.Message($"{itemText.ToString()}");
                 }
+                
+                Log.Message("");
             }
-            Log.Message("");
         }
+
+        private static HttpClient httpClient = null;
 
         private static async Task<ExtensionDataResult> LoadExtensionDataAsync(int pageNumber, int pageSize)
         {
-            var httpClient = new HttpClient
+            if (httpClient == null)
             {
-                BaseAddress = new Uri("https://marketplace.visualstudio.com")
-            };
+                httpClient = new HttpClient
+                {
+                    BaseAddress = new Uri("https://marketplace.visualstudio.com")
+                };
 
-            httpClient.DefaultRequestHeaders.Clear();
-            httpClient.DefaultRequestHeaders.Add("accept", "application/json; api-version=5.2-preview.1; excludeUrls=true");
+                httpClient.DefaultRequestHeaders.Clear();
+                httpClient.DefaultRequestHeaders.Add("accept", "application/json; api-version=5.2-preview.1; excludeUrls=true");
+            }
 
             //var body = JsonConvert.SerializeObject(RequestBody.GetDefault(pageNumber, pageSize));
             var body = RequestBody.GetRawBody(pageNumber, pageSize);
             var stringContent = new StringContent(body, Encoding.ASCII, "application/json");
 
-            Log.Message("Loading data from the Azure DevOps Marketplace");
+            Log.Message($"Loading data from the Azure DevOps Marketplace. PageSize: {pageSize} PageNumber: {pageNumber}");
             try
             {
                 var response = await httpClient.PostAsync("_apis/public/gallery/extensionquery", stringContent);
