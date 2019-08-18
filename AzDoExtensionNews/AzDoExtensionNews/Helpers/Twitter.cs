@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Parameters;
@@ -132,6 +133,11 @@ namespace AzDoExtensionNews.Helpers
                         MediaType= Tweetinvi.Core.Public.Models.Enum.MediaType.Media,
                         WaitForTwitterProcessing = true,
                     });
+
+                    if (!media.IsReadyToBeUsed)
+                    {
+                        Thread.Sleep(2000);
+                    }
 
                     if (media != null)
                     {
