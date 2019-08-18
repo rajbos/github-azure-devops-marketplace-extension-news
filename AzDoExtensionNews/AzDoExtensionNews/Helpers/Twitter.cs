@@ -134,18 +134,28 @@ namespace AzDoExtensionNews.Helpers
                         WaitForTwitterProcessing = true,
                     });
 
-                    if (!media.IsReadyToBeUsed)
-                    {
-                        Thread.Sleep(2000);
-                    }
 
                     if (media != null)
                     {
-                        // publish the tweet with the media
-                        Tweet.PublishTweet(tweetText, new PublishTweetOptionalParameters
+                        if (!media.IsReadyToBeUsed || !media.HasBeenUploaded)
                         {
-                            Medias = new List<Tweetinvi.Models.IMedia> { media }
-                        });
+                            Thread.Sleep(3000);
+                        }
+
+                        try
+                        {
+                            // publish the tweet with the media
+                            Tweet.PublishTweet(tweetText, new PublishTweetOptionalParameters
+                            {
+                                Medias = new List<Tweetinvi.Models.IMedia> { media }
+                            });
+
+                        }
+                        catch
+                        {
+                            // just publish the tweet without the media
+                            Tweet.PublishTweet(tweetText);
+                        }
 
                         return true;
                     }
