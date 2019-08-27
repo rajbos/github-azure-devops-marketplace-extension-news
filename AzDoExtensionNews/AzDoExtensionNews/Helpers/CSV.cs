@@ -25,7 +25,28 @@ namespace AzDoExtensionNews.Helpers
             PropertyInfo[] properties = typeof(T).GetProperties();
             for (int i = 0; i < properties.Length - 1; i++)
             {
-                sw.Write(properties[i].Name + ",");
+                if (properties[i].GetType().IsClass)
+                {
+                    CreateHeader(properties[i], sw);
+                }
+                else
+                {
+                    sw.Write(properties[i].Name + ",");
+                }
+
+            }
+            var lastProp = properties[properties.Length - 1].Name;
+            sw.Write(lastProp + sw.NewLine);
+        }
+        private static void CreateHeader(PropertyInfo obj, StreamWriter sw)
+        {
+            PropertyInfo[] properties = obj.GetType().GetProperties();
+            for (int i = 0; i < properties.Length - 1; i++)
+            {
+                var prop = properties[i];
+                var typeName = obj.Name;
+                var value = prop.GetValue(obj);
+                sw.Write($"{typeName}_{value},");
             }
             var lastProp = properties[properties.Length - 1].Name;
             sw.Write(lastProp + sw.NewLine);
