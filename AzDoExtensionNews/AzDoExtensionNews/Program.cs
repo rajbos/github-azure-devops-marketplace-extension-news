@@ -46,8 +46,9 @@ namespace AzDoExtensionNews
             }
             
             var uniqueExtensionIds = allExtensions.GroupBy(item => item.extensionId).ToList();
+            var uniquePublishers = allExtensions.GroupBy(item => item.publisher.publisherId).ToList();
 
-            Log.Message($"Total Extensions found: {allExtensions.Count}, Distinct items by extensionId: {uniqueExtensionIds.Count}");
+            Log.Message($"Total Extensions found: {allExtensions.Count}, Distinct items by extensionId: {uniqueExtensionIds.Count}. Distinct publishers: {uniquePublishers.Count}");
             // deduplicate the list
             var extensions = DeduplicateExtensions(allExtensions);
             
