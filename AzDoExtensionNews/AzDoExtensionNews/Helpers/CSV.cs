@@ -1,6 +1,7 @@
 ﻿using AzDoExtensionNews.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -13,7 +14,7 @@ namespace AzDoExtensionNews.Helpers
     {
         public static void SaveCSV(List<Extension> allExtensions)
         {
-            if (1 == 2) // todo: extract to setting
+            if (Debugger.IsAttached)
             {
                 CreateCSV(allExtensions, "extensions.csv");
             }

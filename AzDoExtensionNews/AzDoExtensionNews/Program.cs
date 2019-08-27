@@ -62,7 +62,6 @@ namespace AzDoExtensionNews
                 if (PostUpdates(newExtensions, updateExtension, publisherHandles))
                 {
                     // store new data
-                    CSV.SaveCSV(extensions);
                     Storage.SaveJson(extensions);
                 }
                 else
@@ -76,6 +75,9 @@ namespace AzDoExtensionNews
                 updateExtension.Add(extensions.First());
                 PostUpdates(newExtensions, updateExtension, publisherHandles);
             }
+            
+            // save the data to CSV if needed
+            CSV.SaveCSV(extensions);
         }
 
         private static bool PostUpdates(List<Extension> newExtensions, List<Extension> updateExtension, List<PublisherHandles> publisherHandles)
