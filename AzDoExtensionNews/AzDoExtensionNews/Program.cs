@@ -36,8 +36,7 @@ namespace AzDoExtensionNews
             }
             catch (Exception e)
             {
-                Log.Message($"Error loading previous execution information. Stopping execution.{Environment.NewLine}{e.Message}");
-                return;
+                Log.Message($"Error loading previous execution information. Will start with a new slate{Environment.NewLine}{e.Message}");
             }
 
             // get all new data
@@ -58,8 +57,8 @@ namespace AzDoExtensionNews
             var uniqueExtensionIds = allExtensions.GroupBy(item => item.extensionId).ToList();
             var uniquePublishers = allExtensions.GroupBy(item => item.publisher.publisherId).ToList();
 
-            Log.Message($"Total Extensions found: {allExtensions.Count}, Distinct items by extensionId: {uniqueExtensionIds.Count}. Distinct publishers: {uniquePublishers.Count}");
-            // deduplicate the list
+            Log.Message($"Total Extensions found: {allExtensions.Count}, distinct items by extensionId: {uniqueExtensionIds.Count}. Distinct publishers: {uniquePublishers.Count}");
+            // de-duplicate the list
             var extensions = DeduplicateExtensions(allExtensions);
             
             // check with stored data
@@ -86,6 +85,13 @@ namespace AzDoExtensionNews
                 updateExtension.Add(extensions.First());
                 PostUpdates(newExtensions, updateExtension, publisherHandles);
             }
+
+            if (!previousExtensions.Any() && extensions.Any())
+            {
+                // no previously known extensions but new list? Store the new set for the next run
+                // store all data
+                Storage.SaveJson(extensions);
+            }
             
             // save the data to CSV if needed
             CSV.SaveCSV(extensions);
@@ -93,7 +99,8 @@ namespace AzDoExtensionNews
 
         private static bool PostUpdates(List<Extension> newExtensions, List<Extension> updateExtension, List<PublisherHandles> publisherHandles)
         {
-            // todo: limit throughput to only a small number of 
+            // todo: limit throughput to only a small number of tweets to prevent disabling of the twitter account
+
             // todo: maybe only store successfully tweeted extensions?
             var success = true;
             foreach (var extension in newExtensions)
@@ -169,6 +176,13 @@ namespace AzDoExtensionNews
         {
             if (extensions == null) throw new ArgumentNullException(nameof(extensions));
             if (previousExtensions == null) throw new ArgumentNullException(nameof(previousExtensions));
+
+            if (!previousExtensions.Any())
+            {
+                // no old extensions available, so we cannot infer which are new or updated
+                // return empty lists to prevent any actions
+                return (new List<Extension>(), new List<Extension>());
+            }
 
             var newExtensionList = new List<Extension>();
             var updatedExtensionList = new List<Extension>();

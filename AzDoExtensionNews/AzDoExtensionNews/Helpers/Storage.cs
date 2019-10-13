@@ -32,7 +32,7 @@ namespace AzDoExtensionNews.Helpers
             // rename the old file
             RenameOldFile();
 
-            var text = JsonConvert.SerializeObject(extensions);
+            var text = JsonConvert.SerializeObject(extensions, Formatting.Indented);
             WriteDataToFile(text);
 
             UploadFileAsync(GetFilePath()).GetAwaiter().GetResult();
@@ -45,10 +45,20 @@ namespace AzDoExtensionNews.Helpers
 
         public static List<Extension> ReadFromJson()
         {
-            string text = ReadDataFromFile();
+            List<Extension> extensions = null;
+            try
+            {
+                string text = ReadDataFromFile();
 
-            var extensions = JsonConvert.DeserializeObject<List<Extension>>(text);
-            return extensions;
+                extensions = JsonConvert.DeserializeObject<List<Extension>>(text);
+            }
+            catch (Exception e)
+            {
+                // todo:Renaming the file on Storage for backup and analysis and start fresh. 
+                Log.Message($"Error loading the file. Will start as if we have a clean slate Error: {e.Message}");
+            }
+
+            return extensions ?? new List<Extension>();
         }
 
         private static string ReadDataFromFile()
