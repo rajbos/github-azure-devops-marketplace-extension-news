@@ -51,6 +51,7 @@ namespace AzDoExtensionNews.Helpers
                 string text = ReadDataFromFile();
 
                 extensions = JsonConvert.DeserializeObject<List<Extension>>(text);
+                Log.Message($"Found {extensions.Count} previously known extensions");
             }
             catch (Exception e)
             {

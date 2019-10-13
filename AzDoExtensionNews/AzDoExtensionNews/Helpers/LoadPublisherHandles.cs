@@ -14,8 +14,9 @@ namespace AzDoExtensionNews.Helpers
         {
             string text = ReadDataFromFile();
 
-            var extensions = JsonConvert.DeserializeObject<PublisherHandles[]>(text);
-            return extensions.ToList();
+            var extensions = JsonConvert.DeserializeObject<PublisherHandles[]>(text).ToList();
+            Log.Message($"Found {extensions.Count} previously known publishers");
+            return extensions;
         }
 
         private static string ReadDataFromFile()
