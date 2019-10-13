@@ -176,17 +176,26 @@ namespace AzDoExtensionNews.Helpers
 
         private static async Task<byte[]> DownloadImageAsync(string imageUrl)
         {
-            using (var client = new HttpClient())
+            if (string.IsNullOrWhiteSpace(imageUrl)) { return null; }
+
+            try
             {
-
-                using (var result = await client.GetAsync(imageUrl))
+                using (var client = new HttpClient())
                 {
-                    if (result.IsSuccessStatusCode)
-                    {
-                        return await result.Content.ReadAsByteArrayAsync();
-                    }
 
+                    using (var result = await client.GetAsync(imageUrl))
+                    {
+                        if (result.IsSuccessStatusCode)
+                        {
+                            return await result.Content.ReadAsByteArrayAsync();
+                        }
+
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Log.Message($"Error downloading the image from [{imageUrl}]: {e.Message}");
             }
 
             return null;
