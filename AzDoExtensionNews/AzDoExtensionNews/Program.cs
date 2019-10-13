@@ -26,9 +26,19 @@ namespace AzDoExtensionNews
 
         private static async Task CheckForUpdates()
         {
+            List<Extension> previousExtensions = null;
+            List<PublisherHandles> publisherHandles = null;
             // load previously saved data
-            var previousExtensions = Storage.ReadFromJson();
-            var publisherHandles = LoadPublisherHandles.GetPublisherHandles();
+            try
+            {
+                previousExtensions = Storage.ReadFromJson();
+                publisherHandles = LoadPublisherHandles.GetPublisherHandles();
+            }
+            catch (Exception e)
+            {
+                Log.Message($"Error loading previous execution information. Stopping execution.{Environment.NewLine}{e.Message}");
+                return;
+            }
 
             // get all new data
             var maxPages = 50;
@@ -83,6 +93,7 @@ namespace AzDoExtensionNews
 
         private static bool PostUpdates(List<Extension> newExtensions, List<Extension> updateExtension, List<PublisherHandles> publisherHandles)
         {
+            // todo: limit throughput to only a small number of 
             // todo: maybe only store successfully tweeted extensions?
             var success = true;
             foreach (var extension in newExtensions)
