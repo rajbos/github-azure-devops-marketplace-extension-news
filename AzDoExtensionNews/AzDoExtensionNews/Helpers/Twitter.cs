@@ -18,9 +18,19 @@ namespace AzDoExtensionNews.Helpers
         private static readonly string oauth_consumer_secret = Configuration.TwitterConsumerAPISecretKey;
         private static readonly string oauth_token = Configuration.TwitterAccessToken;
         private static readonly string oauth_token_secret = Configuration.TwitterAccessTokenSecret;
+        private static DateTime LastTweeted = DateTime.UtcNow;
+        private const int RateLimitDurationInSeconds = 3;
 
         public static bool SendTweet(string tweetText, string imageUrl)
         {
+            var lastTweetedDuration = DateTime.UtcNow - LastTweeted;
+            if (lastTweetedDuration.TotalSeconds < RateLimitDurationInSeconds)
+            {
+                // back off a little in an attempt to not hit any twitter policy violations
+                Log.Message($"Last tweet was {lastTweetedDuration.TotalMilliseconds} milliseconds ago. Backing off for {RateLimitDurationInSeconds} seconds.");
+                Thread.Sleep(TimeSpan.FromSeconds(RateLimitDurationInSeconds));
+            }
+
             Log.Message($"Sending tweet: {tweetText}. Tweet.Length: {tweetText.Length}");
 
             return TweetWithNuget(tweetText, imageUrl);
