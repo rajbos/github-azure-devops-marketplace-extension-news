@@ -360,7 +360,23 @@
     "TwitterHandle": "@appknox"
   },
   {
-    "PublisherName": "",
-    "TwitterHandle": "@"
+    "PublisherName": "EnterpriseServicesDevOpsTeam",
+    "TwitterHandle": "@Microsoft"
+  },
+  {
+    "PublisherName": "Microsoft%20DevLabs",
+    "TwitterHandle": "@Microsoft"
+  },
+  {
+    "PublisherName": "SiddharthKalai",
+    "TwitterHandle": "@siddharthan2"
+  },
+  {
+    "PublisherName": "contrast-security",
+    "TwitterHandle": "@contrastsec"
+  },
+  {
+    "PublisherName": "Microsoft",
+    "TwitterHandle": "@Microsoft"
   }
 ]
