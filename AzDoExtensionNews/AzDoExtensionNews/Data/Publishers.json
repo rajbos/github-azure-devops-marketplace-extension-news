@@ -378,5 +378,13 @@
   {
     "PublisherName": "Microsoft",
     "TwitterHandle": "@Microsoft"
+  },
+  {
+    "PublisherName": "NeuVector",
+    "TwitterHandle": "@NeuVector"
+  },
+  {
+    "PublisherName": "",
+    "TwitterHandle": "@"
   }
 ]
