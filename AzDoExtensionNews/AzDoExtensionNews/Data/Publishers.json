@@ -340,10 +340,6 @@
     "TwitterHandle": "@UiPath"
   },
   {
-    "PublisherName": "Microsoft DevLabs",
-    "TwitterHandle": "@microsoft"
-  },
-  {
     "PublisherName": "Farrellsoft",
     "TwitterHandle": "@jfarrell"
   },
@@ -360,14 +356,6 @@
     "TwitterHandle": "@appknox"
   },
   {
-    "PublisherName": "EnterpriseServicesDevOpsTeam",
-    "TwitterHandle": "@Microsoft"
-  },
-  {
-    "PublisherName": "Microsoft%20DevLabs",
-    "TwitterHandle": "@Microsoft"
-  },
-  {
     "PublisherName": "SiddharthKalai",
     "TwitterHandle": "@siddharthan2"
   },
@@ -378,6 +366,18 @@
   {
     "PublisherName": "Microsoft",
     "TwitterHandle": "@Microsoft"
+  },
+  {
+    "PublisherName": "EnterpriseServicesDevOpsTeam",
+    "TwitterHandle": "@Microsoft"
+  },
+  {
+    "PublisherName": "Microsoft%20DevLabs",
+    "TwitterHandle": "@Microsoft"
+  },
+  {
+    "PublisherName": "Microsoft DevLabs",
+    "TwitterHandle": "@microsoft"
   },
   {
     "PublisherName": "NeuVector",
