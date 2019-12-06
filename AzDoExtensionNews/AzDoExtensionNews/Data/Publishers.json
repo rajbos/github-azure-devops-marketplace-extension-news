@@ -436,6 +436,14 @@
     "TwitterHandle": "@jansenralph"
   },
   {
+    "PublisherName": "testingbot",
+    "TwitterHandle": "@testingb0t"
+  },
+  {
+    "PublisherName": "redhat",
+    "TwitterHandle": "@rhdevelopers"
+  },
+  {
     "PublisherName": "",
     "TwitterHandle": "@"
   }
