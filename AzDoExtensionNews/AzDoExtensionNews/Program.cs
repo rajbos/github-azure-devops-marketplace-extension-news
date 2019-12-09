@@ -122,22 +122,11 @@ namespace AzDoExtensionNews
             return success;
         }
 
-        private static string GetPublisher(Extension extension, List<PublisherHandles> publisherHandles)
-        {
-            var handle = publisherHandles.FirstOrDefault(item => item.PublisherName.Equals(extension.publisher.publisherName, StringComparison.InvariantCultureIgnoreCase));
-            if (handle != null)
-            {
-                return handle.TwitterHandle;
-            }
-
-            return extension.publisher.displayName;
-        }
-
         private static bool TweetUpdateExtension(Extension extension, List<PublisherHandles> publisherHandles)
         {
             var version = GetVersion(extension);
             var hashtags = Tags.GetHashTags(extension);
-            var publisher = GetPublisher(extension, publisherHandles);
+            var publisher = PublisherFinder.GetPublisher(extension, publisherHandles);
             var tweetText = $"The {GetExtensionText(extension)} \"{extension.displayName}\" from {publisher} has been updated to version {version.version}. Link: {extension.Url} {hashtags}";
             string imageUrl = GetImageUrl(version);
 
@@ -148,7 +137,7 @@ namespace AzDoExtensionNews
         {
             var version = GetVersion(extension);
             var hashtags = Tags.GetHashTags(extension);
-            var publisher = GetPublisher(extension, publisherHandles);
+            var publisher = PublisherFinder.GetPublisher(extension, publisherHandles);
             var tweetText = $"There is a new {GetExtensionText(extension)} from {publisher} available in the Azure DevOps Marketplace! Check out \"{extension.displayName}\". Link: {extension.Url} {hashtags}";
             string imageUrl = GetImageUrl(version);
 
