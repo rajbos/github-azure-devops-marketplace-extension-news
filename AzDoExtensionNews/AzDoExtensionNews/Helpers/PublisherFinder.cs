@@ -13,10 +13,10 @@ namespace AzDoExtensionNews.Helpers
             var handle = publisherHandles.FirstOrDefault(item => item.PublisherName.Equals(extension.publisher.publisherName, StringComparison.InvariantCultureIgnoreCase));
             if (handle != null)
             {
-                Console.WriteLine($"Could not find publisher handle for [{extension.publisher.publisherName}] in the publisher handles list (Count: {publisherHandles.Count})");
                 return handle.TwitterHandle;
             }
 
+            Console.WriteLine($"Could not find publisher handle for [{extension.publisher.publisherName}] in the publisher handles list (Count: {publisherHandles.Count})");
             return extension.publisher.displayName;
         }
     }
