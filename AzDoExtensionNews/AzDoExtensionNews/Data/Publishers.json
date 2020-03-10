@@ -576,6 +576,22 @@
     "TwitterHandle": "@oscarvantol"
   },
   {
+    "PublisherName": "techtalk",
+    "TwitterHandle": "@SpecFlow"
+  },
+  {
+    "PublisherName": "Genetec",
+    "TwitterHandle": "@genetec"
+  },
+  {
+    "PublisherName": "bguidinger",
+    "TwitterHandle": "@bguidinger"
+  },
+  {
+    "PublisherName": "wilksmatt",
+    "TwitterHandle": "@wilksmatt"
+  },
+  {
     "PublisherName": "",
     "TwitterHandle": "@"
   }
