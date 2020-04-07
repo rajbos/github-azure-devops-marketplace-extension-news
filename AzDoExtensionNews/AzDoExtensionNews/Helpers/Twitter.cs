@@ -19,7 +19,7 @@ namespace AzDoExtensionNews.Helpers
         private static readonly string oauth_token = Configuration.TwitterAccessToken;
         private static readonly string oauth_token_secret = Configuration.TwitterAccessTokenSecret;
         private static DateTime LastTweeted = DateTime.UtcNow - TimeSpan.FromMinutes(10);
-        private const int RateLimitDurationInSeconds = 3;
+        private const int RateLimitDurationInSeconds = 10;
 
         public static bool SendTweet(string tweetText, string imageUrl)
         {
