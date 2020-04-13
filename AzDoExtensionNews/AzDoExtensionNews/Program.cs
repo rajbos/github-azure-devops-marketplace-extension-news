@@ -6,8 +6,8 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using AzDoExtensionNews.Helpers;
-using System.Globalization;
 using AzDoExtensionNews.Models;
+using News.Library;
 
 namespace AzDoExtensionNews
 {

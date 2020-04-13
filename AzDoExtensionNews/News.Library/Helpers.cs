@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace AzDoExtensionNews.Helpers
+namespace News.Library
 {
-    internal static class Log
+    public static class Log
     {
         private const string Format = "HH:mm:ss";
 

@@ -4,11 +4,21 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.29025.244
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzDoExtensionNews", "AzDoExtensionNews\AzDoExtensionNews.csproj", "{A0A70CF0-421F-41FD-9FE4-BBE51D3A7B4F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A492124E-B706-4707-A7B0-4BDA75D8727B} = {A492124E-B706-4707-A7B0-4BDA75D8727B}
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzDoExtensionNews.UnitTests", "AzDoExtensionNews.UnitTests\AzDoExtensionNews.UnitTests.csproj", "{03C3E3A4-D232-4947-BB03-4FFE88BB604A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzDoExtensionNews.UnitTests", "AzDoExtensionNews.UnitTests\AzDoExtensionNews.UnitTests.csproj", "{03C3E3A4-D232-4947-BB03-4FFE88BB604A}"
 	ProjectSection(ProjectDependencies) = postProject
 		{A0A70CF0-421F-41FD-9FE4-BBE51D3A7B4F} = {A0A70CF0-421F-41FD-9FE4-BBE51D3A7B4F}
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GitHubActionsNews", "GitHubActionsNews\GitHubActionsNews.csproj", "{EBF923C4-1325-4952-A531-D87919D69E0B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A492124E-B706-4707-A7B0-4BDA75D8727B} = {A492124E-B706-4707-A7B0-4BDA75D8727B}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "News.Library", "News.Library\News.Library.csproj", "{A492124E-B706-4707-A7B0-4BDA75D8727B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,6 +34,14 @@ Global
 		{03C3E3A4-D232-4947-BB03-4FFE88BB604A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{03C3E3A4-D232-4947-BB03-4FFE88BB604A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{03C3E3A4-D232-4947-BB03-4FFE88BB604A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EBF923C4-1325-4952-A531-D87919D69E0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EBF923C4-1325-4952-A531-D87919D69E0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EBF923C4-1325-4952-A531-D87919D69E0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EBF923C4-1325-4952-A531-D87919D69E0B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A492124E-B706-4707-A7B0-4BDA75D8727B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A492124E-B706-4707-A7B0-4BDA75D8727B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A492124E-B706-4707-A7B0-4BDA75D8727B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A492124E-B706-4707-A7B0-4BDA75D8727B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

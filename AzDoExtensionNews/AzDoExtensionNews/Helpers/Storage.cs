@@ -1,11 +1,11 @@
 ﻿using AzDoExtensionNews.Models;
 using Microsoft.Azure.Storage;
 using Microsoft.Azure.Storage.Blob;
+using News.Library;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace AzDoExtensionNews.Helpers

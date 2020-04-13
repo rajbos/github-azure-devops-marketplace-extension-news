@@ -15,6 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\News.Library\News.Library.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="appsettings.secrets.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
