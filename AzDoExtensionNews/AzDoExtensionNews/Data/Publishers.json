@@ -684,6 +684,14 @@
     "TwitterHandle": "@preemptive"
   },
   {
+    "PublisherName": "Palo-Alto-Networks",
+    "TwitterHandle": "@PaloAltoNtwks"
+  },
+  {
+    "PublisherName": "stryker-mutator",
+    "TwitterHandle": "@stryker_mutator"
+  },
+  {
     "PublisherName": "",
     "TwitterHandle": "@"
   }
