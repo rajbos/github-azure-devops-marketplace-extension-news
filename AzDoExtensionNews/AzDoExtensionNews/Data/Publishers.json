@@ -700,6 +700,18 @@
     "TwitterHandle": "@vivienfabing"
   },
   {
+    "PublisherName": "Kobiton",
+    "TwitterHandle": "@kobitonmobile"
+  },
+  {
+    "PublisherName": "Payoneer",
+    "TwitterHandle": "@Payoneer"
+  },
+  {
+    "PublisherName": "MyAppCI",
+    "TwitterHandle": "@cmuellerc"
+  },
+  {
     "PublisherName": "",
     "TwitterHandle": "@"
   }
