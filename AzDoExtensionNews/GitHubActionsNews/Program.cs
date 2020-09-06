@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace GitHubActionsNews
 {
@@ -19,16 +20,32 @@ namespace GitHubActionsNews
 
         static void Main(string[] args)
         {
-            var queriedGitHubMarketplaceUrl = $"{GitHubMarketplaceUrl}&query=a";
-            var actions = GetAllActions(queriedGitHubMarketplaceUrl);
+            List<List<GitHubAction>> allActions = new List<List<GitHubAction>>();
 
-            foreach (var action in actions)
+            Parallel.ForEach(new List<string> { "a", "b", "c" }, item => 
             {
-                if (!Actions.Any(item => item.Title == action.Title))
+                var actions = GetActionsForSearchQuery(item);
+                allActions.Add(actions);
+            });
+
+            foreach (var actions in allActions)
+            {
+                foreach (var action in actions)
                 {
-                    Actions.Add(action);
+                    if (!Actions.Any(item => item.Title == action.Title))
+                    {
+                        Actions.Add(action);
+                    }
                 }
             }
+        }
+
+        private static List<GitHubAction> GetActionsForSearchQuery(string query)
+        {
+            var queriedGitHubMarketplaceUrl = $"{GitHubMarketplaceUrl}&query={query}";
+            var actions = GetAllActions(queriedGitHubMarketplaceUrl);
+
+            return actions;
         }
 
         private static List<GitHubAction> GetAllActions(string searchUrl)
