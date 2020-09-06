@@ -7,6 +7,7 @@ using OpenQA.Selenium.Support.UI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 
 namespace GitHubActionsNews
@@ -78,19 +79,25 @@ namespace GitHubActionsNews
                 }
 
                 // Scrape the page
+                Log.Message("Finding all anchors");
                 var anchors = driver.FindElements(By.TagName("a")).ToList();
+                Log.Message("Filtering for the right anchors");
                 var actionTags = anchors.Where(item => item.GetAttribute("href").StartsWith("https://github.com/marketplace/actions")).ToList();
 
                 Log.Message($"Page {pageNumber}: Found {actionTags.Count} actions, current url: {driver.Url}");
 
+                var sb = new StringBuilder();
                 foreach (var action in actionTags)
                 {
                     var ghAction = ParseAction(action);
                     if (ghAction != null)
                     {
                         actionList.Add(ghAction);
+
+                        sb.AppendLine($"\tFound action:{ghAction.Url}, {ghAction.Title}, {ghAction.Publisher}");
                     }
                 }
+                Log.Message(sb.ToString());
 
                 // find the 'next' button
                 try
@@ -136,15 +143,19 @@ namespace GitHubActionsNews
 
                 var data = JsonConvert.DeserializeObject(hydro);
 
-                var title = action.FindElement(By.TagName("h3")).Text;
-                var url = action.GetAttribute("href") ;
+                var divWithTitle = action.FindElement(By.TagName("h3"));
+                var title = divWithTitle.Text;
+                var url = action.GetAttribute("href");
 
-                Log.Message($"\tFound action:{url}, {title}");
+                var publisherParent = divWithTitle.FindElement(By.XPath("./..")); // find parent element
+                var allChildElements = publisherParent.FindElements(By.XPath(".//*")); // find all child elements                
+                var publisher = allChildElements[2].Text;
 
                 return new GitHubAction
                 {
                     Url = url,
                     Title = title,
+                    Publisher = publisher
                 };
             }
             catch (Exception e)
@@ -159,5 +170,6 @@ namespace GitHubActionsNews
     {
         public string Url { get; set; }
         public string Title { get; set; }
+        public string Publisher { get; set; }
     }
 }
