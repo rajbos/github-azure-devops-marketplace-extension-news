@@ -15,22 +15,39 @@ namespace GitHubActionsNews
     static class Program
     {
         private const string GitHubMarketplaceUrl = "https://github.com/marketplace?type=actions";
+        private static List<GitHubAction> Actions = new List<GitHubAction>();
 
         static void Main(string[] args)
         {
-            var started = DateTime.Now;
+            var queriedGitHubMarketplaceUrl = $"{GitHubMarketplaceUrl}&query=a";
+            var actions = GetAllActions(queriedGitHubMarketplaceUrl);
 
-            var actions = ScrapeGitHubMarketPlace();
-
-            Log.Message($"Duration: {(DateTime.Now - started).TotalSeconds:N2} seconds");
+            foreach (var action in actions)
+            {
+                if (!Actions.Any(item => item.Title == action.Title))
+                {
+                    Actions.Add(action);
+                }
+            }
         }
 
-        private static List<GitHubAction> ScrapeGitHubMarketPlace()
+        private static List<GitHubAction> GetAllActions(string searchUrl)
+        {
+            var started = DateTime.Now;
+
+            var actions = ScrapeGitHubMarketPlace(searchUrl);
+
+            Log.Message($"Duration: {(DateTime.Now - started).TotalSeconds:N2} seconds");
+
+            return actions;
+        }
+
+        private static List<GitHubAction> ScrapeGitHubMarketPlace(string searchUrl)
         {
             IWebDriver Driver = new ChromeDriver();
             try
             {
-                Driver.Url = GitHubMarketplaceUrl;
+                Driver.Url = searchUrl;
                 var actionList = ScrapePage(Driver, 1);
 
                 Log.Message($"Found {actionList.Count} actions");
@@ -89,12 +106,12 @@ namespace GitHubActionsNews
                 var sb = new StringBuilder();
                 foreach (var action in actionTags)
                 {
-                    var ghAction = ParseAction(action);
+                    var ghAction = ParseAction(action, driver);
                     if (ghAction != null)
                     {
                         actionList.Add(ghAction);
 
-                        sb.AppendLine($"\tFound action:{ghAction.Url}, {ghAction.Title}, {ghAction.Publisher}");
+                        sb.AppendLine($"\tFound action:{ghAction.Url}, {ghAction.Title}, {ghAction.Publisher}, {ghAction.Version}");
                     }
                 }
                 Log.Message(sb.ToString());
@@ -115,7 +132,6 @@ namespace GitHubActionsNews
                         waitForElement.Until(ExpectedConditions.UrlToBe(nextUrl));
                         waitForElement.Until(ExpectedConditions.ElementIsVisible(By.LinkText("Next")));
                         waitForElement.Until(ExpectedConditions.ElementIsVisible(By.ClassName("paginate-container")));
-                        //Thread.Sleep(5 * 1000);
 
                         // scrape the new page again
                         actionList.AddRange(ScrapePage(driver, pageNumber + 1));
@@ -135,7 +151,7 @@ namespace GitHubActionsNews
             return actionList;
         }
 
-        private static GitHubAction ParseAction(IWebElement action)
+        private static GitHubAction ParseAction(IWebElement action, IWebDriver driver)
         {
             try
             {
@@ -151,11 +167,35 @@ namespace GitHubActionsNews
                 var allChildElements = publisherParent.FindElements(By.XPath(".//*")); // find all child elements                
                 var publisher = allChildElements[2].Text;
 
+                // open the url in a new tab
+                action.SendKeys(Keys.Shift + "T");
+                action.SendKeys(Keys.Control+ Keys.Enter);
+
+                var newTab = driver.WindowHandles.Last();
+                driver.SwitchTo().Window(newTab);
+                var version = "";
+                // act
+                try
+                {
+                    version = GetVersionFromAction(driver);
+                }
+                catch (Exception e)
+                {
+                    Log.Message($"Error loading version for action with url [{url}]: {e.Message}");
+                }
+
+                // closing the current window and go back to the original tab
+                driver.Close();
+
+                var orgTab = driver.WindowHandles.First();
+                driver.SwitchTo().Window(orgTab);
+
                 return new GitHubAction
                 {
                     Url = url,
                     Title = title,
-                    Publisher = publisher
+                    Publisher = publisher,
+                    Version = version,
                 };
             }
             catch (Exception e)
@@ -164,6 +204,24 @@ namespace GitHubActionsNews
                 return null;
             }
         }
+
+        private static string GetVersionFromAction(IWebDriver driver)
+        {
+            // driver.Navigate().GoToUrl(url);
+
+            var divWithTitle = driver.FindElement(By.XPath("//*[contains(text(),'Latest version')]"));
+            //Log.Message($"{divWithTitle.Text} - {divWithTitle.TagName}");
+            // "contains(text(), 'Latest version')"); ;
+
+            var publisherParent = divWithTitle.FindElement(By.XPath("./..")); // find parent element
+            var allChildElements = publisherParent.FindElements(By.XPath(".//*")); // find all child elements  
+            foreach (var el in allChildElements)
+            {
+                //Log.Message($"{el.Text} - {el.TagName}");
+            }
+
+            return allChildElements[2].Text;
+        }
     }
 
     public class GitHubAction
@@ -171,5 +229,6 @@ namespace GitHubActionsNews
         public string Url { get; set; }
         public string Title { get; set; }
         public string Publisher { get; set; }
+        public string Version { get; internal set; }
     }
 }
