@@ -7,32 +7,69 @@ using OpenQA.Selenium.Support.UI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace GitHubActionsNews
 {
     static class Program
     {
         private const string GitHubMarketplaceUrl = "https://github.com/marketplace?type=actions";
+        private static List<GitHubAction> Actions = new List<GitHubAction>();
 
         static void Main(string[] args)
         {
-            var started = DateTime.Now;
+            List<List<GitHubAction>> allActions = new List<List<GitHubAction>>();
 
-            var actions = ScrapeGitHubMarketPlace();
+            Parallel.ForEach(new List<string> { "b", "c", "d" }, item => 
+            {
+                var actions = GetActionsForSearchQuery(item);
+                allActions.Add(actions);
+            });
 
-            Log.Message($"Duration: {(DateTime.Now - started).TotalSeconds:N2} seconds");
+            foreach (var actions in allActions)
+            {
+                foreach (var action in actions)
+                {
+                    if (!Actions.Any(item => item.Title == action.Title))
+                    {
+                        Actions.Add(action);
+                    }
+                }
+            }
+            Log.Message($"Found [{Actions.Count}] unique actions");
         }
 
-        private static List<GitHubAction> ScrapeGitHubMarketPlace()
+        private static List<GitHubAction> GetActionsForSearchQuery(string query)
+        {
+            var queriedGitHubMarketplaceUrl = $"{GitHubMarketplaceUrl}&query={query}";
+            var actions = GetAllActions(queriedGitHubMarketplaceUrl);
+
+            return actions;
+        }
+
+        private static List<GitHubAction> GetAllActions(string searchUrl)
+        {
+            var started = DateTime.Now;
+
+            var actions = ScrapeGitHubMarketPlace(searchUrl);
+
+            Log.Message($"Duration: {(DateTime.Now - started).TotalSeconds:N2} seconds");
+
+            return actions;
+        }
+
+        private static List<GitHubAction> ScrapeGitHubMarketPlace(string searchUrl)
         {
             IWebDriver Driver = new ChromeDriver();
             try
             {
-                Driver.Url = GitHubMarketplaceUrl;
-                var actionList = ScrapePage(Driver, 1);
+                Driver.Url = searchUrl;
+                var sb = new StringBuilder();
+                var actionList = ScrapePage(Driver, 1, sb);
 
-                Log.Message($"Found {actionList.Count} actions");
+                Log.Message($"Found {actionList.Count} actions for search url [{searchUrl}]");
                 return actionList;
             }
             catch (Exception e)
@@ -48,49 +85,31 @@ namespace GitHubActionsNews
             return new List<GitHubAction>();
         }
 
-        private static List<GitHubAction> ScrapePage(IWebDriver driver, int pageNumber)
+        private static List<GitHubAction> ScrapePage(IWebDriver driver, int pageNumber, StringBuilder logger)
         {
             var actionList = new List<GitHubAction>();
             try
             {
-                // scroll the paginator into view
-                var actions = new Actions(driver);
-
-                var waitForElement = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(5));
-                try
-                {
-                    waitForElement.Until(ExpectedConditions.ElementExists(By.ClassName("paginate-container")));
-                    waitForElement.Until(ExpectedConditions.ElementIsVisible(By.ClassName("paginate-container")));
-                    waitForElement.Until(ExpectedConditions.ElementToBeClickable(By.ClassName("paginate-container")));
-                    var paginator = driver.FindElement(By.ClassName("paginate-container"));
-                    actions.MoveToElement(paginator);
-                    actions.Perform();
-                }
-                catch
-                {
-                    // wait some time and retry
-                    waitForElement.Until(ExpectedConditions.ElementExists(By.ClassName("paginate-container")));
-                    waitForElement.Until(ExpectedConditions.ElementIsVisible(By.ClassName("paginate-container")));
-                    waitForElement.Until(ExpectedConditions.ElementToBeClickable(By.ClassName("paginate-container")));
-                    var paginator = driver.FindElement(By.ClassName("paginate-container"));
-                    actions.MoveToElement(paginator);
-                    actions.Perform();
-                }
+                WebDriverWait waitForElement = ScrollPaginatorIntoView(driver);
 
                 // Scrape the page
                 var anchors = driver.FindElements(By.TagName("a")).ToList();
                 var actionTags = anchors.Where(item => item.GetAttribute("href").StartsWith("https://github.com/marketplace/actions")).ToList();
 
-                Log.Message($"Page {pageNumber}: Found {actionTags.Count} actions, current url: {driver.Url}");
+                Log.Message($"Page {pageNumber}: Found {actionTags.Count} actions, current url: {driver.Url}, logger");
 
+                var sb = new StringBuilder();
                 foreach (var action in actionTags)
                 {
-                    var ghAction = ParseAction(action);
+                    var ghAction = ParseAction(action, driver);
                     if (ghAction != null)
                     {
                         actionList.Add(ghAction);
+
+                        sb.AppendLine($"\tFound action:{ghAction.Url}, {ghAction.Title}, {ghAction.Publisher}, {ghAction.Version}, logger");
                     }
                 }
+                Log.Message(sb.ToString(), logger);
 
                 // find the 'next' button
                 try
@@ -108,27 +127,56 @@ namespace GitHubActionsNews
                         waitForElement.Until(ExpectedConditions.UrlToBe(nextUrl));
                         waitForElement.Until(ExpectedConditions.ElementIsVisible(By.LinkText("Next")));
                         waitForElement.Until(ExpectedConditions.ElementIsVisible(By.ClassName("paginate-container")));
-                        //Thread.Sleep(5 * 1000);
 
                         // scrape the new page again
-                        actionList.AddRange(ScrapePage(driver, pageNumber + 1));
+                        actionList.AddRange(ScrapePage(driver, pageNumber + 1, logger));
                     }
                 }
                 catch
                 {
                     // if the element doesn't exist, we are at the last page
-                    Log.Message($"Next button not found, current url = {driver.Url}");
+                    Log.Message($"Next button not found, current url = [{driver.Url}] on pageNumber [{pageNumber}], logger");
                 }
             }
             catch (Exception e)
-            {
+            {   
                 Log.Message($"Error scraping page {pageNumber}. Exception message: {e.Message}{Environment.NewLine}{e.InnerException?.Message}");
+                Log.Message($"Logs for run with url [{driver.Url}]:" + logger.ToString());
             }
 
             return actionList;
         }
 
-        private static GitHubAction ParseAction(IWebElement action)
+        private static WebDriverWait ScrollPaginatorIntoView(IWebDriver driver)
+        {
+            // scroll the paginator into view
+            var actions = new Actions(driver);
+
+            var waitForElement = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(5));
+            try
+            {
+                waitForElement.Until(ExpectedConditions.ElementExists(By.ClassName("paginate-container")));
+                waitForElement.Until(ExpectedConditions.ElementIsVisible(By.ClassName("paginate-container")));
+                waitForElement.Until(ExpectedConditions.ElementToBeClickable(By.ClassName("paginate-container")));
+                var paginator = driver.FindElement(By.ClassName("paginate-container"));
+                actions.MoveToElement(paginator);
+                actions.Perform();
+            }
+            catch
+            {
+                // wait some time and retry
+                waitForElement.Until(ExpectedConditions.ElementExists(By.ClassName("paginate-container")));
+                waitForElement.Until(ExpectedConditions.ElementIsVisible(By.ClassName("paginate-container")));
+                waitForElement.Until(ExpectedConditions.ElementToBeClickable(By.ClassName("paginate-container")));
+                var paginator = driver.FindElement(By.ClassName("paginate-container"));
+                actions.MoveToElement(paginator);
+                actions.Perform();
+            }
+
+            return waitForElement;
+        }
+
+        private static GitHubAction ParseAction(IWebElement action, IWebDriver driver)
         {
             try
             {
@@ -136,15 +184,43 @@ namespace GitHubActionsNews
 
                 var data = JsonConvert.DeserializeObject(hydro);
 
-                var title = action.FindElement(By.TagName("h3")).Text;
-                var url = action.GetAttribute("href") ;
+                var divWithTitle = action.FindElement(By.TagName("h3"));
+                var title = divWithTitle.Text;
+                var url = action.GetAttribute("href");
 
-                Log.Message($"\tFound action:{url}, {title}");
+                var publisherParent = divWithTitle.FindElement(By.XPath("./..")); // find parent element
+                var allChildElements = publisherParent.FindElements(By.XPath(".//*")); // find all child elements                
+                var publisher = allChildElements[2].Text;
+
+                // open the url in a new tab
+                action.SendKeys(Keys.Shift + "T");
+                action.SendKeys(Keys.Control+ Keys.Enter);
+
+                var newTab = driver.WindowHandles.Last();
+                driver.SwitchTo().Window(newTab);
+                var version = "";
+                // act
+                try
+                {
+                    version = GetVersionFromAction(driver);
+                }
+                catch (Exception e)
+                {
+                    Log.Message($"Error loading version for action with url [{url}]: {e.Message}");
+                }
+
+                // closing the current window and go back to the original tab
+                driver.Close();
+
+                var orgTab = driver.WindowHandles.First();
+                driver.SwitchTo().Window(orgTab);
 
                 return new GitHubAction
                 {
                     Url = url,
                     Title = title,
+                    Publisher = publisher,
+                    Version = version,
                 };
             }
             catch (Exception e)
@@ -153,11 +229,31 @@ namespace GitHubActionsNews
                 return null;
             }
         }
+
+        private static string GetVersionFromAction(IWebDriver driver)
+        {
+            // driver.Navigate().GoToUrl(url);
+
+            var divWithTitle = driver.FindElement(By.XPath("//*[contains(text(),'Latest version')]"));
+            //Log.Message($"{divWithTitle.Text} - {divWithTitle.TagName}");
+            // "contains(text(), 'Latest version')"); ;
+
+            var publisherParent = divWithTitle.FindElement(By.XPath("./..")); // find parent element
+            var allChildElements = publisherParent.FindElements(By.XPath(".//*")); // find all child elements  
+            foreach (var el in allChildElements)
+            {
+                //Log.Message($"{el.Text} - {el.TagName}");
+            }
+
+            return allChildElements[2].Text;
+        }
     }
 
     public class GitHubAction
     {
         public string Url { get; set; }
         public string Title { get; set; }
+        public string Publisher { get; set; }
+        public string Version { get; internal set; }
     }
 }
