@@ -69,7 +69,7 @@ namespace GitHubActionsNews
                 var sb = new StringBuilder();
                 var actionList = ScrapePage(Driver, 1, sb);
 
-                Log.Message($"Found {actionList.Count} actions");
+                Log.Message($"Found {actionList.Count} actions for search url [{searchUrl}]");
                 return actionList;
             }
             catch (Exception e)
