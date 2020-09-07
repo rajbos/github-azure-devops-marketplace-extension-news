@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 
 namespace News.Library
 {
@@ -10,6 +11,12 @@ namespace News.Library
         {
             var timeTag = DateTime.UtcNow.ToString(Format);
             Console.WriteLine($"{timeTag}  {message}");
+        }
+
+        public static void Message(string message, StringBuilder logger)
+        {
+            var timeTag = DateTime.UtcNow.ToString(Format);
+            logger.AppendLine($"{timeTag}  {message}");
         }
     }
 }
