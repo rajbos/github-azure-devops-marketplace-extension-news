@@ -21,8 +21,9 @@ namespace GitHubActionsNews
         static void Main(string[] args)
         {
             List<List<GitHubAction>> allActions = new List<List<GitHubAction>>();
-
-            Parallel.ForEach(new List<string> { "b", "c", "d" }, item => 
+            // skipping common letters to prevent lots of double searches
+            var searchList = new List<string> { "b", "c", "d", "f", "g", "h", "j"    , "q", "y", "z" };
+            Parallel.ForEach(searchList, item => 
             {
                 var actions = GetActionsForSearchQuery(item);
                 allActions.Add(actions);
@@ -51,17 +52,14 @@ namespace GitHubActionsNews
 
         private static List<GitHubAction> GetAllActions(string searchUrl)
         {
-            var started = DateTime.Now;
-
             var actions = ScrapeGitHubMarketPlace(searchUrl);
-
-            Log.Message($"Duration: {(DateTime.Now - started).TotalSeconds:N2} seconds");
 
             return actions;
         }
 
         private static List<GitHubAction> ScrapeGitHubMarketPlace(string searchUrl)
         {
+            var started = DateTime.Now;
             var driver = GetDriver();
 
             try
@@ -70,7 +68,7 @@ namespace GitHubActionsNews
                 var sb = new StringBuilder();
                 var actionList = ScrapePage(driver, 1, sb);
 
-                Log.Message($"Found {actionList.Count} actions for search url [{searchUrl}]");
+                Log.Message($"Found {actionList.Count} actions for search url [{searchUrl}] in {(DateTime.Now - started).TotalMinutes:N2} minutes");
                 return actionList;
             }
             catch (Exception e)
@@ -121,7 +119,6 @@ namespace GitHubActionsNews
                         sb.AppendLine($"\tFound action:{ghAction.Url}, {ghAction.Title}, {ghAction.Publisher}, {ghAction.Version}");
                     }
                 }
-                Log.Message(sb.ToString(), logger);
 
                 // find the 'next' button
                 try
