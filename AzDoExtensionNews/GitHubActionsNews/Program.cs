@@ -20,9 +20,12 @@ namespace GitHubActionsNews
 
         static void Main(string[] args)
         {
+            //load known actions and their versions
+
             List<List<GitHubAction>> allActions = new List<List<GitHubAction>>();
             // skipping common letters to prevent lots of double searches
-            var searchList = new List<string> { "b", "c", "d", "f", "g", "h", "j"    , "q", "y", "z" };
+            var searchList = new List<string> { "b", "c", "d" }; 
+            // "f", "g", "h", "j", "k", "l", "m", "n", "o", "p" , "q", "r", "s", "t", "v", "w", "y", "z" };
             Parallel.ForEach(searchList, item => 
             {
                 var actions = GetActionsForSearchQuery(item);
@@ -40,6 +43,7 @@ namespace GitHubActionsNews
                 }
             }
             Log.Message($"Found [{Actions.Count}] unique actions");
+            // store all actions and their current state
         }
 
         private static List<GitHubAction> GetActionsForSearchQuery(string query)
@@ -150,7 +154,8 @@ namespace GitHubActionsNews
             catch (Exception e)
             {   
                 Log.Message($"Error scraping page {pageNumber}. Exception message: {e.Message}{Environment.NewLine}{e.InnerException?.Message}");
-                Log.Message($"Logs for run with url [{driver.Url}]:" + logger.ToString());
+                Log.Message($"Logs for run with url [{driver.Url}]:");
+                Log.Message(logger.ToString());
             }
 
             return actionList;
