@@ -6,9 +6,9 @@ using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace GitHubActionsNews
@@ -20,9 +20,13 @@ namespace GitHubActionsNews
 
         static void Main(string[] args)
         {
-            List<List<GitHubAction>> allActions = new List<List<GitHubAction>>();
+            //load known actions and their versions
 
-            Parallel.ForEach(new List<string> { "b", "c", "d" }, item => 
+            List<List<GitHubAction>> allActions = new List<List<GitHubAction>>();
+            // skipping common letters to prevent lots of double searches
+            var searchList = new List<string> { "b", "c", "d" }; 
+            // "f", "g", "h", "j", "k", "l", "m", "n", "o", "p" , "q", "r", "s", "t", "v", "w", "y", "z" };
+            Parallel.ForEach(searchList, item => 
             {
                 var actions = GetActionsForSearchQuery(item);
                 allActions.Add(actions);
@@ -39,6 +43,7 @@ namespace GitHubActionsNews
                 }
             }
             Log.Message($"Found [{Actions.Count}] unique actions");
+            // store all actions and their current state
         }
 
         private static List<GitHubAction> GetActionsForSearchQuery(string query)
@@ -51,25 +56,23 @@ namespace GitHubActionsNews
 
         private static List<GitHubAction> GetAllActions(string searchUrl)
         {
-            var started = DateTime.Now;
-
             var actions = ScrapeGitHubMarketPlace(searchUrl);
-
-            Log.Message($"Duration: {(DateTime.Now - started).TotalSeconds:N2} seconds");
 
             return actions;
         }
 
         private static List<GitHubAction> ScrapeGitHubMarketPlace(string searchUrl)
         {
-            IWebDriver Driver = new ChromeDriver();
+            var started = DateTime.Now;
+            var driver = GetDriver();
+
             try
             {
-                Driver.Url = searchUrl;
+                driver.Url = searchUrl;
                 var sb = new StringBuilder();
-                var actionList = ScrapePage(Driver, 1, sb);
+                var actionList = ScrapePage(driver, 1, sb);
 
-                Log.Message($"Found {actionList.Count} actions for search url [{searchUrl}]");
+                Log.Message($"Found {actionList.Count} actions for search url [{searchUrl}] in {(DateTime.Now - started).TotalMinutes:N2} minutes");
                 return actionList;
             }
             catch (Exception e)
@@ -78,11 +81,22 @@ namespace GitHubActionsNews
             }
             finally
             {
-                Driver.Close();
-                Driver.Quit();
+                driver.Close();
+                driver.Quit();
             }
 
             return new List<GitHubAction>();
+        }
+
+        private static ChromeDriver GetDriver()
+        {
+            var chromeOptions = new ChromeOptions();
+            if (Debugger.IsAttached)
+            {
+                chromeOptions.AddArguments("headless");
+            }
+            var driver = new ChromeDriver(chromeOptions);
+            return driver;
         }
 
         private static List<GitHubAction> ScrapePage(IWebDriver driver, int pageNumber, StringBuilder logger)
@@ -96,7 +110,7 @@ namespace GitHubActionsNews
                 var anchors = driver.FindElements(By.TagName("a")).ToList();
                 var actionTags = anchors.Where(item => item.GetAttribute("href").StartsWith("https://github.com/marketplace/actions")).ToList();
 
-                Log.Message($"Page {pageNumber}: Found {actionTags.Count} actions, current url: {driver.Url}, logger");
+                Log.Message($"Page {pageNumber}: Found {actionTags.Count} actions, current url: {driver.Url}", logger);
 
                 var sb = new StringBuilder();
                 foreach (var action in actionTags)
@@ -106,10 +120,9 @@ namespace GitHubActionsNews
                     {
                         actionList.Add(ghAction);
 
-                        sb.AppendLine($"\tFound action:{ghAction.Url}, {ghAction.Title}, {ghAction.Publisher}, {ghAction.Version}, logger");
+                        sb.AppendLine($"\tFound action:{ghAction.Url}, {ghAction.Title}, {ghAction.Publisher}, {ghAction.Version}");
                     }
                 }
-                Log.Message(sb.ToString(), logger);
 
                 // find the 'next' button
                 try
@@ -141,7 +154,8 @@ namespace GitHubActionsNews
             catch (Exception e)
             {   
                 Log.Message($"Error scraping page {pageNumber}. Exception message: {e.Message}{Environment.NewLine}{e.InnerException?.Message}");
-                Log.Message($"Logs for run with url [{driver.Url}]:" + logger.ToString());
+                Log.Message($"Logs for run with url [{driver.Url}]:");
+                Log.Message(logger.ToString());
             }
 
             return actionList;
@@ -202,7 +216,7 @@ namespace GitHubActionsNews
                 // act
                 try
                 {
-                    version = GetVersionFromAction(driver);
+                    version = ActionPageInteraction.GetVersionFromAction(driver);
                 }
                 catch (Exception e)
                 {
@@ -228,24 +242,6 @@ namespace GitHubActionsNews
                 Log.Message($"Error parsing action: {e.Message}");
                 return null;
             }
-        }
-
-        private static string GetVersionFromAction(IWebDriver driver)
-        {
-            // driver.Navigate().GoToUrl(url);
-
-            var divWithTitle = driver.FindElement(By.XPath("//*[contains(text(),'Latest version')]"));
-            //Log.Message($"{divWithTitle.Text} - {divWithTitle.TagName}");
-            // "contains(text(), 'Latest version')"); ;
-
-            var publisherParent = divWithTitle.FindElement(By.XPath("./..")); // find parent element
-            var allChildElements = publisherParent.FindElements(By.XPath(".//*")); // find all child elements  
-            foreach (var el in allChildElements)
-            {
-                //Log.Message($"{el.Text} - {el.TagName}");
-            }
-
-            return allChildElements[2].Text;
         }
     }
 
