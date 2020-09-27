@@ -17,46 +17,11 @@ namespace GitHubActionsNews
     {
         private const string GitHubMarketplaceUrl = "https://github.com/marketplace?type=actions";
         private static readonly string StorageFileName = "Actions";
-        private static List<GitHubAction> Actions = new List<GitHubAction>();
 
         static void Main(string[] args)
         {
-            // read existing action list from storage
-            var existingActions = Storage.ReadFromJson<GitHubAction>(StorageFileName, "actions");
-
             // get all actions from the GitHub marketplace for the given letters
-            var allActions = GetAllActionsFromLetters(args);
-
-            foreach (var actions in allActions)
-            {
-                foreach (var action in actions)
-                {
-                    var existingAction = existingActions.FirstOrDefault(item => item.Title == action.Title);
-                    if (existingAction == null)
-                    {
-                        existingActions.Add(action);
-                        // tweet
-                    }
-                    else
-                    {
-                        // check version number
-                        if (existingAction.Version != action.Version)
-                        {
-                            // update
-                            existingAction.Version = action.Version;
-                            existingAction.Url = action.Url;
-                            existingAction.Publisher = action.Publisher;
-
-                            // tweet
-                            // todo
-                        }
-                    }
-                }
-            }
-            Log.Message($"Found [{existingActions.Count}] unique actions");
-
-            // store all actions and their current state
-            StoreActions(existingActions);
+            _ = GetAllActionsFromLetters(args);
         }
 
         private static List<List<GitHubAction>> GetAllActionsFromLetters(string[] args)
@@ -75,15 +40,45 @@ namespace GitHubActionsNews
             return allActions;
         }
 
-        private static void StoreActions(List<GitHubAction> actions)
-        {
-            Storage.SaveJson(actions, StorageFileName);
-        }
-
         private static List<GitHubAction> GetActionsForSearchQuery(string query)
         {
+            var storeFileName = $"{StorageFileName}-{query}";
+
             var queriedGitHubMarketplaceUrl = $"{GitHubMarketplaceUrl}&query={query}";
             var actions = GetAllActions(queriedGitHubMarketplaceUrl);
+
+            // get existing actions for this query:
+            var existingActions = Storage.ReadFromJson<GitHubAction>(storeFileName, storeFileName);
+
+            // tweet about updates and new actions:
+            foreach (var action in actions)
+            {
+                var existingAction = existingActions.FirstOrDefault(item => item.Title == action.Title);
+                if (existingAction == null)
+                {
+                    existingActions.Add(action);
+                    // tweet
+                    // todo
+                }
+                else
+                {
+                    // check version number
+                    if (existingAction.Version != action.Version)
+                    {
+                        // update
+                        existingAction.Version = action.Version;
+                        existingAction.Url = action.Url;
+                        existingAction.Publisher = action.Publisher;
+
+                        // tweet
+                        // todo
+                    }
+                }
+            }
+
+            Log.Message($"Found [{existingActions.Count}] unique actions");
+            // store the new information:
+            Storage.SaveJson(actions, storeFileName);
 
             return actions;
         }
