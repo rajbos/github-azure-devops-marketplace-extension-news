@@ -11,9 +11,9 @@ using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Parameters;
 
-namespace AzDoExtensionNews.Helpers
+namespace News.Library
 {
-    internal static class Twitter
+    public static class Twitter
     {
         private static readonly string oauth_consumer_key = Configuration.TwitterConsumerAPIKey;
         private static readonly string oauth_consumer_secret = Configuration.TwitterConsumerAPISecretKey;

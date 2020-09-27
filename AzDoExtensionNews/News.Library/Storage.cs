@@ -1,56 +1,53 @@
-﻿using AzDoExtensionNews.Models;
-using Microsoft.Azure.Storage;
+﻿using Microsoft.Azure.Storage;
 using Microsoft.Azure.Storage.Blob;
-using News.Library;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace AzDoExtensionNews.Helpers
+namespace News.Library
 {
-    internal static class Storage
+    public static class Storage
     {
-        private const string FileName = "Extensions.Json";
         private static string FilePath = "";
         #region LocalStorage
 
-        private static string GetFilePath()
+        private static string GetFilePath(string fileName)
         {
             if (!String.IsNullOrEmpty(FilePath))
             {
                 return FilePath;
             }
 
-            FilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, FileName);
+            FilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{fileName}.Json");
             return FilePath;
         }
 
-        public static void SaveJson(List<Extension> extensions)
+        public static void SaveJson<T>(List<T> extensions, string fileName)
         {
             // rename the old file
-            RenameOldFile();
+            RenameOldFile(fileName);
 
             var text = JsonConvert.SerializeObject(extensions, Formatting.Indented);
-            WriteDataToFile(text);
+            WriteDataToFile(text, fileName);
 
-            UploadFileAsync(GetFilePath()).GetAwaiter().GetResult();
+            UploadFileAsync(GetFilePath(fileName)).GetAwaiter().GetResult();
         }
 
-        private static void WriteDataToFile(string text)
+        private static void WriteDataToFile(string text, string fileName)
         {
-            System.IO.File.WriteAllText(GetFilePath(), text);
+            System.IO.File.WriteAllText(GetFilePath(fileName), text);
         }
 
-        public static List<Extension> ReadFromJson()
+        public static List<T> ReadFromJson<T>(string fileName)
         {
-            List<Extension> extensions = null;
+            List<T> extensions = null;
             try
             {
-                string text = ReadDataFromFile();
+                string text = ReadDataFromFile(fileName);
 
-                extensions = JsonConvert.DeserializeObject<List<Extension>>(text);
+                extensions = JsonConvert.DeserializeObject<List<T>>(text);
                 Log.Message($"Found {extensions.Count} previously known extensions");
             }
             catch (Exception e)
@@ -59,20 +56,24 @@ namespace AzDoExtensionNews.Helpers
                 Log.Message($"Error loading the file. Will start as if we have a clean slate Error: {e.Message}");
             }
 
-            return extensions ?? new List<Extension>();
+            return extensions ?? new List<T>();
         }
 
-        private static string ReadDataFromFile()
+        private static string ReadDataFromFile(string fileName)
         {
-            var filePath = GetFilePath();
+            var filePath = GetFilePath(fileName);
             DownloadFileAsync(filePath).GetAwaiter().GetResult();
-            var text = System.IO.File.ReadAllText(filePath);
+            var text = File.ReadAllText(filePath);
             return text;
         }
 
-        private static void RenameOldFile()
+        private static void RenameOldFile(string fileName)
         {
-            System.IO.File.Move(FileName, $"{GetFileNameTimeStampPrefix()}_{FileName}");
+            var fullFileName = $"{fileName}.json";
+            if (File.Exists(fullFileName))
+            {
+               File.Move(fullFileName, $"{GetFileNameTimeStampPrefix()}_{fullFileName}");
+            }
         }
 
         public static string GetFileNameTimeStampPrefix()

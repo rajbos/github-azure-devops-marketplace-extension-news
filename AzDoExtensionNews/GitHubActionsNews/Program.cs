@@ -16,34 +16,68 @@ namespace GitHubActionsNews
     static class Program
     {
         private const string GitHubMarketplaceUrl = "https://github.com/marketplace?type=actions";
+        private static readonly string StorageFileName = "Actions";
         private static List<GitHubAction> Actions = new List<GitHubAction>();
 
         static void Main(string[] args)
         {
-            //load known actions and their versions
 
-            List<List<GitHubAction>> allActions = new List<List<GitHubAction>>();
-            // skipping common letters to prevent lots of double searches
-            var searchList = new List<string> { "b", "c", "d" }; 
-            // "f", "g", "h", "j", "k", "l", "m", "n", "o", "p" , "q", "r", "s", "t", "v", "w", "y", "z" };
-            Parallel.ForEach(searchList, item => 
-            {
-                var actions = GetActionsForSearchQuery(item);
-                allActions.Add(actions);
-            });
+            // read existing action list from storage
+            var existingActions = Storage.ReadFromJson<GitHubAction>(StorageFileName);
+
+            // get all actions from the GitHub marketplace for the given letters
+            var allActions = GetAllActionsFromLetters(args);
 
             foreach (var actions in allActions)
             {
                 foreach (var action in actions)
                 {
-                    if (!Actions.Any(item => item.Title == action.Title))
+                    var existingAction = existingActions.FirstOrDefault(item => item.Title == action.Title);
+                    if (existingAction == null)
                     {
-                        Actions.Add(action);
+                        existingActions.Add(action);
+                        // tweet
+                    }
+                    else
+                    {
+                        // check version number
+                        if (existingAction.Version != action.Version)
+                        {
+                            // update
+                            existingAction.Version = action.Version;
+                            existingAction.Url = action.Url;
+                            existingAction.Publisher = action.Publisher;
+
+                            // tweet
+                            // todo
+                        }
                     }
                 }
             }
-            Log.Message($"Found [{Actions.Count}] unique actions");
+            Log.Message($"Found [{existingActions.Count}] unique actions");
+
             // store all actions and their current state
+            StoreActions(existingActions);
+        }
+
+        private static List<List<GitHubAction>> GetAllActionsFromLetters(string[] args)
+        {
+            List<List<GitHubAction>> allActions = new List<List<GitHubAction>>();
+            // skipping common letters to prevent lots of double searches
+            //var searchList = args;
+            //var searchList = new List<string> { "b", "c", "d" }; 
+            var searchList = new List<string> { "f", "g", "h", "j", "k", "l", "m", "n", "o", "p" , "q", "r", "s", "t", "v", "w", "y", "z" };
+            Parallel.ForEach(searchList, item =>
+            {
+                var actions = GetActionsForSearchQuery(item);
+                allActions.Add(actions);
+            });
+            return allActions;
+        }
+
+        private static void StoreActions(List<GitHubAction> actions)
+        {
+            Storage.SaveJson(actions, StorageFileName);
         }
 
         private static List<GitHubAction> GetActionsForSearchQuery(string query)
@@ -91,7 +125,7 @@ namespace GitHubActionsNews
         private static ChromeDriver GetDriver()
         {
             var chromeOptions = new ChromeOptions();
-            if (Debugger.IsAttached)
+            if (!Debugger.IsAttached)
             {
                 chromeOptions.AddArguments("headless");
             }
@@ -166,7 +200,7 @@ namespace GitHubActionsNews
             // scroll the paginator into view
             var actions = new Actions(driver);
 
-            var waitForElement = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(5));
+            var waitForElement = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(1));
             try
             {
                 waitForElement.Until(ExpectedConditions.ElementExists(By.ClassName("paginate-container")));

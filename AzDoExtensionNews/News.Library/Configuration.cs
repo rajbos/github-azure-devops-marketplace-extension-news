@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
-using System.Text;
 
-namespace AzDoExtensionNews.Helpers
+namespace News.Library
 {
-    internal static class Configuration
+    public static class Configuration
     {
         private static string _TwitterConsumerAPIKey;
         public static string TwitterConsumerAPIKey

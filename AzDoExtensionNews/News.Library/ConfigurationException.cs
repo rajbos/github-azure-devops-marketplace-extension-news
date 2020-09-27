@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace AzDoExtensionNews.Helpers
+namespace News.Library
 {
     public class ConfigurationException : Exception
     {

@@ -14,6 +14,7 @@ namespace AzDoExtensionNews
     class Program
     {
         private const bool TestingTweet = false;
+        private static readonly string StorageFileName = "Extensions";
 
         static void Main(string[] args)
         {
@@ -31,7 +32,7 @@ namespace AzDoExtensionNews
             // load previously saved data
             try
             {
-                previousExtensions = Storage.ReadFromJson();
+                previousExtensions = Storage.ReadFromJson<Extension>(StorageFileName);
                 publisherHandles = LoadPublisherHandles.GetPublisherHandles();
             }
             catch (Exception e)
@@ -72,7 +73,7 @@ namespace AzDoExtensionNews
                 if (PostUpdates(newExtensions, updateExtension, publisherHandles))
                 {
                     // store new data
-                    Storage.SaveJson(extensions);
+                    Storage.SaveJson(extensions, StorageFileName);
                 }
                 else
                 {
@@ -90,7 +91,7 @@ namespace AzDoExtensionNews
             {
                 // no previously known extensions but new list? Store the new set for the next run
                 // store all data
-                Storage.SaveJson(extensions);
+                Storage.SaveJson(extensions, StorageFileName);
             }
             
             // save the data to CSV if needed
