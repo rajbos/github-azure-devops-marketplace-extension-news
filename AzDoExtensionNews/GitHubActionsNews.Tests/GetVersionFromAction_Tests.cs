@@ -32,7 +32,8 @@ namespace GitHubActionsNews.Tests
             // get version info
             var version = ActionPageInteraction.GetVersionFromAction(Driver);
 
-            Assert.AreEqual("0.01", version);
+            Assert.AreNotEqual("", version);
+            Assert.AreNotEqual("latest", version);
         }
 
         [TestMethod]
@@ -45,7 +46,8 @@ namespace GitHubActionsNews.Tests
             // get version info
             var version = ActionPageInteraction.GetVersionFromAction(Driver);
 
-            Assert.AreEqual("v2.0.0", version);
+            Assert.AreNotEqual("", version);
+            Assert.AreNotEqual("v2.0.0", version);
         }
 
         
