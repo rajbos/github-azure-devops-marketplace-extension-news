@@ -22,8 +22,7 @@ namespace GitHubActionsNews
         static void Main(string[] args)
         {
             // read existing action list from storage
-            var existingActions = Storage.ReadFromJson<GitHubAction>(StorageFileName);
-            Log.Message($"Loaded [{existingActions.Count}] know actions from storage");
+            var existingActions = Storage.ReadFromJson<GitHubAction>(StorageFileName, "actions");
 
             // get all actions from the GitHub marketplace for the given letters
             var allActions = GetAllActionsFromLetters(args);
@@ -66,7 +65,8 @@ namespace GitHubActionsNews
             // skipping common letters to prevent lots of double searches
             var searchList = args;
             //var searchList = new List<string> { "b", "c", "d" }; 
-            //var searchList = new List<string> { "f", "g", "h", "j", "k", "l", "m", "n", "o", "p" , "q", "r", "s", "t", "v", "w", "y", "z" };
+            //var searchList = new List<string> { "f", "g", "h", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "v", "w", "y", "z" };
+            //var searchList = new List<string> { "s", "t", "v", "w", "y", "z" };
             Parallel.ForEach(searchList, item =>
             {
                 var actions = GetActionsForSearchQuery(item);

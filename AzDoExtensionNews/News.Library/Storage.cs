@@ -40,7 +40,7 @@ namespace News.Library
             System.IO.File.WriteAllText(GetFilePath(fileName), text);
         }
 
-        public static List<T> ReadFromJson<T>(string fileName)
+        public static List<T> ReadFromJson<T>(string fileName, string message = "extensions")
         {
             List<T> extensions = null;
             try
@@ -48,7 +48,7 @@ namespace News.Library
                 string text = ReadDataFromFile(fileName);
 
                 extensions = JsonConvert.DeserializeObject<List<T>>(text);
-                Log.Message($"Found {extensions.Count} previously known extensions");
+                Log.Message($"Found {extensions.Count} previously known {message}");
             }
             catch (Exception e)
             {
