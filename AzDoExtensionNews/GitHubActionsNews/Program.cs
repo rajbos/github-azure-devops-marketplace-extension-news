@@ -21,9 +21,9 @@ namespace GitHubActionsNews
 
         static void Main(string[] args)
         {
-
             // read existing action list from storage
             var existingActions = Storage.ReadFromJson<GitHubAction>(StorageFileName);
+            Log.Message($"Loaded [{existingActions.Count}] know actions from storage");
 
             // get all actions from the GitHub marketplace for the given letters
             var allActions = GetAllActionsFromLetters(args);

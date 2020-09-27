@@ -330,4 +330,4 @@ ASALocalRun/
 .mfractor/
 
 # Custom files to ignore 
-/AzDoExtensionNews/AzDoExtensionNews/appsettings.secrets.json
+*.secrets.json
