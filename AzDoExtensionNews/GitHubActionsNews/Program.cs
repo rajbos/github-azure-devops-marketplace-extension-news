@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -48,6 +49,21 @@ namespace GitHubActionsNews
 
             Log.Message($"We currently have {actualList.Count} unique actions stored with their version");
             Log.Message($"");
+
+            // search example
+            SearchFor(actualList, "aqua");
+            SearchFor(actualList, "Trivy");
+            SearchFor(actualList, "Secrets");
+        }
+
+        private static void SearchFor(List<GitHubAction> actualList, string startsWith)
+        {
+            var items = actualList.Where(item => item.Title.Contains(startsWith, StringComparison.InvariantCultureIgnoreCase));
+            Log.Message($"Found {items.Count()} items containing '{startsWith}'");
+            foreach (var item in items)
+            {
+                Log.Message($"\t{item.Title}");
+            }
         }
 
         private static List<List<GitHubAction>> GetAllActionsFromLetters(string[] args)
