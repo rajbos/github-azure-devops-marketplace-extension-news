@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,10 +19,35 @@ namespace GitHubActionsNews
         private const string GitHubMarketplaceUrl = "https://github.com/marketplace?type=actions";
         private static readonly string StorageFileName = "Actions";
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            // get all actions from the GitHub marketplace for the given letters
-            _ = GetAllActionsFromLetters(args);
+            if (args.Length > 0 && args[0] == "all")
+            {
+                await RunGroupAction();
+            }
+            else
+            {
+                // get all actions from the GitHub marketplace for the given letters
+                _ = GetAllActionsFromLetters(args);
+            }
+        }
+
+        private static async Task  RunGroupAction()
+        {
+            Log.Message("Running group action");
+            var allItems = await Storage.DownloadAllFilesThatStartWith<GitHubAction>(StorageFileName);
+
+            var actualList = new List<GitHubAction>();
+            foreach (var item in allItems)
+            {
+                if (!actualList.Any(element => element.Title == item.Title))
+                {
+                    actualList.Add(item);
+                }
+            }
+
+            Log.Message($"We currently have {actualList.Count} unique actions stored with their version");
+            Log.Message($"");
         }
 
         private static List<List<GitHubAction>> GetAllActionsFromLetters(string[] args)

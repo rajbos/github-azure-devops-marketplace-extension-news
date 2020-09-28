@@ -4,24 +4,19 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace News.Library
 {
     public static class Storage
     {
-        private static string FilePath = "";
         #region LocalStorage
 
         private static string GetFilePath(string fileName)
         {
-            if (!String.IsNullOrEmpty(FilePath))
-            {
-                return FilePath;
-            }
-
-            FilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{fileName}.Json");
-            return FilePath;
+            var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{fileName}.Json");
+            return filePath;
         }
 
         public static void SaveJson<T>(List<T> extensions, string fileName)
@@ -139,6 +134,30 @@ namespace News.Library
             // todo: check if the file is newer then the local file, else do not download!
             var cloudLastModified = cloudBlockBlob.Properties.LastModified;
             await cloudBlockBlob.DownloadToFileAsync(filePath, FileMode.OpenOrCreate);
+        }
+
+        public static async Task<List<T>> DownloadAllFilesThatStartWith<T>(string startsWith)
+        {
+            // get all file refs that start with startsWith
+            var connectionString = GetConnectionString();
+            await GetBlobClientAsync(connectionString);
+
+            var list = CloudBlobContainer.ListBlobs(prefix: startsWith);
+
+            var allItems = new List<T>();
+            foreach (var item in list)
+            {
+                // download them all
+                var splitted = item.StorageUri.PrimaryUri.ToString().Split('/');
+                var fileName = Path.GetFileNameWithoutExtension(splitted[splitted.Length - 1]);
+
+                // group the results
+                var itemsFromFile = ReadFromJson<T>(fileName);
+
+                allItems.AddRange(itemsFromFile);                
+            }
+
+            return allItems;
         }
 
         private static string GetConnectionString()
