@@ -100,7 +100,13 @@ namespace AzDoExtensionNews
 
         private static bool PostUpdates(List<Extension> newExtensions, List<Extension> updateExtension, List<PublisherHandles> publisherHandles)
         {
-            // todo: limit throughput to only a small number of tweets to prevent disabling of the twitter account
+            // limit throughput to only a small number of tweets to prevent disabling of the twitter account
+            if (newExtensions.Count + updateExtension.Count > 50)
+            {
+                // something must be wrong, number is way to larger
+                Log.Message($"Found {newExtensions.Count + updateExtension.Count} extensions to tweet about, number is way to high. Skipping sending the tweets");
+                return true;
+            }
 
             // todo: maybe only store successfully tweeted extensions?
             var success = true;
