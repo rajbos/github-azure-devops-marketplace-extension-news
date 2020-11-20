@@ -48,7 +48,7 @@ namespace News.Library
             catch (Exception e)
             {
                 // todo:Renaming the file on Storage for backup and analysis and start fresh. 
-                Log.Message($"Error loading the file. Will start as if we have a clean slate Error: {e.Message}");
+                Log.Message($"Error loading the file [{fileName}]. Will start as if we have a clean slate Error: {e.Message}");
             }
 
             return extensions ?? new List<T>();
@@ -127,7 +127,7 @@ namespace News.Library
 
             Console.WriteLine("Downloading from Blob storage as blob to '{0}'", filePath);
 
-            // Get a reference to the blob address, then upload the file to the blob.
+            // Get a reference to the blob address, then download the file from the blob.
             // Use the value of localFileName for the blob name.
             CloudBlockBlob cloudBlockBlob = CloudBlobContainer.GetBlockBlobReference(localFileName);
 

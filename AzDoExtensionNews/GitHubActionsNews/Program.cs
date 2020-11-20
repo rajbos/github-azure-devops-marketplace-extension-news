@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace GitHubActionsNews
@@ -22,15 +23,32 @@ namespace GitHubActionsNews
 
         static async Task Main(string[] args)
         {
-            if (args.Length > 0 && args[0] == "all")
+            if (args.Length == 0)
             {
-                await RunGroupAction();
+                Log.Message("Please add a parameter to the run");
+                Log.Message(" all = run through each action result in the list");
+                Log.Message(" One or more comma separated letters = run through each action result that matches the search string");
+                Log.Message(" consolidate = download all previous result files and consolidate to 1 file");
             }
-            else
+
+            switch (args[0])
             {
-                // get all actions from the GitHub marketplace for the given letters
-                _ = GetAllActionsFromLetters(args);
+                case "all":
+                    await RunGroupAction();
+                    break;
+                case "consolidate":
+                    await RunConsolidate();
+                    break;
+                default:
+                    // get all actions from the GitHub marketplace for the given letters
+                    _ = GetAllActionsFromLetters(args);
+                    break;
             }
+        }
+
+        private static async Task RunConsolidate()
+        {
+            await Consolidate.Run();
         }
 
         private static async Task  RunGroupAction()
@@ -84,6 +102,7 @@ namespace GitHubActionsNews
 
         private static List<GitHubAction> GetActionsForSearchQuery(string query)
         {
+            Log.Message($"Loading latest states for all actions starting with [{query}]");
             var storeFileName = $"{StorageFileName}-{query}";
 
             var queriedGitHubMarketplaceUrl = $"{GitHubMarketplaceUrl}&query={query}";
@@ -98,6 +117,7 @@ namespace GitHubActionsNews
                 var existingAction = existingActions.FirstOrDefault(item => item.Title == action.Title);
                 if (existingAction == null)
                 {
+                    Log.Message($"Found a new action: {action.Title}");
                     existingActions.Add(action);
                     // tweet
                     // todo
@@ -107,6 +127,8 @@ namespace GitHubActionsNews
                     // check version number
                     if (existingAction.Version != action.Version)
                     {
+                        Log.Message($"Found an updated action: {action.Title}: old version [{existingAction.Version}], new version [{action.Version}]");
+
                         // update
                         existingAction.Version = action.Version;
                         existingAction.Url = action.Url;
@@ -120,7 +142,7 @@ namespace GitHubActionsNews
 
             Log.Message($"Found [{existingActions.Count}] unique actions");
             // store the new information:
-            Storage.SaveJson(actions, storeFileName);
+            Storage.SaveJson(existingActions, storeFileName);
 
             return actions;
         }
@@ -196,34 +218,37 @@ namespace GitHubActionsNews
                 }
 
                 // find the 'next' button
+                // xxx
+                IWebElement nextButton = null;
                 try
                 {
-                    var nextButton = driver.FindElement(By.LinkText("Next"));
-                    if (nextButton != null)
-                    {
-                        var nextUrl = nextButton.GetAttribute("href");
-                        // click the next button
-                        nextButton.Click();
-
-                        waitForElement.Until(ExpectedConditions.ElementExists(By.LinkText("Next")));
-
-                        // wait for the next button to be available again
-                        waitForElement.Until(ExpectedConditions.UrlToBe(nextUrl));
-                        waitForElement.Until(ExpectedConditions.ElementIsVisible(By.LinkText("Next")));
-                        waitForElement.Until(ExpectedConditions.ElementIsVisible(By.ClassName("paginate-container")));
-
-                        // scrape the new page again
-                        actionList.AddRange(ScrapePage(driver, pageNumber + 1, logger));
-                    }
+                    nextButton = driver.FindElement(By.LinkText("Next"));
                 }
                 catch
                 {
                     // if the element doesn't exist, we are at the last page
                     Log.Message($"Next button not found, current url = [{driver.Url}] on pageNumber [{pageNumber}], logger");
                 }
+
+                if (nextButton != null)
+                {
+                    var nextUrl = nextButton.GetAttribute("href");
+                    // click the next button
+                    nextButton.Click();
+
+                    waitForElement.Until(ExpectedConditions.ElementExists(By.LinkText("Next")));
+
+                    // wait for the next button to be available again
+                    waitForElement.Until(ExpectedConditions.UrlToBe(nextUrl));
+                    waitForElement.Until(ExpectedConditions.ElementIsVisible(By.LinkText("Next")));
+                    waitForElement.Until(ExpectedConditions.ElementIsVisible(By.ClassName("paginate-container")));
+
+                    // scrape the new page again
+                    actionList.AddRange(ScrapePage(driver, pageNumber + 1, logger));
+                }
             }
             catch (Exception e)
-            {   
+            {
                 Log.Message($"Error scraping page {pageNumber}. Exception message: {e.Message}{Environment.NewLine}{e.InnerException?.Message}");
                 Log.Message($"Logs for run with url [{driver.Url}]:");
                 Log.Message(logger.ToString());
@@ -250,12 +275,27 @@ namespace GitHubActionsNews
             catch
             {
                 // wait some time and retry
+                Thread.Sleep(1000);
                 waitForElement.Until(ExpectedConditions.ElementExists(By.ClassName("paginate-container")));
                 waitForElement.Until(ExpectedConditions.ElementIsVisible(By.ClassName("paginate-container")));
                 waitForElement.Until(ExpectedConditions.ElementToBeClickable(By.ClassName("paginate-container")));
                 var paginator = driver.FindElement(By.ClassName("paginate-container"));
                 actions.MoveToElement(paginator);
                 actions.Perform();
+            }
+
+            try
+            {
+                //todo: hide cookie message
+                var bannerClassName = "hx_cookie-banner";
+                var banner = driver.FindElement(By.ClassName(bannerClassName));
+
+                IJavaScriptExecutor js = driver as IJavaScriptExecutor;
+                js.ExecuteScript("arguments[0].style='display: none;'", banner);
+            } 
+            catch
+            {
+                // nom nom nom
             }
 
             return waitForElement;
