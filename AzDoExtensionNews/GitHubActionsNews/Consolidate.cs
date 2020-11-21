@@ -1,6 +1,7 @@
 ﻿using News.Library;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -24,9 +25,28 @@ namespace GitHubActionsNews
             var started = DateTime.Now;
             Log.Message($"DownloadAllActionsFiles");
 
-            var actions = await Storage.DownloadAllFilesThatStartWith<GitHubAction>("Actions");
+            var allActions = await Storage.DownloadAllFilesThatStartWith<GitHubAction>("Actions");
+            // dedupe
+            var actions = allActions.Distinct(new GitHubActionComparer());
 
-            Log.Message($"Download all files took {(DateTime.Now - started).TotalSeconds:N2}, we have {actions.Count} known actions");
+            Log.Message($"Download all files took {(DateTime.Now - started).TotalSeconds:N2}, we have {actions.Count()} known actions");
+        }
+    }
+
+    internal class GitHubActionComparer : IEqualityComparer<GitHubAction>
+    {
+        public bool Equals(GitHubAction x, GitHubAction y)
+        {
+            return
+                string.Equals(x.Title, y.Title, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(x.Publisher, y.Publisher, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(x.Url, y.Url, StringComparison.OrdinalIgnoreCase)
+                ;
+        }
+
+        public int GetHashCode(GitHubAction obj)
+        {
+            return obj.Title.GetHashCode();
         }
     }
 }

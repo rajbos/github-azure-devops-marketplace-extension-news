@@ -8,8 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -361,6 +359,6 @@ namespace GitHubActionsNews
         public string Url { get; set; }
         public string Title { get; set; }
         public string Publisher { get; set; }
-        public string Version { get; internal set; }
+        public string Version { get; set; }
     }
 }

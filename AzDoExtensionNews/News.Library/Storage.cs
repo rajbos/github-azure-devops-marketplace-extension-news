@@ -4,7 +4,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace News.Library
@@ -150,6 +149,11 @@ namespace News.Library
                 // download them all
                 var splitted = item.StorageUri.PrimaryUri.ToString().Split('/');
                 var fileName = Path.GetFileNameWithoutExtension(splitted[splitted.Length - 1]);
+
+                if (fileName == "Actions-r")
+                {
+                    Log.Message("downloaded file to check");
+                }
 
                 // group the results
                 var itemsFromFile = ReadFromJson<T>(fileName);

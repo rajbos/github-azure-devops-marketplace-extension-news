@@ -15,11 +15,18 @@ namespace AzDoExtensionNews
     {
         private const bool TestingTweet = false;
         private static readonly string StorageFileName = "Extensions";
+        private static Twitter twitter;
 
         static void Main(string[] args)
         {
             var started = DateTime.Now;
             Configuration.LoadSettings();
+
+            twitter = new Twitter(Configuration.TwitterConsumerAPIKey, 
+                                  Configuration.TwitterConsumerAPISecretKey, 
+                                  Configuration.TwitterAccessToken, 
+                                  Configuration.TwitterAccessTokenSecret);
+
             CheckForUpdates().GetAwaiter().GetResult();
 
             Log.Message($"Duration: {(DateTime.Now - started).TotalSeconds:N2} seconds");
@@ -137,7 +144,7 @@ namespace AzDoExtensionNews
             var tweetText = $"The {GetExtensionText(extension)} \"{extension.displayName}\" from {publisher} has been updated to version {version.version}. Link: {extension.Url} {hashtags}";
             string imageUrl = GetImageUrl(version);
 
-            return Twitter.SendTweet(tweetText, imageUrl);
+            return twitter.SendTweet(tweetText, imageUrl);
         }
         
         private static bool TweetNewExtension(Extension extension, List<PublisherHandles> publisherHandles)
@@ -148,7 +155,7 @@ namespace AzDoExtensionNews
             var tweetText = $"There is a new {GetExtensionText(extension)} from {publisher} available in the Azure DevOps Marketplace! Check out \"{extension.displayName}\". Link: {extension.Url} {hashtags}";
             string imageUrl = GetImageUrl(version);
 
-            return Twitter.SendTweet(tweetText, imageUrl);
+            return twitter.SendTweet(tweetText, imageUrl);
         }
 
         private static string GetImageUrl(Models.Version version)

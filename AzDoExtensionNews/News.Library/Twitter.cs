@@ -13,16 +13,25 @@ using Tweetinvi.Parameters;
 
 namespace News.Library
 {
-    public static class Twitter
+    public class Twitter
     {
-        private static readonly string oauth_consumer_key = Configuration.TwitterConsumerAPIKey;
-        private static readonly string oauth_consumer_secret = Configuration.TwitterConsumerAPISecretKey;
-        private static readonly string oauth_token = Configuration.TwitterAccessToken;
-        private static readonly string oauth_token_secret = Configuration.TwitterAccessTokenSecret;
+        public Twitter(string oauth_consumer_key, string oauth_consumer_secret, string oauth_token, string oauth_token_secret)
+        {
+            OauthConsumerKey = oauth_consumer_key;
+            OauthConsumerSecret = oauth_consumer_secret;
+            OauthToken = oauth_token;
+            OauthTokenSecret = oauth_token_secret;
+        }
+
         private static DateTime LastTweeted = DateTime.UtcNow - TimeSpan.FromMinutes(10);
         private const int RateLimitDurationInSeconds = 10;
 
-        public static bool SendTweet(string tweetText, string imageUrl)
+        public string OauthConsumerKey { get; }
+        public string OauthConsumerSecret { get; }
+        public string OauthToken { get; }
+        public string OauthTokenSecret { get; }
+
+        public bool SendTweet(string tweetText, string imageUrl)
         {
             var lastTweetedDuration = DateTime.UtcNow - LastTweeted;
             if (lastTweetedDuration.TotalSeconds < RateLimitDurationInSeconds)
@@ -38,7 +47,7 @@ namespace News.Library
             // return TweetWithHttp(tweetText);
         }
 
-        private static bool TweetWithHttp(string tweetText)
+        private bool TweetWithHttp(string tweetText)
         {
             try
             {
@@ -58,16 +67,16 @@ namespace News.Library
 
                 string baseString = string.Format(
                     baseFormat,
-                    oauth_consumer_key,
+                    OauthConsumerKey,
                     oauth_nonce,
                     oauth_signature_method,
-                    oauth_timestamp, oauth_token,
+                    oauth_timestamp, OauthToken,
                     oauth_version,
                     Uri.EscapeDataString(tweetText)
                 );
 
                 string oauth_signature = null;
-                using (HMACSHA1 hasher = new HMACSHA1(ASCIIEncoding.ASCII.GetBytes(Uri.EscapeDataString(oauth_consumer_secret) + "&" + Uri.EscapeDataString(oauth_token_secret))))
+                using (HMACSHA1 hasher = new HMACSHA1(ASCIIEncoding.ASCII.GetBytes(Uri.EscapeDataString(OauthConsumerSecret) + "&" + Uri.EscapeDataString(OauthTokenSecret))))
                 {
                     oauth_signature = Convert.ToBase64String(hasher.ComputeHash(ASCIIEncoding.ASCII.GetBytes("POST&" + Uri.EscapeDataString(twitterURL) + "&" + Uri.EscapeDataString(baseString))));
                 }
@@ -77,12 +86,12 @@ namespace News.Library
 
                 string authorizationHeader = string.Format(
                     authorizationFormat,
-                    Uri.EscapeDataString(oauth_consumer_key),
+                    Uri.EscapeDataString(OauthConsumerKey),
                     Uri.EscapeDataString(oauth_nonce),
                     Uri.EscapeDataString(oauth_signature),
                     Uri.EscapeDataString(oauth_signature_method),
                     Uri.EscapeDataString(oauth_timestamp),
-                    Uri.EscapeDataString(oauth_token),
+                    Uri.EscapeDataString(OauthToken),
                     Uri.EscapeDataString(oauth_version)
                 );
 
@@ -123,16 +132,16 @@ namespace News.Library
             }
         }
 
-        private static bool TweetWithNuget(string tweetText, string imageUrl)
+        private bool TweetWithNuget(string tweetText, string imageUrl)
         {
             try
             {
                 // setup authentication with Twitter
                 Auth.SetUserCredentials(
-                    consumerKey: oauth_consumer_key,
-                    consumerSecret: oauth_consumer_secret,
-                    userAccessToken: oauth_token,
-                    userAccessSecret: oauth_token_secret);
+                    consumerKey: OauthConsumerKey,
+                    consumerSecret: OauthConsumerSecret,
+                    userAccessToken: OauthToken,
+                    userAccessSecret: OauthTokenSecret);
 
                 // download image URL in memory
                 var mediaFile = DownloadImageAsync(imageUrl).GetAwaiter().GetResult();
@@ -185,7 +194,7 @@ namespace News.Library
             }
         }
 
-        private static async Task<byte[]> DownloadImageAsync(string imageUrl)
+        private async Task<byte[]> DownloadImageAsync(string imageUrl)
         {
             if (string.IsNullOrWhiteSpace(imageUrl)) { return null; }
 
