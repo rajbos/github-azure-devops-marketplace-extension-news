@@ -126,6 +126,11 @@ namespace News.Library
 
             Console.WriteLine("Downloading from Blob storage as blob to '{0}'", filePath);
 
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
+
             // Get a reference to the blob address, then download the file from the blob.
             // Use the value of localFileName for the blob name.
             CloudBlockBlob cloudBlockBlob = CloudBlobContainer.GetBlockBlobReference(localFileName);
