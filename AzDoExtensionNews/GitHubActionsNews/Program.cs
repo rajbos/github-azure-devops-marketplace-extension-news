@@ -18,6 +18,7 @@ namespace GitHubActionsNews
     {
         private const string GitHubMarketplaceUrl = "https://github.com/marketplace?type=actions";
         private static readonly string StorageFileName = "Actions";
+        private static Twitter twitter;
 
         static async Task Main(string[] args)
         {
@@ -28,6 +29,13 @@ namespace GitHubActionsNews
                 Log.Message(" One or more comma separated letters = run through each action result that matches the search string");
                 Log.Message(" consolidate = download all previous result files and consolidate to 1 file");
             }
+
+            Configuration.LoadSettings();
+
+            twitter = new Twitter(Configuration.TwitterConsumerAPIKey,
+                                  Configuration.TwitterConsumerAPISecretKey,
+                                  Configuration.TwitterAccessToken,
+                                  Configuration.TwitterAccessTokenSecret);
 
             switch (args[0])
             {
@@ -46,7 +54,7 @@ namespace GitHubActionsNews
 
         private static async Task RunConsolidate()
         {
-            await Consolidate.Run();
+            await Consolidate.Run(twitter);
         }
 
         private static async Task  RunGroupAction()
@@ -117,8 +125,6 @@ namespace GitHubActionsNews
                 {
                     Log.Message($"Found a new action: {action.Title}");
                     existingActions.Add(action);
-                    // tweet
-                    // todo
                 }
                 else
                 {
@@ -131,9 +137,6 @@ namespace GitHubActionsNews
                         existingAction.Version = action.Version;
                         existingAction.Url = action.Url;
                         existingAction.Publisher = action.Publisher;
-
-                        // tweet
-                        // todo
                     }
                 }
             }
