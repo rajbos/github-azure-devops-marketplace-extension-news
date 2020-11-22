@@ -30,7 +30,7 @@ namespace GitHubActionsNews
                     if (previousVersion == null)
                     {
                         // tweet new action
-                        tweetText = $"A new GitHub Action has been added to the marketplace!" + Environment.NewLine + $"Check out '{action.Title}' from {action.Publisher}. {action.Url}";
+                        tweetText = $"A new GitHub Action has been added to the marketplace!" + Environment.NewLine + Environment.NewLine + $"Check out '{action.Title}' from {action.Publisher}. {action.Url}";
                     }
                     else if (action.Version != previousVersion.Version)
                     {
