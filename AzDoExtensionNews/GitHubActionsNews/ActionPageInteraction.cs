@@ -1,5 +1,7 @@
-﻿using OpenQA.Selenium;
+﻿using News.Library;
+using OpenQA.Selenium;
 using System;
+using System.Diagnostics;
 
 namespace GitHubActionsNews
 {
@@ -33,7 +35,10 @@ namespace GitHubActionsNews
                 var allChildElements = publisherParent.FindElements(By.XPath(".//*")); // find all child elements  
                 foreach (var el in allChildElements)
                 {
-                    //Log.Message($"{el.Text} - {el.TagName}");
+                    if (Debugger.IsAttached)
+                    {
+                        Log.Message($"{el.Text} - {el.TagName}");
+                    }
                 }
 
                 return allChildElements[2].Text;

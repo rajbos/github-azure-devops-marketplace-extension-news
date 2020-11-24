@@ -45,10 +45,29 @@ namespace GitHubActionsNews
                 case "consolidate":
                     await RunConsolidate();
                     break;
+                case "test":
+                    RunTest();
+                    break;
                 default:
                     // get all actions from the GitHub marketplace for the given letters
                     _ = GetAllActionsFromLetters(args);
                     break;
+            }
+        }
+
+        private static void RunTest()
+        {
+            var driver = GetDriver();
+            try 
+            {
+                driver.Navigate().GoToUrl("https://github.com/marketplace/actions/cli-for-microsoft-365-login");
+                var version = ActionPageInteraction.GetVersionFromAction(driver);
+                Log.Message($"Found version [{version}]");
+            }
+            finally
+            {
+                driver.Close();
+                driver.Quit();
             }
         }
 
@@ -219,7 +238,6 @@ namespace GitHubActionsNews
                 }
 
                 // find the 'next' button
-                // xxx
                 IWebElement nextButton = null;
                 try
                 {
