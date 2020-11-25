@@ -38,7 +38,9 @@ namespace GitHubActionsNews
                         tweetText = $"GitHub Action '{action.Title}' from {action.Publisher} has been updated to version {action.Version}. {action.Url}";
                     }
 
-                    if (!string.IsNullOrEmpty(tweetText))
+                    // only tweet when necessary
+                    // and only when there is nothing wrong with the version
+                    if (!string.IsNullOrEmpty(tweetText) && tweetText.IndexOf("Error loading version from page") == -1)
                     {
                         // send the tweet
                         twitter.SendTweet(tweetText, "");
