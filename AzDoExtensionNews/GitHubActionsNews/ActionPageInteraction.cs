@@ -2,6 +2,7 @@
 using OpenQA.Selenium;
 using System;
 using System.Diagnostics;
+using System.Text;
 
 namespace GitHubActionsNews
 {
@@ -22,22 +23,25 @@ namespace GitHubActionsNews
                 }
                 catch (OpenQA.Selenium.NoSuchElementException)
                 {
-                    return $"Error loading version from page [{driver.Url}]";
+                    return $"Error loading version from page [{driver.Url}], cannot find 'Latest version' or 'Pre-release' on this page";
                 }
             }
 
+            var sb = new StringBuilder();
             try
             {                
-                //Log.Message($"{divWithTitle.Text} - {divWithTitle.TagName}");
+                sb.AppendLine($"{divWithTitle.Text} - {divWithTitle.TagName}");
                 // "contains(text(), 'Latest version')"); ;
 
                 var publisherParent = divWithTitle.FindElement(By.XPath("./..")); // find parent element
                 var allChildElements = publisherParent.FindElements(By.XPath(".//*")); // find all child elements  
+                sb.AppendLine($"childElements.Count: [{allChildElements.Count}]");
                 foreach (var el in allChildElements)
                 {
+                    sb.AppendLine($"{el.Text} - {el.TagName}");
                     if (Debugger.IsAttached)
                     {
-                        Log.Message($"{el.Text} - {el.TagName}");
+                        Log.Message(sb.ToString());
                     }
                 }
 
@@ -45,7 +49,7 @@ namespace GitHubActionsNews
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Error loading version from page [{driver.Url}]: {e.Message}");
+                Console.WriteLine($"Error loading version from page [{driver.Url}]: {e.Message}{Environment.NewLine}Log messages: {Environment.NewLine}{sb}");
                 throw;
             }
         }
