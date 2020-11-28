@@ -41,6 +41,9 @@ namespace AzDoExtensionNews
             {
                 previousExtensions = Storage.ReadFromJson<Extension>(StorageFileName);
                 publisherHandles = LoadPublisherHandles.GetPublisherHandles();
+
+                Log.Message($"Found [{previousExtensions.Count}] known extensions in storage");
+                Log.Message($"Found [{publisherHandles.Count}] known publisher handles");
             }
             catch (Exception e)
             {

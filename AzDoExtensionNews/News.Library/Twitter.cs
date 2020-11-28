@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Tweetinvi;
+using Tweetinvi.Models;
 using Tweetinvi.Parameters;
 
 namespace News.Library
@@ -23,7 +24,7 @@ namespace News.Library
             OauthTokenSecret = oauth_token_secret;
         }
 
-        private static DateTime LastTweeted = DateTime.UtcNow - TimeSpan.FromMinutes(10);
+        private DateTime LastTweeted = DateTime.UtcNow - TimeSpan.FromMinutes(10);
         private const int RateLimitDurationInSeconds = 10;
 
         public string OauthConsumerKey { get; }
@@ -160,22 +161,31 @@ namespace News.Library
                     {
                         if (!media.IsReadyToBeUsed || !media.HasBeenUploaded)
                         {
+                            // give more time for the tweet media to be ready
                             Thread.Sleep(3000);
                         }
 
                         try
                         {
                             // publish the tweet with the media
-                            Tweet.PublishTweet(tweetText, new PublishTweetOptionalParameters
+                            var tweet2 = Tweet.PublishTweet(tweetText, new PublishTweetOptionalParameters
                             {
                                 Medias = new List<Tweetinvi.Models.IMedia> { media }
                             });
 
+                            if (tweet2 != null)
+                            {
+                                Log.Message($"Tweet came back with creation timestamp: [{tweet2.CreatedAt}]");
+                            }
                         }
                         catch
                         {
                             // just publish the tweet without the media
-                            Tweet.PublishTweet(tweetText);
+                            var tweet3 = Tweet.PublishTweet(tweetText);
+                            if (tweet3 != null)
+                            {
+                                Log.Message($"Tweet came back with creation timestamp: [{tweet3.CreatedAt}]");
+                            }
                         }
 
                         return true;
@@ -183,7 +193,11 @@ namespace News.Library
                 }
 
                 // just publish the tweet without the media
-                Tweet.PublishTweet(tweetText);
+                var tweet = Tweet.PublishTweet(tweetText);
+                if (tweet != null)
+                {
+                    Log.Message($"Tweet came back with creation timestamp: [{tweet.CreatedAt}]");
+                }
 
                 return true;
 
