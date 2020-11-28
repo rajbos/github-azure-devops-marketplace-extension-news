@@ -38,11 +38,12 @@ namespace GitHubActionsNews
                 sb.AppendLine($"childElements.Count: [{allChildElements.Count}]");
                 foreach (var el in allChildElements)
                 {
-                    sb.AppendLine($"{el.Text} - {el.TagName}");
-                    if (Debugger.IsAttached)
-                    {
-                        Log.Message(sb.ToString());
-                    }
+                    sb.AppendLine($"{el.Text} - {el.TagName}");                   
+                }
+
+                if (Debugger.IsAttached)
+                {
+                    Log.Message(sb.ToString());
                 }
 
                 return allChildElements[2].Text;

@@ -60,7 +60,7 @@ namespace GitHubActionsNews
             var driver = GetDriver();
             try 
             {
-                driver.Navigate().GoToUrl("https://github.com/marketplace/actions/cli-for-microsoft-365-login");
+                driver.Navigate().GoToUrl("https://github.com/marketplace/actions/c5-deploy-action");
                 var version = ActionPageInteraction.GetVersionFromAction(driver);
                 Log.Message($"Found version [{version}]");
             }
