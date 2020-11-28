@@ -22,7 +22,7 @@ namespace GitHubActionsNews.Tests
             Driver = new ChromeDriver(chromeOptions);
         }
 
-        [TestMethod]
+        //[TestMethod]
         public void OnlyPrerelease_Test()
         {
             // go to url with only a prerelease version:            
@@ -36,7 +36,7 @@ namespace GitHubActionsNews.Tests
             Assert.AreNotEqual("latest", version);
         }
 
-        [TestMethod]
+        //[TestMethod]
         public void LatestVersion_Test()
         {
             // go to url with a latest version:            
@@ -48,9 +48,7 @@ namespace GitHubActionsNews.Tests
 
             Assert.AreNotEqual("", version);
             Assert.AreNotEqual("v2.0.0", version);
-        }
-
-        
+        }        
 
         [TestCleanup]
         public void TestCleanup()
