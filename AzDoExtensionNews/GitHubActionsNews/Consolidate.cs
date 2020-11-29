@@ -48,7 +48,7 @@ namespace GitHubActionsNews
                     if (!string.IsNullOrEmpty(tweetText) && tweetText.IndexOf(ErrorText) == -1)
                     {
                         // send the tweet
-                        twitter.SendTweet(tweetText, "");
+                        twitter.SendTweet(tweetText, "", previousVersion == null ? null : $"Old version: [{previousVersion?.Version}]");
                         tweetsSend++;
                     }
                 }

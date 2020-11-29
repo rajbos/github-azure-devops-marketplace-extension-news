@@ -32,7 +32,7 @@ namespace News.Library
         public string OauthToken { get; }
         public string OauthTokenSecret { get; }
 
-        public bool SendTweet(string tweetText, string imageUrl)
+        public bool SendTweet(string tweetText, string imageUrl, string additionalLogInfo = null)
         {
             var lastTweetedDuration = DateTime.UtcNow - LastTweeted;
             if (lastTweetedDuration.TotalSeconds < RateLimitDurationInSeconds)
@@ -42,7 +42,7 @@ namespace News.Library
                 Thread.Sleep(TimeSpan.FromSeconds(RateLimitDurationInSeconds));
             }
 
-            Log.Message($"Sending tweet: {tweetText}. Tweet.Length: {tweetText.Length}");
+            Log.Message($"Sending tweet: {tweetText}. Tweet.Length: {tweetText.Length} {additionalLogInfo}");
             // update last tweeted
             LastTweeted = DateTime.UtcNow;
             return TweetWithNuget(tweetText, imageUrl);
