@@ -13,7 +13,7 @@ namespace AzDoExtensionNews.Helpers
         /// Get the tags from the publisher as twitter hashTags
         /// </summary>
         /// <param name="extension">The extension to load the tags from</param>
-        public static string GetHashTags(Extension extension)
+        public static string GetHashTags(Extension extension, int tweetTextLength)
         {
             if (extension == null) throw new ArgumentNullException(nameof(extension));
 
@@ -40,7 +40,18 @@ namespace AzDoExtensionNews.Helpers
                 hashtagList.Add($"Trial: {trailPeriod} Days");
             }
 
-            return string.Join(" ", hashtagList);
+            var limitedHashtagList = new List<string>();
+            var currentTweetLength = tweetTextLength;
+            foreach (var tag in hashtagList)
+            {
+                if (currentTweetLength + tag.Length + 1 < 280)
+                {
+                    limitedHashtagList.Add(tag);
+                    currentTweetLength = currentTweetLength + tag.Length + 1;
+                }
+            }
+
+            return string.Join(" ", limitedHashtagList);
         }
 
         /// <summary>

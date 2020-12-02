@@ -122,17 +122,17 @@ namespace AzDoExtensionNews
             var success = true;
             foreach (var extension in newExtensions)
             {
-                if (!TweetNewExtension(extension, publisherHandles))
+                //if (!TweetNewExtension(extension, publisherHandles))
                 {
-                    success = false;
+                    //success = false;
                 }
             }
 
             foreach (var extension in updateExtension)
             {
-                if (!TweetUpdateExtension(extension, publisherHandles))
+                //if (!TweetUpdateExtension(extension, publisherHandles))
                 {
-                    success = false;
+                    //success = false;
                 }
             }
 
@@ -142,9 +142,10 @@ namespace AzDoExtensionNews
         private static bool TweetUpdateExtension(Extension extension, List<PublisherHandles> publisherHandles)
         {
             var version = GetVersion(extension);
-            var hashtags = Tags.GetHashTags(extension);
             var publisher = PublisherFinder.GetPublisher(extension, publisherHandles);
-            var tweetText = $"The {GetExtensionText(extension)} \"{extension.displayName}\" from {publisher} has been updated to version {version.version}. Link: {extension.Url} {hashtags}";
+            var tweetText = $"The {GetExtensionText(extension)} \"{extension.displayName}\" from {publisher} has been updated to version {version.version}. Link: {extension.Url}";
+            var hashtags = Tags.GetHashTags(extension, tweetText.Length);
+            tweetText = $"{tweetText} {hashtags}";
             string imageUrl = GetImageUrl(version);
 
             return twitter.SendTweet(tweetText, imageUrl);
@@ -153,9 +154,11 @@ namespace AzDoExtensionNews
         private static bool TweetNewExtension(Extension extension, List<PublisherHandles> publisherHandles)
         {
             var version = GetVersion(extension);
-            var hashtags = Tags.GetHashTags(extension);
             var publisher = PublisherFinder.GetPublisher(extension, publisherHandles);
-            var tweetText = $"There is a new {GetExtensionText(extension)} from {publisher} available in the Azure DevOps Marketplace! Check out \"{extension.displayName}\". Link: {extension.Url} {hashtags}";
+            var tweetText = $"There is a new {GetExtensionText(extension)} from {publisher} available in the Azure DevOps Marketplace! Check out \"{extension.displayName}\". Link: {extension.Url}";
+
+            var hashtags = Tags.GetHashTags(extension, tweetText.Length);
+            tweetText = $"{tweetText} {hashtags}";
             string imageUrl = GetImageUrl(version);
 
             return twitter.SendTweet(tweetText, imageUrl);

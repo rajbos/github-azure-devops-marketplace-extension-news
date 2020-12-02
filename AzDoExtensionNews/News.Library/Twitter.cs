@@ -139,27 +139,51 @@ namespace News.Library
             try
             {
                 // setup authentication with Twitter
-                Auth.SetUserCredentials(
+                var appCredentials = new TwitterCredentials(
                     consumerKey: OauthConsumerKey,
                     consumerSecret: OauthConsumerSecret,
-                    userAccessToken: OauthToken,
-                    userAccessSecret: OauthTokenSecret);
+                    accessToken: OauthToken,
+                    accessTokenSecret: OauthTokenSecret);
+
+                var userClient = new TwitterClient(appCredentials);
+
+                if (tweetText.Length > 280)
+                {
+                    tweetText = tweetText.Substring(0, 280);
+                }
 
                 // download image URL in memory
                 var mediaFile = DownloadImageAsync(imageUrl).GetAwaiter().GetResult();
                 if (mediaFile != null)
                 {
                     // upload it to twitter
-                    var media = Upload.UploadBinary(mediaFile, new UploadParameters {
-                        MediaCategory= Tweetinvi.Core.Public.Models.Enum.MediaCategory.Image,
-                        MediaType= Tweetinvi.Core.Public.Models.Enum.MediaType.Media,
-                        WaitForTwitterProcessing = true,
-                    });
+                    
+                    //store the file
+                    var filePath = Guid.NewGuid().ToString() + ".png";
+                    File.WriteAllBytes(filePath, mediaFile);                    
 
+                    var tweetinviLogoBinary = File.ReadAllBytes(filePath);
 
-                    if (media != null)
+                    // upload image to add to the tweet
+                    IMedia uploadedImage = null;
+
+                    try
                     {
-                        if (!media.IsReadyToBeUsed || !media.HasBeenUploaded)
+                        uploadedImage = userClient.Upload.UploadTweetImageAsync(new UploadTweetImageParameters(tweetinviLogoBinary)
+                        {
+                            MediaCategory = MediaCategory.Image,
+                            MediaType = MediaType.Media,
+                            WaitForTwitterProcessing = true,
+                        }).GetAwaiter().GetResult();
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Message($"Error uploading media to Twitter: {Environment.NewLine}{e.Message}");
+                    }
+
+                    if (uploadedImage != null)
+                    {
+                        if (!uploadedImage.IsReadyToBeUsed || !uploadedImage.HasBeenUploaded)
                         {
                             // give more time for the tweet media to be ready
                             Thread.Sleep(3000);
@@ -168,23 +192,37 @@ namespace News.Library
                         try
                         {
                             // publish the tweet with the media
-                            var tweet2 = Tweet.PublishTweet(tweetText, new PublishTweetOptionalParameters
-                            {
-                                Medias = new List<Tweetinvi.Models.IMedia> { media }
-                            });
+                            var tweet2 = userClient.Tweets.PublishTweetAsync(new PublishTweetParameters
+                            { 
+                                Text = tweetText,
+                                MediaIds = new List<long> { uploadedImage.Id.Value }, // does Ids work or do we need the Medias list?
+                            }
+                            ).GetAwaiter().GetResult();
+                            //var tweet2 = Tweet.PublishTweet(tweetText, new PublishTweetOptionalParameters
+                            //{
+                            //    Medias = new List<Tweetinvi.Models.IMedia> { media }
+                            //});
 
                             if (tweet2 != null)
                             {
                                 Log.Message($"Tweet came back with creation timestamp: [{tweet2.CreatedAt}]");
                             }
+                            else
+                            {
+                                Log.Message($"Error sending tweet, result was null");
+                            }
                         }
                         catch
                         {
                             // just publish the tweet without the media
-                            var tweet3 = Tweet.PublishTweet(tweetText);
+                            var tweet3 = userClient.Tweets.PublishTweetAsync(tweetText).GetAwaiter().GetResult();
                             if (tweet3 != null)
                             {
                                 Log.Message($"Tweet came back with creation timestamp: [{tweet3.CreatedAt}]");
+                            }
+                            else
+                            {
+                                Log.Message($"Error sending tweet, result was null");
                             }
                         }
 
@@ -193,10 +231,14 @@ namespace News.Library
                 }
 
                 // just publish the tweet without the media
-                var tweet = Tweet.PublishTweet(tweetText);
+                var tweet = userClient.Tweets.PublishTweetAsync(tweetText).GetAwaiter().GetResult();
                 if (tweet != null)
                 {
                     Log.Message($"Tweet came back with creation timestamp: [{tweet.CreatedAt}]");
+                }
+                else
+                {
+                    Log.Message($"Error sending tweet, result was null");
                 }
 
                 return true;
@@ -205,7 +247,8 @@ namespace News.Library
             catch (Exception e)
             {
                 Log.Message($"Error tweeting: {e.Message}");
-                throw;
+                // throw; // throwing will stop the run, not store the update and will send out the same tweet next time again.
+                return false;
             }
         }
 
