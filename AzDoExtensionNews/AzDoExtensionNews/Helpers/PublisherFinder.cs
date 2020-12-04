@@ -1,4 +1,5 @@
 ﻿using AzDoExtensionNews.Models;
+using News.Library;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +17,7 @@ namespace AzDoExtensionNews.Helpers
                 return handle.TwitterHandle;
             }
 
-            Console.WriteLine($"Could not find publisher handle for [{extension.publisher.publisherName}] in the publisher handles list (Count: {publisherHandles.Count})");
+            Log.Message($"Could not find publisher handle for [{extension.publisher.publisherName}] in the publisher handles list (Count: {publisherHandles.Count})");
             return extension.publisher.displayName;
         }
     }
