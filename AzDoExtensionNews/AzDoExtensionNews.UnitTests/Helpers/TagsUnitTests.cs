@@ -16,7 +16,7 @@ namespace Tests.Helpers
             };
 
             // Act
-            var hashTags = Tags.GetHashTags(extension);
+            var hashTags = Tags.GetHashTags(extension, 100);
 
             // Assert
             Assert.AreEqual("Trial: 18 Days", hashTags);
@@ -32,7 +32,7 @@ namespace Tests.Helpers
             };
 
             // Act
-            var hashTags = Tags.GetHashTags(extension);
+            var hashTags = Tags.GetHashTags(extension, 100);
 
             // Assert
             Assert.AreEqual(char.ConvertFromUtf32(0x1F4B3), hashTags);
