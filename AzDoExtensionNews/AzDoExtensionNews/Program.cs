@@ -122,7 +122,7 @@ namespace AzDoExtensionNews
             var success = true;
             foreach (var extension in newExtensions)
             {
-                //if (!TweetNewExtension(extension, publisherHandles))
+                if (!TweetNewExtension(extension, publisherHandles))
                 {
                     //success = false;
                 }
@@ -130,7 +130,7 @@ namespace AzDoExtensionNews
 
             foreach (var extension in updateExtension)
             {
-                //if (!TweetUpdateExtension(extension, publisherHandles))
+                if (!TweetUpdateExtension(extension, publisherHandles))
                 {
                     //success = false;
                 }

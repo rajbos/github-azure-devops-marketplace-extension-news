@@ -157,24 +157,23 @@ namespace News.Library
                 if (mediaFile != null)
                 {
                     // upload it to twitter
-                    
-                    //store the file
-                    var filePath = Guid.NewGuid().ToString() + ".png";
-                    File.WriteAllBytes(filePath, mediaFile);                    
 
-                    var tweetinviLogoBinary = File.ReadAllBytes(filePath);
+                    //store the file
+                    var filePath = Guid.NewGuid().ToString(); // + ".png"; // not sure if this is needed
+                    File.WriteAllBytes(filePath, mediaFile);                    
 
                     // upload image to add to the tweet
                     IMedia uploadedImage = null;
 
                     try
                     {
-                        uploadedImage = userClient.Upload.UploadTweetImageAsync(new UploadTweetImageParameters(tweetinviLogoBinary)
-                        {
-                            MediaCategory = MediaCategory.Image,
-                            MediaType = MediaType.Media,
-                            WaitForTwitterProcessing = true,
-                        }).GetAwaiter().GetResult();
+                        //var tweetinviLogoBinary = File.ReadAllBytes(filePath);
+                        //uploadedImage = userClient.Upload.UploadTweetImageAsync(new UploadTweetImageParameters(tweetinviLogoBinary)
+                        //{
+                        //    MediaCategory = MediaCategory.Image,
+                        //    MediaType = MediaType.Media,
+                        //    WaitForTwitterProcessing = true,
+                        //}).GetAwaiter().GetResult();
                     }
                     catch (Exception e)
                     {
@@ -198,10 +197,6 @@ namespace News.Library
                                 MediaIds = new List<long> { uploadedImage.Id.Value }, // does Ids work or do we need the Medias list?
                             }
                             ).GetAwaiter().GetResult();
-                            //var tweet2 = Tweet.PublishTweet(tweetText, new PublishTweetOptionalParameters
-                            //{
-                            //    Medias = new List<Tweetinvi.Models.IMedia> { media }
-                            //});
 
                             if (tweet2 != null)
                             {
@@ -247,7 +242,7 @@ namespace News.Library
             catch (Exception e)
             {
                 Log.Message($"Error tweeting: {e.Message}");
-                // throw; // throwing will stop the run, not store the update and will send out the same tweet next time again.
+                // throw; // throwing will stop the run, NOT store the update and will send out the same tweet next time again.
                 return false;
             }
         }
