@@ -156,6 +156,7 @@ namespace GitHubActionsNews
                         existingAction.Version = action.Version;
                         existingAction.Url = action.Url;
                         existingAction.Publisher = action.Publisher;
+                        existingAction.Updated = DateTime.UtcNow;
                     }
                 }
             }
