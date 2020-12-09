@@ -9,7 +9,6 @@ namespace GitHubActionsNews
     public static class Consolidate
     {
         private const string FullOverview = "Actions-Full-Overview";
-        private const string ErrorText = "Error loading version from page";
 
         public static async Task Run(Twitter twitter)
         {
@@ -38,7 +37,7 @@ namespace GitHubActionsNews
                     else if (!string.IsNullOrEmpty(action.Version) && action.Version != previousVersion.Version)
                     {
                         // only tweet when nothing went wrong with loading the version text from either the current version or the new one
-                        if (action.Version.IndexOf(ErrorText) == -1 && previousVersion.Version.IndexOf(ErrorText) == -1)
+                        if (action.Version.IndexOf(Constants.ErrorText) == -1 && previousVersion.Version.IndexOf(Constants.ErrorText) == -1)
                         {
                             // tweet changes
                             tweetText = $"GitHub Action '{action.Title}' from {action.Publisher} has been updated to version {action.Version}. {action.Url}";
@@ -47,7 +46,7 @@ namespace GitHubActionsNews
 
                     // only tweet when necessary
                     // and only when there is nothing wrong with the version
-                    if (!string.IsNullOrEmpty(tweetText) && tweetText.IndexOf(ErrorText) == -1)
+                    if (!string.IsNullOrEmpty(tweetText) && tweetText.IndexOf(Constants.ErrorText) == -1)
                     {
                         // send the tweet
                         twitter.SendTweet(tweetText, "", previousVersion == null ? null : $"Old version: [{previousVersion?.Version}]");

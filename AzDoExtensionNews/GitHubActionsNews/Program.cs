@@ -60,7 +60,7 @@ namespace GitHubActionsNews
             var driver = GetDriver();
             try 
             {
-                driver.Navigate().GoToUrl("https://github.com/marketplace/actions/c5-deploy-action");
+                driver.Navigate().GoToUrl("https://github.com/marketplace/actions/c");
                 var version = ActionPageInteraction.GetVersionFromAction(driver);
                 Log.Message($"Found version [{version}]");
             }
@@ -148,7 +148,7 @@ namespace GitHubActionsNews
                 else
                 {
                     // check version number
-                    if (existingAction.Version != action.Version)
+                    if (existingAction.Version != action.Version && action.Version.IndexOf(Constants.ErrorText) == -1)
                     {
                         Log.Message($"Found an updated action: {action.Title}: old version [{existingAction.Version}], new version [{action.Version}]");
 
