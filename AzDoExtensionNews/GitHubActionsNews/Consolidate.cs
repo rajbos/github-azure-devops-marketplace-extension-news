@@ -19,7 +19,6 @@ namespace GitHubActionsNews
 
             // download previous overview
             var allActions = await Storage.DownloadAllFilesThatStartWith<GitHubAction>(FullOverview);
-            
 
             var tweetsSend = 0;
             if (allActions?.Count > 0)
@@ -36,7 +35,7 @@ namespace GitHubActionsNews
                         // tweet new action
                         tweetText = $"A new GitHub Action has been added to the marketplace!" + Environment.NewLine + Environment.NewLine + $"Check out '{action.Title}' from {action.Publisher}. {action.Url}";
                     }
-                    else if (action.Version != previousVersion.Version)
+                    else if (!string.IsNullOrEmpty(action.Version) && action.Version != previousVersion.Version)
                     {
                         // only tweet when nothing went wrong with loading the version text from either the current version or the new one
                         if (action.Version.IndexOf(ErrorText) == -1 && previousVersion.Version.IndexOf(ErrorText) == -1)
