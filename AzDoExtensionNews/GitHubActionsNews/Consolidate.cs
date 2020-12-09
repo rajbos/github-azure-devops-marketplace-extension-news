@@ -19,6 +19,7 @@ namespace GitHubActionsNews
 
             // download previous overview
             var allActions = await Storage.DownloadAllFilesThatStartWith<GitHubAction>(FullOverview);
+            
 
             var tweetsSend = 0;
             if (allActions?.Count > 0)
@@ -26,7 +27,9 @@ namespace GitHubActionsNews
                 // check for changes
                 foreach (var action in updatedActions)
                 {
-                    var previousVersion = allActions.FirstOrDefault(item => item.Url == action.Url);
+                    var previousVersion = allActions.Where(item => item.Url == action.Url)
+                                                    .OrderByDescending(item => item.Updated)
+                                                    .FirstOrDefault();
                     var tweetText = "";
                     if (previousVersion == null)
                     {
@@ -51,12 +54,14 @@ namespace GitHubActionsNews
                         twitter.SendTweet(tweetText, "", previousVersion == null ? null : $"Old version: [{previousVersion?.Version}]");
                         tweetsSend++;
                     }
+
+                    action.Updated = DateTime.UtcNow;
                 }
 
                 Log.Message($"Send {tweetsSend} tweets out in this run");
             }
 
-            if (tweetsSend > 0 && updatedActions.Count > 0)
+            if (updatedActions.Count > 0)
             {
                 // store current set as overview
                 Storage.SaveJson<GitHubAction>(updatedActions, FullOverview);

@@ -324,9 +324,9 @@ namespace GitHubActionsNews
         {
             try
             {
-                var hydro = action.GetAttribute("data-hydro-click");
-
-                var data = JsonConvert.DeserializeObject(hydro);
+                // unfortunately, the hydro info has not enough data so we need to find the missing data points
+                //var hydro = action.GetAttribute("data-hydro-click");
+                //var data = JsonConvert.DeserializeObject(hydro);
 
                 var divWithTitle = action.FindElement(By.TagName("h3"));
                 var title = divWithTitle.Text;
@@ -365,6 +365,7 @@ namespace GitHubActionsNews
                     Title = title,
                     Publisher = publisher,
                     Version = version,
+                    Updated = DateTime.UtcNow,
                 };
             }
             catch (Exception e)
@@ -381,5 +382,6 @@ namespace GitHubActionsNews
         public string Title { get; set; }
         public string Publisher { get; set; }
         public string Version { get; set; }
+        public DateTime? Updated { get; set; }
     }
 }
