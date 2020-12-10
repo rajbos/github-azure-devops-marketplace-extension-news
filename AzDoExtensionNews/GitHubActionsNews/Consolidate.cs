@@ -40,7 +40,7 @@ namespace GitHubActionsNews
                         // tweet new action                        
                         tweetText = $"A new GitHub Action has been added to the marketplace!" + Environment.NewLine + Environment.NewLine + $"Check out '{action.Title}' from {action.Publisher}. {action.Url}";
                     }
-                    else if (!string.IsNullOrEmpty(action.Version) && action.Version != previousVersion.Version)
+                    else if (!string.IsNullOrWhiteSpace(action.Version) && action.Version != previousVersion.Version)
                     {
                         // only tweet when nothing went wrong with loading the version text from either the current version or the new one
                         if (action.Version.IndexOf(Constants.ErrorText) == -1 && previousVersion.Version.IndexOf(Constants.ErrorText) == -1)
@@ -55,7 +55,7 @@ namespace GitHubActionsNews
 
                     // only tweet when necessary
                     // and only when there is nothing wrong with the version
-                    if (!string.IsNullOrEmpty(tweetText) && tweetText.IndexOf(Constants.ErrorText) == -1)
+                    if (!string.IsNullOrWhiteSpace(tweetText) && tweetText.IndexOf(Constants.ErrorText) == -1)
                     {
                         // send the tweet
                         twitter.SendTweet(tweetText, "", previousVersion == null ? null : $"Old version: [{previousVersion?.Version}]");
