@@ -126,18 +126,24 @@ namespace News.Library
 
             Console.WriteLine("Downloading from Blob storage as blob to '{0}'", filePath);
 
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-            }
-
             // Get a reference to the blob address, then download the file from the blob.
             // Use the value of localFileName for the blob name.
             CloudBlockBlob cloudBlockBlob = CloudBlobContainer.GetBlockBlobReference(localFileName);
+            // load the attributes
+            await cloudBlockBlob.FetchAttributesAsync().ConfigureAwait(false);
 
-            // todo: check if the file is newer then the local file, else do not download!
             var cloudLastModified = cloudBlockBlob.Properties.LastModified;
-            await cloudBlockBlob.DownloadToFileAsync(filePath, FileMode.OpenOrCreate);
+
+            var lastWriteTime = File.GetLastWriteTimeUtc(filePath);
+            if (lastWriteTime < cloudLastModified)
+            {
+                // cloud file is newer, delete local file and download the newer file
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
+                await cloudBlockBlob.DownloadToFileAsync(filePath, FileMode.OpenOrCreate);
+            }
         }
 
         public static async Task<List<T>> DownloadAllFilesThatStartWith<T>(string startsWith)
@@ -154,11 +160,6 @@ namespace News.Library
                 // download them all
                 var splitted = item.StorageUri.PrimaryUri.ToString().Split('/');
                 var fileName = Path.GetFileNameWithoutExtension(splitted[splitted.Length - 1]);
-
-                if (fileName == "Actions-r")
-                {
-                    Log.Message("downloaded file to check");
-                }
 
                 // group the results
                 var itemsFromFile = ReadFromJson<T>(fileName);

@@ -25,13 +25,19 @@ namespace GitHubActionsNews
                 // check for changes
                 foreach (var action in updatedActions)
                 {
-                    var previousVersion = allActions.Where(item => item.Url == action.Url)
-                                                    .OrderByDescending(item => item.Updated)
-                                                    .FirstOrDefault();
+                    if (action.Url == "https://github.com/marketplace/actions/version-forget-me-not")
+                    {
+                        var wait = true;
+                    }
+
+                    var previousVersions = allActions.Where(item => item.Url == action.Url)
+                                                    .OrderByDescending(item => item.Updated);
+
+                    var previousVersion = previousVersions.FirstOrDefault();
                     var tweetText = "";
                     if (previousVersion == null)
                     {
-                        // tweet new action
+                        // tweet new action                        
                         tweetText = $"A new GitHub Action has been added to the marketplace!" + Environment.NewLine + Environment.NewLine + $"Check out '{action.Title}' from {action.Publisher}. {action.Url}";
                     }
                     else if (!string.IsNullOrEmpty(action.Version) && action.Version != previousVersion.Version)
@@ -39,6 +45,9 @@ namespace GitHubActionsNews
                         // only tweet when nothing went wrong with loading the version text from either the current version or the new one
                         if (action.Version.IndexOf(Constants.ErrorText) == -1 && previousVersion.Version.IndexOf(Constants.ErrorText) == -1)
                         {
+                            // update version we store into all.json 
+                            action.Version = previousVersion.Version;
+                            action.Updated = DateTime.UtcNow;
                             // tweet changes
                             tweetText = $"GitHub Action '{action.Title}' from {action.Publisher} has been updated to version {action.Version}. {action.Url}";
                         }
@@ -52,8 +61,6 @@ namespace GitHubActionsNews
                         twitter.SendTweet(tweetText, "", previousVersion == null ? null : $"Old version: [{previousVersion?.Version}]");
                         tweetsSend++;
                     }
-
-                    action.Updated = DateTime.UtcNow;
                 }
 
                 Log.Message($"Send {tweetsSend} tweets out in this run");
@@ -61,6 +68,8 @@ namespace GitHubActionsNews
 
             if (updatedActions.Count > 0)
             {
+                var test = updatedActions.Where(item => item.Url == "https://github.com/marketplace/actions/version-forget-me-not");
+
                 // store current set as overview
                 Storage.SaveJson<GitHubAction>(updatedActions, FullOverview);
             }
@@ -73,11 +82,34 @@ namespace GitHubActionsNews
 
             var allActions = await Storage.DownloadAllFilesThatStartWith<GitHubAction>("Actions");
             // de-duplicate
-            var actions = allActions.Distinct(new GitHubActionComparer());
+            //var actions = allActions.Distinct(new GitHubActionComparer());
+            var actions = OnlyLoadLatestUpdatedPerAction(allActions);
 
             Log.Message($"Download all files took {(DateTime.Now - started).TotalSeconds:N2}, we have {actions.Count()} known actions");
 
             return actions;
+        }
+
+        private static IEnumerable<GitHubAction> OnlyLoadLatestUpdatedPerAction(List<GitHubAction> allActions)
+        {
+            var latestVersions = new List<GitHubAction>();
+            foreach (var action in allActions)
+            {
+                var latest = allActions.Where(item => item.Url == action.Url)
+                                       .OrderByDescending(item => item.Updated)
+                                       .FirstOrDefault();
+
+                if (latest != null)
+                {
+                    // prevent adding it twice
+                    if (!latestVersions.Any(item => item.Url == latest.Url))
+                    {
+                        latestVersions.Add(latest);
+                    }
+                }
+            }
+
+            return latestVersions;
         }
     }
 
