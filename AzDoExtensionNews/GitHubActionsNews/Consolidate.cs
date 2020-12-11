@@ -40,14 +40,11 @@ namespace GitHubActionsNews
                         // tweet new action                        
                         tweetText = $"A new GitHub Action has been added to the marketplace!" + Environment.NewLine + Environment.NewLine + $"Check out '{action.Title}' from {action.Publisher}. {action.Url}";
                     }
-                    else if (!string.IsNullOrWhiteSpace(action.Version) && action.Version != previousVersion.Version)
+                    else if (!string.IsNullOrWhiteSpace(action.Version) && !action.Version.Equals(previousVersion.Version, StringComparison.InvariantCultureIgnoreCase))
                     {
                         // only tweet when nothing went wrong with loading the version text from either the current version or the new one
-                        if (action.Version.IndexOf(Constants.ErrorText) == -1 && previousVersion.Version.IndexOf(Constants.ErrorText) == -1)
+                        if (action.Version.IndexOf(Constants.ErrorText) == -1 && (previousVersion.Version == null || previousVersion.Version.IndexOf(Constants.ErrorText) == -1))
                         {
-                            // update version we store into all.json 
-                            action.Version = previousVersion.Version;
-                            action.Updated = DateTime.UtcNow;
                             // tweet changes
                             tweetText = $"GitHub Action '{action.Title}' from {action.Publisher} has been updated to version {action.Version}. {action.Url}";
                         }
@@ -92,6 +89,7 @@ namespace GitHubActionsNews
 
         private static IEnumerable<GitHubAction> OnlyLoadLatestUpdatedPerAction(List<GitHubAction> allActions)
         {
+            Log.Message("De-duplicating the consolidated actions list");
             var latestVersions = new List<GitHubAction>();
             foreach (var action in allActions)
             {
@@ -110,23 +108,6 @@ namespace GitHubActionsNews
             }
 
             return latestVersions;
-        }
-    }
-
-    internal class GitHubActionComparer : IEqualityComparer<GitHubAction>
-    {
-        public bool Equals(GitHubAction x, GitHubAction y)
-        {
-            return
-                string.Equals(x.Title, y.Title, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(x.Publisher, y.Publisher, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(x.Url, y.Url, StringComparison.OrdinalIgnoreCase)
-                ;
-        }
-
-        public int GetHashCode(GitHubAction obj)
-        {
-            return obj.Title.GetHashCode();
         }
     }
 }
