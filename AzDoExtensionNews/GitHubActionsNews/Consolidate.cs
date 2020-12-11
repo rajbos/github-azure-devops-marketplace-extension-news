@@ -82,7 +82,7 @@ namespace GitHubActionsNews
             //var actions = allActions.Distinct(new GitHubActionComparer());
             var actions = OnlyLoadLatestUpdatedPerAction(allActions);
 
-            Log.Message($"Download all files took {(DateTime.Now - started).TotalSeconds:N2}, we have {actions.Count()} known actions");
+            Log.Message($"Download all files took {(DateTime.Now - started).TotalSeconds:N2}s, we have {actions.Count()} known actions");
 
             return actions;
         }
