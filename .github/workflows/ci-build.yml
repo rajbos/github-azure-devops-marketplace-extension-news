@@ -16,34 +16,34 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/cache@v3
       with:
-        path: ${{ github.workspace }}/.nuget/packages
-        key: ${{ runner.os }}-${{ hashFiles('**/**.csproj') }}
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-${{ hashFiles('**/**.csproj') }}-1
 
     # build it:
-    - name: restore
+    - name: Restore
       run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln
 
-    - name: build
+    - name: Build
       run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release
 
-    - name: test
+    - name: Test
       run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
 
     # publish the AzDo news:
-    - name: publish AzDo News
+    - name: Publish AzDo News
       run: dotnet publish AzDoExtensionNews/AzDoExtensionNews/AzDoExtensionNews.csproj -c Release -o publish/AzDo/
 
-    - name: publish AzDo Artifact
+    - name: Publish AzDo Artifact
       uses: actions/upload-artifact@v2
       with:
         path: publish/AzDo
         name: AzDoNews
 
     # also publish GitHub news:
-    - name: publish GitHub News
+    - name: Publish GitHub News
       run: dotnet publish AzDoExtensionNews/GitHubActionsNews/GitHubActionsNews.csproj -c Release -o publish/GitHub/
 
-    - name: publish GitHub Artifact
+    - name: Publish GitHub Artifact
       uses: actions/upload-artifact@v2
       with:
         path: publish/GitHub
