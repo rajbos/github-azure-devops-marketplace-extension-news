@@ -4,6 +4,9 @@ on:
   push:
     paths:
     - /AzDoExtensionNews/*
+    - /.github/workflows/ci-build.yml
+    
+  workflow_dispatch:
 
 jobs:
   build:
