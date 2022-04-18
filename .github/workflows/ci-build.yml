@@ -13,7 +13,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln
-    - run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release
-    - run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
-    - run: dotnet publish AzDoExtensionNews/AzDoExtensionNews.sln -c Release
+    - name: restore
+      run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln
+
+    - name: build
+      run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release
+
+    - name: test
+      run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
+
+    # publish the AzDo news:
+    - name: publish AzDo News
+      run: dotnet publish AzDoExtensionNews/AzDoExtensionNews/AzDoExtensionNews.csproj -c Release -o publish/AzDo/
+
+    - name: publish AzDo Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        path: publish/AzDo
+        name: AzDoNews
+
+    # also publish GitHub news:
+    - name: publish GitHub News
+      run: dotnet publish AzDoExtensionNews/GitHubActionsNews/GitHubActionsNews.csproj -c Release -o publish/GitHub/
+
+    - name: publish GitHub Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        path: publish/GitHub
+        name: GitHubNews
