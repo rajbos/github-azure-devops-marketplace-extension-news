@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - run: dotnet restore /AzDoExtensionNews/AzDoExtensionNews.sln
-    - run: dotnet build /AzDoExtensionNews/AzDoExtensionNews.sln -c Release
-    - run: dotnet test /AzDoExtensionNews/AzDoExtensionNews.sln
-    - run: dotnet publish /AzDoExtensionNews/AzDoExtensionNews.sln -c Release
+    - run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln
+    - run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release
+    - run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
+    - run: dotnet publish AzDoExtensionNews/AzDoExtensionNews.sln -c Release
