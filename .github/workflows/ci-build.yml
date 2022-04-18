@@ -17,7 +17,7 @@ jobs:
     - uses: actions/cache@v3
       with:
         path: ${{ github.workspace }}/.nuget/packages
-        key: ${{ runner.os }}-${{ hashFiles('**/csproj') }}
+        key: ${{ runner.os }}-${{ hashFiles('**/**.csproj') }}
 
     # build it:
     - name: restore
