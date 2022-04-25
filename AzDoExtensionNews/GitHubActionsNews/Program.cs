@@ -4,6 +4,7 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
+using SeleniumExtras.WaitHelpers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -205,6 +206,9 @@ namespace GitHubActionsNews
         private static ChromeDriver GetDriver()
         {
             var chromeOptions = new ChromeOptions();
+            chromeOptions.AddArgument("no-sandbox");
+            var path = Environment.GetEnvironmentVariable("ChromeWebDriver");
+            Console.WriteLine($"Found ChromeWebDriver path at {path}");
             if (!Debugger.IsAttached)
             {
                 chromeOptions.AddArguments("headless");
