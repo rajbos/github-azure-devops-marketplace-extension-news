@@ -8,6 +8,18 @@ namespace GitHubActionsNews
 {
     public static class ActionPageInteraction
     {
+        public static string GetRepoFromAction(IWebDriver driver) 
+        {
+            // find the div that has Links in the title
+            var linkDiv = driver.FindElement(By.XPath("//*[contains(text(),'Links')]"));
+            var linkDivParent = linkDiv.FindElement(By.XPath("./..")); // find parent element
+            Console.WriteLine($"{linkDivParent.Text}");
+            // find first link in this div
+            var links = linkDivParent.FindElements(By.TagName("a"));
+            var link = links[0];
+            return link.Text;
+        }
+
         public static string GetVersionFromAction(IWebDriver driver)
         {
             IWebElement divWithTitle;

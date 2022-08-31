@@ -4,6 +4,7 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
+using SeleniumExtras.WaitHelpers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -60,9 +61,10 @@ namespace GitHubActionsNews
             var driver = GetDriver();
             try 
             {
-                driver.Navigate().GoToUrl("https://github.com/marketplace/actions/c");
+                driver.Navigate().GoToUrl("https://github.com/marketplace/actions/setup-c-c-compiler");
                 var version = ActionPageInteraction.GetVersionFromAction(driver);
-                Log.Message($"Found version [{version}]");
+                var url = ActionPageInteraction.GetRepoFromAction(driver);
+                Log.Message($"Found version [{version}] and url [${url}]");
             }
             finally
             {
@@ -157,6 +159,12 @@ namespace GitHubActionsNews
                         existingAction.Url = action.Url;
                         existingAction.Publisher = action.Publisher;
                         existingAction.Updated = DateTime.UtcNow;
+                        existingAction.RepoUrl = action.RepoUrl;
+                    }
+                    else
+                    {
+                        // always update the repo url since that is empty
+                        existingAction.RepoUrl = action.RepoUrl;
                     }
                 }
             }
@@ -234,7 +242,7 @@ namespace GitHubActionsNews
                     {
                         actionList.Add(ghAction);
 
-                        sb.AppendLine($"\tFound action:{ghAction.Url}, {ghAction.Title}, {ghAction.Publisher}, {ghAction.Version}");
+                        sb.AppendLine($"\tFound action:{ghAction.Url}, {ghAction.Title}, {ghAction.Publisher}, {ghAction.Version}, {ghAction.RepoUrl}");
                     }
                 }
 
@@ -344,10 +352,12 @@ namespace GitHubActionsNews
                 var newTab = driver.WindowHandles.Last();
                 driver.SwitchTo().Window(newTab);
                 var version = "";
+                var actionRepoUrl = "";
                 // act
                 try
                 {
                     version = ActionPageInteraction.GetVersionFromAction(driver);
+                    actionRepoUrl = ActionPageInteraction.GetRepoFromAction(driver);
                 }
                 catch (Exception e)
                 {
@@ -367,6 +377,7 @@ namespace GitHubActionsNews
                     Publisher = publisher,
                     Version = version,
                     Updated = DateTime.UtcNow,
+                    RepoUrl = actionRepoUrl,
                 };
             }
             catch (Exception e)
@@ -384,5 +395,6 @@ namespace GitHubActionsNews
         public string Publisher { get; set; }
         public string Version { get; set; }
         public DateTime? Updated { get; set; }
+        public string RepoUrl { get; set; }
     }
 }
