@@ -377,6 +377,10 @@ namespace GitHubActionsNews
                         Log.Message($"Error loading version for action with url [{url}]: {e.Message}, Page title:{driver.Title}");
                     }
                 }
+                else
+                {
+                    Log.Message($"Action detail page 404's with url [{url}], Page title:{driver.Title}");
+                }
 
                 // closing the current window and go back to the original tab
                 driver.Close();
