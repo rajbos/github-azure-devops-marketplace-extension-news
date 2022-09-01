@@ -3,23 +3,45 @@ using OpenQA.Selenium;
 using System;
 using System.Diagnostics;
 using System.Text;
+using System.Linq;
 
 namespace GitHubActionsNews
 {
     public static class ActionPageInteraction
     {
-        public static string GetRepoFromAction(IWebDriver driver) 
+        public static string GetRepoFromAction(IWebDriver driver)
         {
+            var links = driver.FindElements(By.TagName("a"));
+            foreach (var link in links)
+            {
+                //Console.WriteLine(link.Text);
+            }
+
+            var foundIssueLink = links.FirstOrDefault(a => a.Text.StartsWith("Report abuse"));
+
+            if (foundIssueLink == null)
+            {
+                return null;
+            }
+
             // find the div that has Links in the title
-            var linkDiv = driver.FindElement(By.XPath("//*[contains(text(),'Links')]"));
+            //var linkDiv = driver.FindElement(By.XPath("//*[contains(text(),'Open issues')]"));
+            var linkDiv = foundIssueLink;
+
             var linkDivParent = linkDiv.FindElement(By.XPath("./..")); // find parent element
             Console.WriteLine($"{linkDivParent.Text}");
             // find first link in this div
-            var links = linkDivParent.FindElements(By.TagName("a"));
-            var link = links[0];
-            return link.Text;
+             links = linkDivParent.FindElements(By.TagName("a"));
+            if (links.Count > 0)
+            {
+                var link = links[0];
+                return link.Text;
+            }
+            else
+            {
+                return "";
+            }
         }
-
         public static string GetVersionFromAction(IWebDriver driver)
         {
             IWebElement divWithTitle;

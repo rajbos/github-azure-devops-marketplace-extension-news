@@ -61,7 +61,7 @@ namespace GitHubActionsNews
             var driver = GetDriver();
             try 
             {
-                driver.Navigate().GoToUrl("https://github.com/marketplace/actions/setup-c-c-compiler");
+                driver.Navigate().GoToUrl("https://github.com/marketplace/actions/glo-parse-card-links");
                 var version = ActionPageInteraction.GetVersionFromAction(driver);
                 var url = ActionPageInteraction.GetRepoFromAction(driver);
                 Log.Message($"Found version [{version}] and url [${url}]");
@@ -353,15 +353,29 @@ namespace GitHubActionsNews
                 driver.SwitchTo().Window(newTab);
                 var version = "";
                 var actionRepoUrl = "";
-                // act
-                try
+
+                if (!driver.Title.StartsWith("Page not found"))
                 {
-                    version = ActionPageInteraction.GetVersionFromAction(driver);
-                    actionRepoUrl = ActionPageInteraction.GetRepoFromAction(driver);
-                }
-                catch (Exception e)
-                {
-                    Log.Message($"Error loading version for action with url [{url}]: {e.Message}");
+                    // act
+                    try
+                    {
+                        version = ActionPageInteraction.GetVersionFromAction(driver);
+
+                        try
+                        {
+                            actionRepoUrl = ActionPageInteraction.GetRepoFromAction(driver);
+                            if (string.IsNullOrEmpty(actionRepoUrl))
+                                throw new Exception("Did not find action repo url");
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Message($"Error loading action repo url for action with url [{url}]: {e.Message}, Page title:{driver.Title}");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Message($"Error loading version for action with url [{url}]: {e.Message}, Page title:{driver.Title}");
+                    }
                 }
 
                 // closing the current window and go back to the original tab
