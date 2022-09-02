@@ -29,7 +29,7 @@ namespace GitHubActionsNews
             var linkDiv = foundIssueLink;
 
             var linkDivParent = linkDiv.FindElement(By.XPath("./..")); // find parent element
-            Console.WriteLine($"{linkDivParent.Text}");
+            //Console.WriteLine($"{linkDivParent.Text}");
             // find first link in this div
              links = linkDivParent.FindElements(By.TagName("a"));
             if (links.Count > 0)
