@@ -238,6 +238,7 @@ namespace GitHubActionsNews
                 foreach (var action in actionTags)
                 {
                     var ghAction = ParseAction(action, driver);
+                    Thread.Sleep(2000); // try to cut down on ratelimit messages
                     if (ghAction != null)
                     {
                         actionList.Add(ghAction);
@@ -360,6 +361,7 @@ namespace GitHubActionsNews
                     try
                     {
                         version = ActionPageInteraction.GetVersionFromAction(driver);
+                        Log.Message($"Found version [${version}] for url [${url}]");
 
                         try
                         {
