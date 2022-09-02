@@ -354,6 +354,7 @@ namespace GitHubActionsNews
                 driver.SwitchTo().Window(newTab);
                 var version = "";
                 var actionRepoUrl = "";
+                Thread.Sleep(2000);
 
                 if (!driver.Title.StartsWith("Page not found"))
                 {
@@ -361,7 +362,7 @@ namespace GitHubActionsNews
                     try
                     {
                         version = ActionPageInteraction.GetVersionFromAction(driver);
-                        Log.Message($"Found version [${version}] for url [${url}]");
+                        Log.Message($"Found version [{version}] for url [{url}]");
 
                         try
                         {
@@ -371,8 +372,11 @@ namespace GitHubActionsNews
                         }
                         catch (Exception e)
                         {
-                            Log.Message($"Error loading action repo url for action with url [{url}]: {e.Message}, Page title:{driver.Title}");
+                            Log.Message($"Error loading action repo url for action with url [{url}]: {e.Message}, Page title:{driver.Title}, the version we got is: [{version}]");
+                            var source = driver.PageSource.ToString();
+                            Console.WriteLine(source);
                         }
+
                     }
                     catch (Exception e)
                     {
