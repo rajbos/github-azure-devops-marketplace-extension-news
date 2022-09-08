@@ -31,7 +31,7 @@ namespace GitHubActionsNews
                     }
 
                     var previousVersions = allActions.Where(item => item.Url == action.Url)
-                                                    .OrderByDescending(item => item.Updated);
+                                                     .OrderByDescending(item => item.Updated);
 
                     var previousVersion = previousVersions.FirstOrDefault();
                     var tweetText = "";
@@ -89,11 +89,11 @@ namespace GitHubActionsNews
 
         private static IEnumerable<GitHubAction> OnlyLoadLatestUpdatedPerAction(List<GitHubAction> allActions)
         {
-            Log.Message("De-duplicating the consolidated actions list");
+            Log.Message($"De-duplicating the consolidated actions list, starting with [{allActions.Count()}]");
             var latestVersions = new List<GitHubAction>();
             foreach (var action in allActions)
             {
-                var latest = allActions.Where(item => item.Url == action.Url)
+                var latest = latestVersions.Where(item => item.Url == action.Url)
                                        .OrderByDescending(item => item.Updated)
                                        .FirstOrDefault();
 
@@ -107,6 +107,7 @@ namespace GitHubActionsNews
                 }
             }
 
+            Log.Message($"End of de-dupe we have [{latestVersions.Count()}] actions")
             return latestVersions;
         }
     }
