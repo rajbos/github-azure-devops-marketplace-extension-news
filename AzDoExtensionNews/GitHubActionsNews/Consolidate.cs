@@ -107,7 +107,7 @@ namespace GitHubActionsNews
                 }
             }
 
-            Log.Message($"End of de-dupe we have [{latestVersions.Count()}] actions")
+            Log.Message($"End of de-dupe we have [{latestVersions.Count()}] actions");
             return latestVersions;
         }
     }
