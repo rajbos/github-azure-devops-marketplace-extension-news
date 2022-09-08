@@ -77,7 +77,7 @@ namespace GitHubActionsNews
 
                 if (Debugger.IsAttached)
                 {
-                    Log.Message(sb.ToString());
+                    //Log.Message(sb.ToString());
                 }
 
                 return allChildElements[2].Text;

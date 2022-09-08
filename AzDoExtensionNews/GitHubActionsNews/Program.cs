@@ -163,7 +163,7 @@ namespace GitHubActionsNews
                     }
                     else
                     {
-                        // always update the repo url since that is empty
+                        // always update the repo url since that is empty in older runs
                         existingAction.RepoUrl = action.RepoUrl;
                     }
                 }
@@ -193,8 +193,9 @@ namespace GitHubActionsNews
                 driver.Url = searchUrl;
                 var sb = new StringBuilder();
                 var actionList = ScrapePage(driver, 1, sb);
+                var emptyRepoUrl = actionList.Where(x => String.IsNullOrEmpty(x.RepoUrl)).Count();
 
-                Log.Message($"Found {actionList.Count} actions for search url [{searchUrl}] in {(DateTime.Now - started).TotalMinutes:N2} minutes");
+                Log.Message($"Found {actionList.Count} actions for search url [{searchUrl}] in {(DateTime.Now - started).TotalMinutes:N2} minutes, with [{emptyRepoUrl}] not filled repo urls");
                 return actionList;
             }
             catch (Exception e)
@@ -213,7 +214,7 @@ namespace GitHubActionsNews
         private static ChromeDriver GetDriver()
         {
             var chromeOptions = new ChromeOptions();
-            if (!Debugger.IsAttached)
+            //if (!Debugger.IsAttached)
             {
                 chromeOptions.AddArguments("headless");
             }
@@ -234,7 +235,6 @@ namespace GitHubActionsNews
 
                 Log.Message($"Page {pageNumber}: Found {actionTags.Count} actions, current url: {driver.Url}", logger);
 
-                var sb = new StringBuilder();
                 foreach (var action in actionTags)
                 {
                     var ghAction = ParseAction(action, driver);
@@ -243,7 +243,7 @@ namespace GitHubActionsNews
                     {
                         actionList.Add(ghAction);
 
-                        sb.AppendLine($"\tFound action:{ghAction.Url}, {ghAction.Title}, {ghAction.Publisher}, {ghAction.Version}, {ghAction.RepoUrl}");
+                        logger.AppendLine($"\tFound action:{ghAction.Url}, {ghAction.Title}, {ghAction.Publisher}, {ghAction.Version}, {ghAction.RepoUrl}");
                     }
                 }
 
@@ -355,6 +355,10 @@ namespace GitHubActionsNews
                 var version = "";
                 var actionRepoUrl = "";
                 Thread.Sleep(2000);
+                if (driver.Title.StartsWith("about:blank")) 
+                {
+                    Thread.Sleep(2000); // we need more time for the page to load
+                }
 
                 if (!driver.Title.StartsWith("Page not found"))
                 {
@@ -369,6 +373,8 @@ namespace GitHubActionsNews
                             actionRepoUrl = ActionPageInteraction.GetRepoFromAction(driver);
                             if (string.IsNullOrEmpty(actionRepoUrl))
                                 throw new Exception("Did not find action repo url");
+                            else
+                                Log.Message($"Found repoUrl [{actionRepoUrl}] for url [{url}]");
                         }
                         catch (Exception e)
                         {

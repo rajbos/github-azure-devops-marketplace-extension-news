@@ -32,6 +32,7 @@ namespace News.Library
         private static void WriteDataToFile(string text, string fileName)
         {
             System.IO.File.WriteAllText(GetFilePath(fileName), text);
+            Log.Message($"Wrote all data to file [{fileName}]");
         }
 
         public static List<T> ReadFromJson<T>(string fileName, string message = "extensions")
@@ -64,9 +65,11 @@ namespace News.Library
         private static void RenameOldFile(string fileName)
         {
             var fullFileName = $"{fileName}.json";
+            var newFileName = $"{GetFileNameTimeStampPrefix()}_{fullFileName}";
+            Log.Message($"Renaming file [{fileName}] to [{newFileName}]");
             if (File.Exists(fullFileName))
             {
-               File.Move(fullFileName, $"{GetFileNameTimeStampPrefix()}_{fullFileName}");
+               File.Move(fullFileName, newFileName);
             }
         }
 
