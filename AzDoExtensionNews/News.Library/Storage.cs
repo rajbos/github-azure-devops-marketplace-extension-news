@@ -22,7 +22,8 @@ namespace News.Library
         {
             // rename the old file
             RenameOldFile(fileName);
-
+            
+            Log.Message($"Storing [{extensions.Count}] extensions to [{fileName}]");
             var text = JsonConvert.SerializeObject(extensions, Formatting.Indented);
             WriteDataToFile(text, fileName);
 
@@ -56,6 +57,7 @@ namespace News.Library
 
         private static string ReadDataFromFile(string fileName)
         {
+            Log.Message($"Reading data from file [{fileName}]");
             var filePath = GetFilePath(fileName);
             DownloadFileAsync(filePath).GetAwaiter().GetResult();
             var text = File.ReadAllText(filePath);

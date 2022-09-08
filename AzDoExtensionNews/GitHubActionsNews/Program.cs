@@ -141,7 +141,13 @@ namespace GitHubActionsNews
             // tweet about updates and new actions:
             foreach (var action in actions)
             {
-                var existingAction = existingActions.FirstOrDefault(item => item.Title == action.Title);
+                var allActionsWithThisTitle = existingActions
+                                        .Where(item => item.Title == action.Title);
+
+                var existingAction = allActionsWithThisTitle
+                                        .OrderByDescending(item => item.Updated)
+                                        .LastOrDefault();
+
                 if (existingAction == null)
                 {
                     Log.Message($"Found a new action: {action.Title}");
@@ -149,6 +155,23 @@ namespace GitHubActionsNews
                 }
                 else
                 {
+                    // remove any other action from the list that has the same title
+                    if (allActionsWithThisTitle.Count() > 1)
+                    {
+                        var list = allActionsWithThisTitle.ToList();
+                        for (var i = 0; i < list.Count(); i++)
+                        {
+                            var current = list[i];
+                            if (current.Title == existingAction.Title && current.Updated != existingAction.Updated)
+                            {
+                                // delete this one from the list
+                                Log.Message($"Removing duplicate entry for [{current.Title}] and [{current.Updated}]");
+                                var toRemove = existingActions.First(item => item.Title == current.Title && item.Updated == current.Updated);
+                                existingActions.Remove(toRemove);
+                            }
+                        }
+                    }
+
                     // check version number
                     if (existingAction.Version != action.Version && action.Version.IndexOf(Constants.ErrorText) == -1)
                     {
@@ -164,6 +187,7 @@ namespace GitHubActionsNews
                     else
                     {
                         // always update the repo url since that is empty in older runs
+                        Log.Message($"No further changes, but updating the repoUrl for [{existingAction.Url}] to [{existingAction.RepoUrl}]");
                         existingAction.RepoUrl = action.RepoUrl;
                     }
                 }
