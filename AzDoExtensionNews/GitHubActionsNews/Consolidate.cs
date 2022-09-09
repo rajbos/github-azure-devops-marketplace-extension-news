@@ -97,7 +97,7 @@ namespace GitHubActionsNews
                                        .OrderByDescending(item => item.Updated)
                                        .FirstOrDefault();
 
-                if (latest != null)
+                if (latest == null)
                 {
                     // prevent adding it twice
                     if (!latestVersions.Any(item => item.Url == latest.Url))
