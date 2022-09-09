@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace News.Library
 {
@@ -44,7 +45,16 @@ namespace News.Library
                 string text = ReadDataFromFile(fileName);
 
                 extensions = JsonConvert.DeserializeObject<List<T>>(text);
-                Log.Message($"Found {extensions.Count} previously known {message}");
+                if (typeof(T) == typeof(GitHubAction))
+                {
+                    var actions = extensions as List<GitHubAction>;
+                    var nonEmpty = actions.Where(item => !String.IsNullOrEmpty(item.RepoUrl)).Count();
+                    Log.Message($"Found {extensions.Count} previously known {message} with [{nonEmpty}] filled repo urls");
+                }
+                else
+                {
+                    Log.Message($"Found {extensions.Count} previously known {message}");
+                }
             }
             catch (Exception e)
             {
@@ -166,10 +176,16 @@ namespace News.Library
                 var splitted = item.StorageUri.PrimaryUri.ToString().Split('/');
                 var fileName = Path.GetFileNameWithoutExtension(splitted[splitted.Length - 1]);
 
+                // prevent the full overview file from being downloaded
+                if (list.Count() == 1 && fileName.EndsWith("-Full-Overview.Json"))
+                {
+                    continue;
+                }
+             
                 // group the results
-                var itemsFromFile = ReadFromJson<T>(fileName);
+                var itemsFromFile = ReadFromJson<T>(fileName, $"extensions with [{startsWith}]");
 
-                allItems.AddRange(itemsFromFile);                
+                allItems.AddRange(itemsFromFile);
             }
 
             return allItems;

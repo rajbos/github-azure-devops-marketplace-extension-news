@@ -193,7 +193,8 @@ namespace GitHubActionsNews
                 }
             }
 
-            Log.Message($"Found [{existingActions.Count}] unique actions");
+            var count = existingActions.Where(item => !String.IsNullOrEmpty(item.RepoUrl)).Count();
+            Log.Message($"Found [{existingActions.Count}] unique actions with [{count}] repo urls");
             // store the new information:
             Storage.SaveJson(existingActions, storeFileName);
 
@@ -440,15 +441,5 @@ namespace GitHubActionsNews
                 return null;
             }
         }
-    }
-
-    public class GitHubAction
-    {
-        public string Url { get; set; }
-        public string Title { get; set; }
-        public string Publisher { get; set; }
-        public string Version { get; set; }
-        public DateTime? Updated { get; set; }
-        public string RepoUrl { get; set; }
     }
 }

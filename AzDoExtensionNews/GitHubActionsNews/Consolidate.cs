@@ -82,32 +82,44 @@ namespace GitHubActionsNews
             //var actions = allActions.Distinct(new GitHubActionComparer());
             var actions = OnlyLoadLatestUpdatedPerAction(allActions);
 
-            Log.Message($"Download all files took {(DateTime.Now - started).TotalSeconds:N2}s, we have {actions.Count()} known actions");
+            var count = actions.Where(item => !String.IsNullOrEmpty(item.RepoUrl)).Count();
+            Log.Message($"Download all files took {(DateTime.Now - started).TotalSeconds:N2}s, we have {actions.Count()} known actions with [{count}] filled repo urls");
 
             return actions;
         }
 
         private static IEnumerable<GitHubAction> OnlyLoadLatestUpdatedPerAction(List<GitHubAction> allActions)
         {
-            Log.Message($"De-duplicating the consolidated actions list, starting with [{allActions.Count()}]");
+            var notEmpty = allActions.Where(item => !String.IsNullOrEmpty(item.RepoUrl)).Count();
+            Log.Message($"De-duplicating the consolidated actions list, starting with [{allActions.Count()}] with [{notEmpty}] filled repo urls");
             var latestVersions = new List<GitHubAction>();
+            // order the incoming dataset to get the most recent and filled ones on top
+            allActions = allActions.OrderByDescending(item => item.Updated)
+                                   .OrderByDescending(item => String.IsNullOrEmpty(item.RepoUrl) ? "" : item.RepoUrl)
+                                   .ToList();
+
             foreach (var action in allActions)
             {
-                var latest = latestVersions.Where(item => item.Url == action.Url)
+                GitHubAction latest = null;
+                if (latestVersions.Any())
+                {
+                    var latest2 = latestVersions.Where(item => item.Url == action.Url)
                                        .OrderByDescending(item => item.Updated)
-                                       .FirstOrDefault();
+                                       .OrderByDescending(item => String.IsNullOrEmpty(item.RepoUrl) ? "" : item.RepoUrl);
 
+                    latest = latest2
+                                       .FirstOrDefault();
+                }
+
+                // prevent adding it twice
                 if (latest == null)
                 {
-                    // prevent adding it twice
-                    if (!latestVersions.Any(item => item.Url == latest.Url))
-                    {
-                        latestVersions.Add(latest);
-                    }
+                   latestVersions.Add(action);
                 }
             }
-
-            Log.Message($"End of de-dupe we have [{latestVersions.Count()}] actions");
+            notEmpty = latestVersions.Where(item => !String.IsNullOrEmpty(item.RepoUrl)).Count();
+            Log.Message($"End of de-dupe we have [{latestVersions.Count()}] actions with [{notEmpty}] filled repo urls");
+            
             return latestVersions;
         }
     }

@@ -30,6 +30,9 @@ namespace News.Library
 
         private static string _BlobStorageConnectionString;
 
+        /// <summary>
+        /// Must be a connection string, not a SAS token!
+        /// </summary>
         public static string BlobStorageConnectionString
         {
             get
