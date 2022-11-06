@@ -43,73 +43,142 @@ jobs:
         path: publish/AzDo
         name: ${{ env.ArtifactName }}
 
-  ConsolidateTweet:
+  CharacterSet1:
     runs-on: ubuntu-latest
     needs: build
 
     steps:
-      - name: Run Character Command 1
+      - name: Run Character Command
         uses: "./.github/templates/character-to-run"
         with:
           characters: ${{ env.CharacterSet1 }}
           artifactName: ${{ env.ArtifactName }}
 
-      - name: Run Character Command 2
+  CharacterSet2:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Run Character Command
         uses: "./.github/templates/character-to-run"
         with:
           characters: ${{ env.CharacterSet2 }}
           artifactName: ${{ env.ArtifactName }}
 
-      - name: Run Character Command 3
+  CharacterSet3:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Run Character Command
         uses: "./.github/templates/character-to-run"
         with:
           characters: ${{ env.CharacterSet3 }}
           artifactName: ${{ env.ArtifactName }}
 
-      - name: Run Character Command 4
+  CharacterSet4:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Run Character Command
         uses: "./.github/templates/character-to-run"
         with:
           characters: ${{ env.CharacterSet4 }}
           artifactName: ${{ env.ArtifactName }}
 
-      - name: Run Character Command 5
+  CharacterSet5:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Run Character Command
         uses: "./.github/templates/character-to-run"
         with:
           characters: ${{ env.CharacterSet5 }}
           artifactName: ${{ env.ArtifactName }}
 
-      - name: Run Character Command 6
+  CharacterSet6:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Run Character Command
         uses: "./.github/templates/character-to-run"
         with:
           characters: ${{ env.CharacterSet6 }}
           artifactName: ${{ env.ArtifactName }}
 
-      - name: Run Character Command 7
+  CharacterSet7:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Run Character Command
         uses: "./.github/templates/character-to-run"
         with:
           characters: ${{ env.CharacterSet7 }}
           artifactName: ${{ env.ArtifactName }}
 
-      - name: Run Character Command 8
+  CharacterSet8:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Run Character Command
         uses: "./.github/templates/character-to-run"
         with:
           characters: ${{ env.CharacterSet8 }}
           artifactName: ${{ env.ArtifactName }}
 
-      - name: Run Character Command 9
+  CharacterSet9:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Run Character Command
         uses: "./.github/templates/character-to-run"
         with:
           characters: ${{ env.CharacterSet9 }}
           artifactName: ${{ env.ArtifactName }}
 
-      - name: Run Character Command 10
+  CharacterSet10:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Run Character Command
         uses: "./.github/templates/character-to-run"
         with:
           characters: ${{ env.CharacterSet10 }}
           artifactName: ${{ env.ArtifactName }}
 
-      - name: Perform a Pester test from the command-line
-        shell: pwsh 
-        run: |
-          cd "${{steps.download.outputs.download-path}}/drop/GH/"      
-          dotnet .\GitHubActionsNews.dll "consolidate"
+  ConsolidateTweet:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ env.ArtifactName }}
+
+      - name: 'Echo download path'
+        run: echo ${{steps.download.outputs.download-path}}
+
+    #   - name: App Settings Variable Substitution
+    #     uses: microsoft/variable-substitution@v1
+    #     with:
+    #       files: '${{steps.download.outputs.download-path}}/drop/GH/appsettings.json/appsettings.json'
+    #     env:
+    #       TwitterConsumerAPIKey: ${{ secrets.TwitterConsumerAPIKey }}
+    #       TwitterConsumerAPISecretKey: ${{ secrets.TwitterConsumerAPISecretKey }}
+    #       TwitterAccessToken: ${{ secrets.TwitterAccessToken }}
+    #       TwitterAccessTokenSecret: ${{ secrets.TwitterAccessTokenSecret }}
+    #       BlobStorageConnectionString: ${{ secrets.BlobStorageConnectionString }}
+
+      # - name: Perform a Pester test from the command-line
+      #   shell: pwsh
+      #   run: |
+      #     cd "${{steps.download.outputs.download-path}}/drop/GH/"
+      #     dotnet .\GitHubActionsNews.dll "consolidate"
+
+
