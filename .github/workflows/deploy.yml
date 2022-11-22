@@ -53,7 +53,7 @@ jobs:
 
     steps:
       - name: Run Character Command
-        uses: "./.github/templates/character-to-run"
+        uses: "./.github/workflows/templates/character-to-run/action.yml"
         with:
           characters: ${{ env.CharacterSet1 }}
           artifactName: ${{ env.ArtifactName }}
