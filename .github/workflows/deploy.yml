@@ -21,6 +21,7 @@ on:
   push:
    paths:
    - .github/workflows/deploy.yml
+   - .github/workflows/templates/*
 
 jobs:
   build:
