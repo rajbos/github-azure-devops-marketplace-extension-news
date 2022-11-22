@@ -1,4 +1,4 @@
-name: Tweet Scehduled Build and Deploy
+name: Tweet Scheduled Build and Deploy
 
 env:
   ArtifactName: 'AzDoNews'
@@ -52,8 +52,10 @@ jobs:
     needs: build
 
     steps:
+      - uses: actions/checkout@v3
+
       - name: Run Character Command
-        uses: "./.github/workflows/templates/character-to-run/action.yml"
+        uses: "./.github/workflows/templates/action.yml"
         with:
           characters: ${{ env.CharacterSet1 }}
           artifactName: ${{ env.ArtifactName }}
