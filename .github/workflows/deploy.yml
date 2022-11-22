@@ -17,6 +17,10 @@ on:
   schedule:
     - cron: "* */4 * * *"
   workflow_dispatch:
+  
+  push:
+   paths:
+   - .github/workflows/deploy.yml
 
 jobs:
   build:
