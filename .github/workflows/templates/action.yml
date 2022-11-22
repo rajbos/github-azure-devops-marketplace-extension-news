@@ -18,6 +18,7 @@ runs:
         name: ${{ inputs.artifactName }}
 
     - name: 'Echo download path'
+      shell: bash
       run: echo ${{steps.download.outputs.download-path}}
 
     #   - name: App Settings Variable Substitution
