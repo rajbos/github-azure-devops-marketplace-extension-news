@@ -10,14 +10,14 @@ inputs:
 runs:
   using: "composite"
   # Defining the action steps(Just one step to be simple)
-steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v3
-        with:
-          name: ${{ inputs.artifactName }}
+  steps:
+    - name: Download artifact from build job
+      uses: actions/download-artifact@v3
+      with:
+        name: ${{ inputs.artifactName }}
 
-      - name: 'Echo download path'
-        run: echo ${{steps.download.outputs.download-path}}
+    - name: 'Echo download path'
+      run: echo ${{steps.download.outputs.download-path}}
 
     #   - name: App Settings Variable Substitution
     #     uses: microsoft/variable-substitution@v1
