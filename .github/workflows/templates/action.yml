@@ -1,4 +1,5 @@
-name: character to run
+name: 'character to run'
+description: 'a description'
 
 # Were we can define the inputs that our action will accept
 inputs:
