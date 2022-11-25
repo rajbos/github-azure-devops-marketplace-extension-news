@@ -16,6 +16,7 @@ runs:
       uses: actions/download-artifact@v3
       with:
         name: ${{ inputs.artifactName }}
+        path: ./
 
     - name: 'Echo download path'
       shell: bash
