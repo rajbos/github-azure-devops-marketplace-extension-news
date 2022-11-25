@@ -62,6 +62,7 @@ jobs:
   ConsolidateTweet:
     runs-on: windows-latest
     needs: GatherCharacterDateJsons
+    if: ${{ always() }}
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v3
