@@ -1,5 +1,4 @@
 ﻿using News.Library;
-using Newtonsoft.Json;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Interactions;
@@ -7,7 +6,6 @@ using OpenQA.Selenium.Support.UI;
 using SeleniumExtras.WaitHelpers;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -59,7 +57,7 @@ namespace GitHubActionsNews
         private static void RunTest()
         {
             var driver = GetDriver();
-            try 
+            try
             {
                 driver.Navigate().GoToUrl("https://github.com/marketplace/actions/glo-parse-card-links");
                 var version = ActionPageInteraction.GetVersionFromAction(driver);
@@ -78,7 +76,7 @@ namespace GitHubActionsNews
             await Consolidate.Run(twitter);
         }
 
-        private static async Task  RunGroupAction()
+        private static async Task RunGroupAction()
         {
             Log.Message("Running group action");
             var allItems = await Storage.DownloadAllFilesThatStartWith<GitHubAction>(StorageFileName);
@@ -239,10 +237,9 @@ namespace GitHubActionsNews
         private static ChromeDriver GetDriver()
         {
             var chromeOptions = new ChromeOptions();
-            //if (!Debugger.IsAttached)
-            {
-                chromeOptions.AddArguments("headless");
-            }
+
+            chromeOptions.AddArguments("headless");
+
             var driver = new ChromeDriver(chromeOptions);
             return driver;
         }
@@ -346,7 +343,7 @@ namespace GitHubActionsNews
 
                 IJavaScriptExecutor js = driver as IJavaScriptExecutor;
                 js.ExecuteScript("arguments[0].style='display: none;'", banner);
-            } 
+            }
             catch
             {
                 // nom nom nom
@@ -373,14 +370,14 @@ namespace GitHubActionsNews
 
                 // open the url in a new tab
                 action.SendKeys(Keys.Shift + "T");
-                action.SendKeys(Keys.Control+ Keys.Enter);
+                action.SendKeys(Keys.Control + Keys.Enter);
 
                 var newTab = driver.WindowHandles.Last();
                 driver.SwitchTo().Window(newTab);
                 var version = "";
                 var actionRepoUrl = "";
                 Thread.Sleep(2000);
-                if (driver.Title.StartsWith("about:blank")) 
+                if (driver.Title.StartsWith("about:blank"))
                 {
                     Thread.Sleep(2000); // we need more time for the page to load
                 }
