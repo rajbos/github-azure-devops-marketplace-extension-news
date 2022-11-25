@@ -49,7 +49,7 @@ jobs:
         name: ${{ env.ArtifactName }}
 
   GatherCharacterDateJsons:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: build
     strategy:
       matrix:
