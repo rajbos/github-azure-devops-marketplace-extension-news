@@ -75,10 +75,15 @@ jobs:
         with:
           files: 'ArtifactFolder/appsettings.json'
         env:
-          TwitterConsumerAPIKey: ${{ secrets.TwitterConsumerAPIKey }}
-          TwitterConsumerAPISecretKey: ${{ secrets.TwitterConsumerAPISecretKey }}
-          TwitterAccessToken: ${{ secrets.TwitterAccessToken }}
-          TwitterAccessTokenSecret: ${{ secrets.TwitterAccessTokenSecret }}
+          # TwitterConsumerAPIKey: ${{ secrets.TwitterConsumerAPIKey }}
+          # TwitterConsumerAPISecretKey: ${{ secrets.TwitterConsumerAPISecretKey }}
+          # TwitterAccessToken: ${{ secrets.TwitterAccessToken }}
+          # TwitterAccessTokenSecret: ${{ secrets.TwitterAccessTokenSecret }}
+          # BlobStorageConnectionString: ${{ secrets.BLOB_CONNECTION_STRING }}
+          TwitterConsumerAPIKey: 'TestKey'
+          TwitterConsumerAPISecretKey: 'TestKey'
+          TwitterAccessToken: 'TestKey'
+          TwitterAccessTokenSecret: 'TestKey'
           BlobStorageConnectionString: ${{ secrets.BLOB_CONNECTION_STRING }}
 
       - name: Perform a Pester test from the command-line
