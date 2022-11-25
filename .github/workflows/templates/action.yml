@@ -9,19 +9,14 @@ inputs:
     required: true
   TwitterConsumerAPIKey:
     required: true
-    default: 'TwitterConsumerAPIKey'
   TwitterConsumerAPISecretKey:
     required: true
-    default: 'TwitterConsumerAPISecretKey'
   TwitterAccessToken:
     required: true
-    default: 'TwitterAccessToken'
   TwitterAccessTokenSecret:
     required: true
-    default: 'TwitterAccessTokenSecret'
   BLOB_SAS_TOKEN:
     required: true
-    default: 'BLOB_SAS_TOKEN'
 
 runs:
   using: "composite"

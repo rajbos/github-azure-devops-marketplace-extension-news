@@ -63,10 +63,10 @@ jobs:
         with:
           characters: ${{ matrix.characters }}
           artifactName: ${{ env.ArtifactName }}
-          TwitterConsumerAPIKey: ''
-          TwitterConsumerAPISecretKey: ''
-          TwitterAccessToken: ''
-          TwitterAccessTokenSecret: ''
+          TwitterConsumerAPIKey: 'TwitterConsumerAPIKey'
+          TwitterConsumerAPISecretKey: 'TwitterConsumerAPISecretKey'
+          TwitterAccessToken: 'TwitterAccessToken'
+          TwitterAccessTokenSecret: 'TwitterAccessTokenSecret'
           BLOB_SAS_TOKEN: ${{ secrets.BLOB_SAS_TOKEN }}
 
   # ConsolidateTweet:
