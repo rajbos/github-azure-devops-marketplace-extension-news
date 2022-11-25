@@ -125,7 +125,7 @@ namespace GitHubActionsNews
         private static List<GitHubAction> GetActionsForSearchQuery(string query)
         {
             Log.Message($"Loading latest states for all actions starting with [{query}]");
-            var storeFileName = $"{StorageFileName}-{query}";
+            var storeFileName = $"Temp-{StorageFileName}-{query}";
 
             var queriedGitHubMarketplaceUrl = $"{GitHubMarketplaceUrl}&query={query}";
             //var actions = GetAllActions(queriedGitHubMarketplaceUrl);

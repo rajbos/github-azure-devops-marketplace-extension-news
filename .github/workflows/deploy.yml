@@ -57,7 +57,7 @@ jobs:
           TwitterConsumerAPISecretKey: 'TwitterConsumerAPISecretKey'
           TwitterAccessToken: 'TwitterAccessToken'
           TwitterAccessTokenSecret: 'TwitterAccessTokenSecret'
-          BlobStorageConnectionString: ${{ secrets.BlobStorageConnectionString }}
+          BlobStorageConnectionString: ${{ secrets.BLOB_CONNECTION_STRING }}
 
   ConsolidateTweet:
     runs-on: windows-latest
