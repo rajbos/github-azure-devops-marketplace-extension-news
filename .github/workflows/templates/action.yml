@@ -12,6 +12,10 @@ runs:
   using: "composite"
   # Defining the action steps(Just one step to be simple)
   steps:
+    - name: sleep
+      shell: bash
+      run: sleep 60
+
     - name: Download artifact from build job
       uses: actions/download-artifact@v3
       with:
