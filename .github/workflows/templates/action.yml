@@ -7,6 +7,21 @@ inputs:
     required: true
   artifactName:
     required: true
+  TwitterConsumerAPIKey:
+    required: true
+    default: 'TwitterConsumerAPIKey'
+  TwitterConsumerAPISecretKey:
+    required: true
+    default: 'TwitterConsumerAPISecretKey'
+  TwitterAccessToken:
+    required: true
+    default: 'TwitterAccessToken'
+  TwitterAccessTokenSecret:
+    required: true
+    default: 'TwitterAccessTokenSecret'
+  BLOB_SAS_TOKEN:
+    required: true
+    default: 'BLOB_SAS_TOKEN'
 
 runs:
   using: "composite"
@@ -27,11 +42,11 @@ runs:
       with:
         files: 'ArtifactFolder/appsettings.json'
       env:
-        TwitterConsumerAPIKey: ${{ secrets.TwitterConsumerAPIKey }}
-        TwitterConsumerAPISecretKey: ${{ secrets.TwitterConsumerAPISecretKey }}
-        TwitterAccessToken: ${{ secrets.TwitterAccessToken }}
-        TwitterAccessTokenSecret: ${{ secrets.TwitterAccessTokenSecret }}
-        BlobStorageConnectionString: ${{ secrets.BLOB_SAS_TOKEN }}
+        TwitterConsumerAPIKey: ${{ inputs.TwitterConsumerAPIKey }}
+        TwitterConsumerAPISecretKey: ${{ inputs.TwitterConsumerAPISecretKey }}
+        TwitterAccessToken: ${{ inputs.TwitterAccessToken }}
+        TwitterAccessTokenSecret: ${{ inputs.TwitterAccessTokenSecret }}
+        BLOB_SAS_TOKEN: ${{ inputs.BLOB_SAS_TOKEN }}
 
     - name: Perform a Pester test from the command-line
       shell: pwsh
