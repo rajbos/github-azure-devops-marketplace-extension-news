@@ -15,7 +15,7 @@ inputs:
     required: true
   TwitterAccessTokenSecret:
     required: true
-  BLOB_SAS_TOKEN:
+  BlobStorageConnectionString:
     required: true
 
 runs:
@@ -28,10 +28,6 @@ runs:
         name: ${{ inputs.artifactName }}
         path: ./ArtifactFolder
 
-    - name: 'Show folder structure'
-      shell: bash
-      run: ls
-
     - name: App Settings Variable Substitution
       uses: microsoft/variable-substitution@v1
       with:
@@ -41,11 +37,10 @@ runs:
         TwitterConsumerAPISecretKey: ${{ inputs.TwitterConsumerAPISecretKey }}
         TwitterAccessToken: ${{ inputs.TwitterAccessToken }}
         TwitterAccessTokenSecret: ${{ inputs.TwitterAccessTokenSecret }}
-        BLOB_SAS_TOKEN: ${{ inputs.BLOB_SAS_TOKEN }}
+        BlobStorageConnectionString: ${{ inputs.BlobStorageConnectionString }}
 
     - name: Perform a Pester test from the command-line
       shell: pwsh
       run: |
-        cd .\ArtifactFolder
-        ls
+        cd .\ArtifactFolder        
         dotnet GitHubActionsNews.dll ${{ inputs.characters }}

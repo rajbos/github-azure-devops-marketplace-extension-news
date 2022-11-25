@@ -2,16 +2,6 @@ name: Tweet Scheduled Build and Deploy
 
 env:
   ArtifactName: 'AzDoNews'
-  CharacterSet1: '"c", "d", "e"'
-  CharacterSet2: '"g", "h", "j"'
-  CharacterSet3: '"k", "l", "m", "n"'
-  CharacterSet4: '"u", "w", "x", "y", "z"'
-  CharacterSet5: '"l", "o", "p"'
-  CharacterSet6: '"b"'
-  CharacterSet7: '"r", "s", "t", "v"'
-  CharacterSet8: '"ai", "ae", "ia", "ea"'
-  CharacterSet9: '"1", "2", "3", "4", "5"'
-  CharacterSet10: '"6", "7", "8", "9", "0"'
 
 on:
   schedule:
@@ -54,8 +44,7 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        characters: [c,b,e]
-
+        characters: [c,b,e,g,h,j,k,l,m,n,u,w,x,y,z,o,p,r,s,t,v,b,ai,ae,ia,ea,0,1,2,3,4,5,6,7,8,9]
     steps:
       - uses: actions/checkout@v3
 
@@ -68,32 +57,34 @@ jobs:
           TwitterConsumerAPISecretKey: 'TwitterConsumerAPISecretKey'
           TwitterAccessToken: 'TwitterAccessToken'
           TwitterAccessTokenSecret: 'TwitterAccessTokenSecret'
-          BLOB_SAS_TOKEN: ${{ secrets.BLOB_SAS_TOKEN }}
+          BlobStorageConnectionString: ${{ secrets.BlobStorageConnectionString }}
 
-  # ConsolidateTweet:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Download artifact from build job
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: ${{ env.ArtifactName }}
+  ConsolidateTweet:
+    runs-on: windows-latest
+    needs: GatherCharacterDateJsons
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ inputs.artifactName }}
+          path: ./ArtifactFolder  
 
 
-    #   - name: App Settings Variable Substitution
-    #     uses: microsoft/variable-substitution@v1
-    #     with:
-    #       files: '${{steps.download.outputs.download-path}}/drop/GH/appsettings.json/appsettings.json'
-    #     env:
-    #       TwitterConsumerAPIKey: ${{ secrets.TwitterConsumerAPIKey }}
-    #       TwitterConsumerAPISecretKey: ${{ secrets.TwitterConsumerAPISecretKey }}
-    #       TwitterAccessToken: ${{ secrets.TwitterAccessToken }}
-    #       TwitterAccessTokenSecret: ${{ secrets.TwitterAccessTokenSecret }}
-    #       BlobStorageConnectionString: ${{ secrets.BlobStorageConnectionString }}
+      - name: App Settings Variable Substitution
+        uses: microsoft/variable-substitution@v1
+        with:
+          files: 'ArtifactFolder/appsettings.json'
+        env:
+          TwitterConsumerAPIKey: ${{ secrets.TwitterConsumerAPIKey }}
+          TwitterConsumerAPISecretKey: ${{ secrets.TwitterConsumerAPISecretKey }}
+          TwitterAccessToken: ${{ secrets.TwitterAccessToken }}
+          TwitterAccessTokenSecret: ${{ secrets.TwitterAccessTokenSecret }}
+          BlobStorageConnectionString: ${{ secrets.BlobStorageConnectionString }}
 
-      # - name: Perform a Pester test from the command-line
-      #   shell: pwsh
-      #   run: |
-      #     cd "${{steps.download.outputs.download-path}}/drop/GH/"
-      #     dotnet .\GitHubActionsNews.dll "consolidate"
+      - name: Perform a Pester test from the command-line
+        shell: pwsh
+        run: |
+          cd .\ArtifactFolder
+          dotnet GitHubActionsNews.dll "consolidate"
 
 
