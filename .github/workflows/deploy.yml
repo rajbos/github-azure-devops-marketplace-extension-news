@@ -83,7 +83,7 @@ jobs:
           TwitterConsumerAPIKey: 'TestKey'
           TwitterConsumerAPISecretKey: 'TestKey'
           TwitterAccessToken: 'TestKey'
-          TwitterAccessTokenSecret: 'TestKey'
+          TwitterAccessTokenSecret: 'TestKey '
           BlobStorageConnectionString: ${{ secrets.BLOB_CONNECTION_STRING }}
 
       - name: Perform a Pester test from the command-line
