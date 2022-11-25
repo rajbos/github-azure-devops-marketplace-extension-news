@@ -52,4 +52,4 @@ runs:
       shell: pwsh
       run: |
         ls
-        dotnet .\ArtifactFolder\GitHubActionsNews.dll ${{ inputs.characters }}
+        dotnet run .\ArtifactFolder\GitHubActionsNews.dll ${{ inputs.characters }}
