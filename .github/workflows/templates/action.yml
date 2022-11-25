@@ -20,7 +20,7 @@ runs:
       uses: actions/download-artifact@v3
       with:
         name: ${{ inputs.artifactName }}
-        path: ./
+        path: ./TestFolder
 
     - name: 'Echo download path'
       shell: bash
