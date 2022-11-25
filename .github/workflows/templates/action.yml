@@ -51,5 +51,6 @@ runs:
     - name: Perform a Pester test from the command-line
       shell: pwsh
       run: |
+        cd .\ArtifactFolder
         ls
-        dotnet .\ArtifactFolder\GitHubActionsNews.dll ${{ inputs.characters }}
+        dotnet GitHubActionsNews.dll ${{ inputs.characters }}
