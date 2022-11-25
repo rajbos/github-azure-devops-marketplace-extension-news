@@ -22,19 +22,19 @@ runs:
       shell: bash
       run: ls
 
-    #   - name: App Settings Variable Substitution
-    #     uses: microsoft/variable-substitution@v1
-    #     with:
-    #       files: '${{steps.download.outputs.download-path}}/drop/GH/appsettings.json/appsettings.json'
-    #     env:
-    #       TwitterConsumerAPIKey: ${{ secrets.TwitterConsumerAPIKey }}
-    #       TwitterConsumerAPISecretKey: ${{ secrets.TwitterConsumerAPISecretKey }}
-    #       TwitterAccessToken: ${{ secrets.TwitterAccessToken }}
-    #       TwitterAccessTokenSecret: ${{ secrets.TwitterAccessTokenSecret }}
-    #       BlobStorageConnectionString: ${{ secrets.BlobStorageConnectionString }}
+    - name: App Settings Variable Substitution
+      uses: microsoft/variable-substitution@v1
+      with:
+        files: 'ArtifactFolder/appsettings.json'
+      env:
+        TwitterConsumerAPIKey: ${{ secrets.TwitterConsumerAPIKey }}
+        TwitterConsumerAPISecretKey: ${{ secrets.TwitterConsumerAPISecretKey }}
+        TwitterAccessToken: ${{ secrets.TwitterAccessToken }}
+        TwitterAccessTokenSecret: ${{ secrets.TwitterAccessTokenSecret }}
+        BlobStorageConnectionString: ${{ secrets.BlobStorageConnectionString }}
 
-    #   - name: Perform a Pester test from the command-line
-    #     shell: pwsh
-    #     run: |
-    #       cd "${{steps.download.outputs.download-path}}/drop/GH/"
-    #       dotnet .\GitHubActionsNews.dll ${{ inputs.characters }}
+    - name: Perform a Pester test from the command-line
+      shell: pwsh
+      run: |
+        cd "ArtifactFolder"
+        dotnet .\GitHubActionsNews.dll ${{ inputs.characters }}

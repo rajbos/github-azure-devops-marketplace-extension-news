@@ -48,7 +48,7 @@ jobs:
         path: publish/AzDo
         name: ${{ env.ArtifactName }}
 
-  CharacterSet1:
+  GatherCharacterDateJsons:
     runs-on: ubuntu-latest
     needs: build
     strategy:
@@ -64,105 +64,6 @@ jobs:
           characters: ${{ matrix.characters }}
           artifactName: ${{ env.ArtifactName }}
 
-  # CharacterSet2:
-  #   runs-on: ubuntu-latest
-  #   needs: build
-
-  #   steps:
-  #     - name: Run Character Command
-  #       uses: "./.github/templates/character-to-run"
-  #       with:
-  #         characters: ${{ env.CharacterSet2 }}
-  #         artifactName: ${{ env.ArtifactName }}
-
-  # CharacterSet3:
-  #   runs-on: ubuntu-latest
-  #   needs: build
-
-  #   steps:
-  #     - name: Run Character Command
-  #       uses: "./.github/templates/character-to-run"
-  #       with:
-  #         characters: ${{ env.CharacterSet3 }}
-  #         artifactName: ${{ env.ArtifactName }}
-
-  # CharacterSet4:
-  #   runs-on: ubuntu-latest
-  #   needs: build
-
-  #   steps:
-  #     - name: Run Character Command
-  #       uses: "./.github/templates/character-to-run"
-  #       with:
-  #         characters: ${{ env.CharacterSet4 }}
-  #         artifactName: ${{ env.ArtifactName }}
-
-  # CharacterSet5:
-  #   runs-on: ubuntu-latest
-  #   needs: build
-
-  #   steps:
-  #     - name: Run Character Command
-  #       uses: "./.github/templates/character-to-run"
-  #       with:
-  #         characters: ${{ env.CharacterSet5 }}
-  #         artifactName: ${{ env.ArtifactName }}
-
-  # CharacterSet6:
-  #   runs-on: ubuntu-latest
-  #   needs: build
-
-  #   steps:
-  #     - name: Run Character Command
-  #       uses: "./.github/templates/character-to-run"
-  #       with:
-  #         characters: ${{ env.CharacterSet6 }}
-  #         artifactName: ${{ env.ArtifactName }}
-
-  # CharacterSet7:
-  #   runs-on: ubuntu-latest
-  #   needs: build
-
-  #   steps:
-  #     - name: Run Character Command
-  #       uses: "./.github/templates/character-to-run"
-  #       with:
-  #         characters: ${{ env.CharacterSet7 }}
-  #         artifactName: ${{ env.ArtifactName }}
-
-  # CharacterSet8:
-  #   runs-on: ubuntu-latest
-  #   needs: build
-
-  #   steps:
-  #     - name: Run Character Command
-  #       uses: "./.github/templates/character-to-run"
-  #       with:
-  #         characters: ${{ env.CharacterSet8 }}
-  #         artifactName: ${{ env.ArtifactName }}
-
-  # CharacterSet9:
-  #   runs-on: ubuntu-latest
-  #   needs: build
-
-  #   steps:
-  #     - name: Run Character Command
-  #       uses: "./.github/templates/character-to-run"
-  #       with:
-  #         characters: ${{ env.CharacterSet9 }}
-  #         artifactName: ${{ env.ArtifactName }}
-
-  # CharacterSet10:
-  #   runs-on: ubuntu-latest
-  #   needs: build
-
-  #   steps:
-  #     - name: Run Character Command
-  #       uses: "./.github/templates/character-to-run"
-  #       with:
-  #         characters: ${{ env.CharacterSet10 }}
-  #         artifactName: ${{ env.ArtifactName }}
-
   # ConsolidateTweet:
   #   runs-on: ubuntu-latest
   #   steps:
@@ -171,8 +72,6 @@ jobs:
   #       with:
   #         name: ${{ env.ArtifactName }}
 
-      - name: 'Echo download path'
-        run: echo ${{steps.download.outputs.download-path}}
 
     #   - name: App Settings Variable Substitution
     #     uses: microsoft/variable-substitution@v1
