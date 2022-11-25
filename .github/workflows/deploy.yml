@@ -51,6 +51,7 @@ jobs:
   GatherCharacterDateJsons:
     runs-on: windows-latest
     needs: build
+    continue-on-error: true
     strategy:
       matrix:
         characters: [c,b,e]
