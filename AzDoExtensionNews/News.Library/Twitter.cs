@@ -44,9 +44,8 @@ namespace News.Library
             Log.Message($"Sending tweet: {tweetText}. Tweet.Length: {tweetText.Length} {additionalLogInfo}");
             // update last tweeted
             LastTweeted = DateTime.UtcNow;
-            //return TweetWithNuget(tweetText, imageUrl);
+            return TweetWithNuget(tweetText, imageUrl);
             // return TweetWithHttp(tweetText);
-            return true;
         }
 
         private bool TweetWithHttp(string tweetText)

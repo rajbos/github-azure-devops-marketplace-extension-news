@@ -234,9 +234,10 @@ namespace GitHubActionsNews
         private static ChromeDriver GetDriver()
         {
             var chromeOptions = new ChromeOptions();
-
-            chromeOptions.AddArguments("headless");
-
+            //if (!Debugger.IsAttached)
+            {
+                chromeOptions.AddArguments("headless");
+            }
             var driver = new ChromeDriver(chromeOptions);
             return driver;
         }

@@ -25,6 +25,12 @@ namespace GitHubActionsNews
                 // check for changes
                 foreach (var action in updatedActions)
                 {
+                    if (tweetsSend > 25) 
+                    {
+                        // to many tweets to send, stop sending any more to prevent ratelimiting issues
+                        break;
+                    }
+
                     if (action.Url == "https://github.com/marketplace/actions/version-forget-me-not")
                     {
                         var wait = true;
