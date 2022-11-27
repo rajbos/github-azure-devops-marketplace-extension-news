@@ -39,7 +39,7 @@ jobs:
         path: publish/AzDo
         name: ${{ env.ArtifactName }}
 
-  GatherCharacterDateJsons:
+  GatherCharacterJsons:
     runs-on: windows-latest
     needs: build
     continue-on-error: true
@@ -63,7 +63,7 @@ jobs:
 
   ConsolidateTweet:
     runs-on: windows-latest
-    needs: GatherCharacterDateJsons
+    needs: GatherCharacterJsons
     if: ${{ always() }}
     steps:
       - name: Download artifact from build job
@@ -73,7 +73,7 @@ jobs:
           path: ./ArtifactFolder
 
       - name: App Settings Variable Substitution
-        uses: microsoft/variable-substitution@v1 #Depracated action, but it still works :-)
+        uses: microsoft/variable-substitution@v1 # Deprecated action, but it still works :-). Does need an update to node16 though!
         with:
           files: 'ArtifactFolder/appsettings.json'
         env:
