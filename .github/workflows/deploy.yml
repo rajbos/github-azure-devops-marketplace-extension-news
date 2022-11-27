@@ -1,4 +1,4 @@
-name: Tweet Scheduled Build and Deploy
+name: Scheduled Build and Deploy
 
 env:
   ArtifactName: 'AzDoNews'
@@ -6,18 +6,19 @@ env:
 on:
   schedule:
     - cron: "* */4 * * *"
+
   workflow_dispatch:
   
   push:
    paths:
    - .github/workflows/deploy.yml
-   - .github/workflows/templates/*
+   - .github/actions/character-to-run/*
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/cache@v3
       with:
         path: ~/.nuget/packages
@@ -33,7 +34,7 @@ jobs:
       run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
 
     - name: Publish AzDo Artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         path: publish/AzDo
         name: ${{ env.ArtifactName }}
@@ -44,15 +45,16 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        characters: [c,b,e,g,h,j,k,l,m,n,u,w,x,y,z,o,p,r,s,t,v,b,ai,ae,ia,ea,0,1,2,3,4,5,6,7,8,9]
+        character: [c,b,e,g,h,j,k,l,m,n,u,w,x,y,z,o,p,r,s,t,v,b,ai,ae,ia,ea,0,1,2,3,4,5,6,7,8,9]
     steps:
       - uses: actions/checkout@v3
 
       - name: Run Character Command
-        uses: ./.github/workflows/templates
+        uses: ./.github/actions/character-to-run/
         with:
-          characters: ${{ matrix.characters }}
+          characters: ${{ matrix.character }}
           artifactName: ${{ env.ArtifactName }}
+          # we don't need actual values for these in this job, but they are required
           TwitterConsumerAPIKey: 'TwitterConsumerAPIKey'
           TwitterConsumerAPISecretKey: 'TwitterConsumerAPISecretKey'
           TwitterAccessToken: 'TwitterAccessToken'
@@ -68,29 +70,21 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: ${{ env.artifactName }}
-          path: ./ArtifactFolder  
-
+          path: ./ArtifactFolder
 
       - name: App Settings Variable Substitution
-        uses: microsoft/variable-substitution@v1
+        uses: microsoft/variable-substitution@v1 #Depracated action, but it still works :-)
         with:
           files: 'ArtifactFolder/appsettings.json'
         env:
-          # TwitterConsumerAPIKey: ${{ secrets.TwitterConsumerAPIKey }}
-          # TwitterConsumerAPISecretKey: ${{ secrets.TwitterConsumerAPISecretKey }}
-          # TwitterAccessToken: ${{ secrets.TwitterAccessToken }}
-          # TwitterAccessTokenSecret: ${{ secrets.TwitterAccessTokenSecret }}
-          # BlobStorageConnectionString: ${{ secrets.BLOB_CONNECTION_STRING }}
-          TwitterConsumerAPIKey: 'TestKey'
-          TwitterConsumerAPISecretKey: 'TestKey'
-          TwitterAccessToken: 'TestKey'
-          TwitterAccessTokenSecret: 'TestKey '
+          TwitterConsumerAPIKey: ${{ secrets.TwitterConsumerAPIKey }}
+          TwitterConsumerAPISecretKey: ${{ secrets.TwitterConsumerAPISecretKey }}
+          TwitterAccessToken: ${{ secrets.TwitterAccessToken }}
+          TwitterAccessTokenSecret: ${{ secrets.TwitterAccessTokenSecret }}
           BlobStorageConnectionString: ${{ secrets.BLOB_CONNECTION_STRING }}
 
-      - name: Perform a Pester test from the command-line
+      - name: Consolidate the json files and tweet about updates
         shell: pwsh
         run: |
           cd .\ArtifactFolder
           dotnet GitHubActionsNews.dll "consolidate"
-
-
