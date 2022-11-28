@@ -1,5 +1,4 @@
-﻿using News.Library;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -54,7 +53,7 @@ namespace News.Library
             try
             {
                 string twitterURL = "https://api.twitter.com/1.1/statuses/update.json";
-                
+
                 // set the oauth version and signature method
                 string oauth_version = "1.0";
                 string oauth_signature_method = "HMAC-SHA1";
@@ -160,7 +159,7 @@ namespace News.Library
 
                     //store the file
                     var filePath = Guid.NewGuid().ToString(); // + ".png"; // not sure if this is needed
-                    File.WriteAllBytes(filePath, mediaFile);                    
+                    File.WriteAllBytes(filePath, mediaFile);
 
                     // upload image to add to the tweet
                     IMedia uploadedImage = null;
@@ -192,7 +191,7 @@ namespace News.Library
                         {
                             // publish the tweet with the media
                             var tweet2 = userClient.Tweets.PublishTweetAsync(new PublishTweetParameters
-                            { 
+                            {
                                 Text = tweetText,
                                 MediaIds = new List<long> { uploadedImage.Id.Value }, // does Ids work or do we need the Medias list?
                             }

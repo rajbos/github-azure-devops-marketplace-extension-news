@@ -1,5 +1,4 @@
 ﻿using News.Library;
-using Newtonsoft.Json;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Interactions;
@@ -7,7 +6,6 @@ using OpenQA.Selenium.Support.UI;
 using SeleniumExtras.WaitHelpers;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -59,7 +57,7 @@ namespace GitHubActionsNews
         private static void RunTest()
         {
             var driver = GetDriver();
-            try 
+            try
             {
                 driver.Navigate().GoToUrl("https://github.com/marketplace/actions/glo-parse-card-links");
                 var version = ActionPageInteraction.GetVersionFromAction(driver);
@@ -78,7 +76,7 @@ namespace GitHubActionsNews
             await Consolidate.Run(twitter);
         }
 
-        private static async Task  RunGroupAction()
+        private static async Task RunGroupAction()
         {
             Log.Message("Running group action");
             var allItems = await Storage.DownloadAllFilesThatStartWith<GitHubAction>(StorageFileName);
@@ -116,9 +114,6 @@ namespace GitHubActionsNews
             List<List<GitHubAction>> allActions = new List<List<GitHubAction>>();
             // skipping common letters to prevent lots of double searches
             var searchList = args;
-            //var searchList = new List<string> { "b", "c", "d" }; 
-            //var searchList = new List<string> { "f", "g", "h", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "v", "w", "y", "z" };
-            //var searchList = new List<string> { "s", "t", "v", "w", "y", "z" };
             Parallel.ForEach(searchList, item =>
             {
                 var actions = GetActionsForSearchQuery(item);
@@ -346,7 +341,7 @@ namespace GitHubActionsNews
 
                 IJavaScriptExecutor js = driver as IJavaScriptExecutor;
                 js.ExecuteScript("arguments[0].style='display: none;'", banner);
-            } 
+            }
             catch
             {
                 // nom nom nom
@@ -373,14 +368,14 @@ namespace GitHubActionsNews
 
                 // open the url in a new tab
                 action.SendKeys(Keys.Shift + "T");
-                action.SendKeys(Keys.Control+ Keys.Enter);
+                action.SendKeys(Keys.Control + Keys.Enter);
 
                 var newTab = driver.WindowHandles.Last();
                 driver.SwitchTo().Window(newTab);
                 var version = "";
                 var actionRepoUrl = "";
                 Thread.Sleep(2000);
-                if (driver.Title.StartsWith("about:blank")) 
+                if (driver.Title.StartsWith("about:blank"))
                 {
                     Thread.Sleep(2000); // we need more time for the page to load
                 }

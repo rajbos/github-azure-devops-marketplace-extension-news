@@ -1,0 +1,90 @@
+name: Scheduled Build and Deploy
+
+env:
+  ArtifactName: 'AzDoNews'
+
+on:
+  schedule:
+    - cron: "* */4 * * *"
+
+  workflow_dispatch:
+  
+  push:
+   paths:
+   - .github/workflows/deploy.yml
+   - .github/actions/character-to-run/*
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-${{ hashFiles('**/**.csproj') }}-1
+
+    - name: Restore
+      run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln
+
+    - name: Build
+      run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release -o publish/AzDo/
+
+    - name: Test
+      run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
+
+    - name: Publish AzDo Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        path: publish/AzDo
+        name: ${{ env.ArtifactName }}
+
+  GatherCharacterJsons:
+    runs-on: windows-latest
+    needs: build
+    continue-on-error: true
+    strategy:
+      matrix:
+        character: [c,b,e,g,h,j,k,l,m,n,u,w,x,y,z,o,p,r,s,t,v,b,ai,ae,ia,ea,0,1,2,3,4,5,6,7,8,9]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run Character Command
+        uses: ./.github/actions/character-to-run/
+        with:
+          characters: ${{ matrix.character }}
+          artifactName: ${{ env.ArtifactName }}
+          # we don't need actual values for these in this job, but they are required
+          TwitterConsumerAPIKey: 'TwitterConsumerAPIKey'
+          TwitterConsumerAPISecretKey: 'TwitterConsumerAPISecretKey'
+          TwitterAccessToken: 'TwitterAccessToken'
+          TwitterAccessTokenSecret: 'TwitterAccessTokenSecret'
+          BlobStorageConnectionString: ${{ secrets.BLOB_CONNECTION_STRING }}
+
+  ConsolidateTweet:
+    runs-on: windows-latest
+    needs: GatherCharacterJsons
+    if: ${{ always() }}
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ env.artifactName }}
+          path: ./ArtifactFolder
+
+      - name: App Settings Variable Substitution
+        uses: microsoft/variable-substitution@v1 # Deprecated action, but it still works :-). Does need an update to node16 though!
+        with:
+          files: 'ArtifactFolder/appsettings.json'
+        env:
+          TwitterConsumerAPIKey: ${{ secrets.TwitterConsumerAPIKey }}
+          TwitterConsumerAPISecretKey: ${{ secrets.TwitterConsumerAPISecretKey }}
+          TwitterAccessToken: ${{ secrets.TwitterAccessToken }}
+          TwitterAccessTokenSecret: ${{ secrets.TwitterAccessTokenSecret }}
+          BlobStorageConnectionString: ${{ secrets.BLOB_CONNECTION_STRING }}
+
+      - name: Consolidate the json files and tweet about updates
+        shell: pwsh
+        run: |
+          cd .\ArtifactFolder
+          dotnet GitHubActionsNews.dll "consolidate"
