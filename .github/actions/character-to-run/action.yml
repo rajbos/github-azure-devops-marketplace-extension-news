@@ -31,7 +31,7 @@ runs:
       # https://github.com/microsoft/variable-substitution
       #Deprecated action, but it still works :-). Does need an update to node16 though!
     - name: App Settings Variable Substitution
-      uses: rajbos-actions/variable-substitution@main #@v1 
+      uses: rajbos-actions/variable-substitution@master #@v1 
       with:
         files: 'ArtifactFolder/appsettings.json'
       env:
