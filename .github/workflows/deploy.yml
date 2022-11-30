@@ -75,7 +75,7 @@ jobs:
           path: ./ArtifactFolder
 
       - name: App Settings Variable Substitution
-        uses: microsoft/variable-substitution@v1 # Deprecated action, but it still works :-). Does need an update to node16 though!
+        uses: microsoft/variable-substitution@v1.1
         with:
           files: 'ArtifactFolder/appsettings.json'
         env:
