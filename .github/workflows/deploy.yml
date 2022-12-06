@@ -75,7 +75,7 @@ jobs:
           path: ./ArtifactFolder
 
       - name: App Settings Variable Substitution
-        uses: microsoft/variable-substitution@v1.1
+        uses: rajbos/variable-substitution@master
         with:
           files: 'ArtifactFolder/appsettings.json'
         env:
