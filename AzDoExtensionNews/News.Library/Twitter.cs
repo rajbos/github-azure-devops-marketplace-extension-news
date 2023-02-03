@@ -33,6 +33,9 @@ namespace News.Library
 
         public bool SendTweet(string tweetText, string imageUrl, string additionalLogInfo = null)
         {
+            // twitter api is becoming paid, stop using it
+            return false;
+            
             var lastTweetedDuration = DateTime.UtcNow - LastTweeted;
             if (lastTweetedDuration.TotalSeconds < RateLimitDurationInSeconds)
             {
