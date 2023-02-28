@@ -31,7 +31,7 @@ jobs:
       run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release --property:OutputPath=publish/AzDo/
       
     - name: Publish
-      run: dotnet publish AzDoExtensionNews/AzDoExtensionNews.sln -c Release --property:PublishDir=publish/AzDo/
+      run: dotnet publish AzDoExtensionNews/AzDoExtensionNews.sln -c Release --property:PublishDir=./publish/AzDo/
       
     - continue-on-error: true
       run: |
