@@ -28,15 +28,18 @@ jobs:
       run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln
 
     - name: Build
-      run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release --property:OutputPath=${{env.DOTNET_ROOT}}/publish/AzDo/
-
+      run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release
+      
+    - name: Publish
+      run: dotnet publish AzDoExtensionNews/AzDoExtensionNews.sln -c Release --property:PublishDir=${{ github.workspace }}/publish/AzDo/
+      
     - name: Test
       run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
 
     - name: Publish AzDo Artifact
       uses: actions/upload-artifact@v3
       with:
-        path: ${{env.DOTNET_ROOT}}/publish/AzDo
+        path: publish/AzDo
         name: ${{ env.ArtifactName }}
 
   GatherCharacterJsons:
