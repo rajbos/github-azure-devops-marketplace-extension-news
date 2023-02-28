@@ -30,7 +30,11 @@ jobs:
     - name: Build
       run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release --property:OutputPath=publish/AzDo/
       
-    - run: |
+    - name: Publish
+      run: dotnet publish AzDoExtensionNews/AzDoExtensionNews.sln -c Release
+      
+    - continue-on-error: true
+      run: |
         echo $PWD
         ls -la
         cd publish
