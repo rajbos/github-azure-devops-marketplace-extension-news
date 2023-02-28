@@ -28,20 +28,11 @@ jobs:
       run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln
 
     - name: Build
-      run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release --property:OutputPath=publish/AzDo/
+      run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release
       
     - name: Publish
       run: dotnet publish AzDoExtensionNews/AzDoExtensionNews.sln -c Release --property:PublishDir=${{ github.workspace }}/publish/AzDo/
       
-    - continue-on-error: true
-      run: |
-        echo $PWD
-        ls -la
-        cd publish
-        ls -la
-        cd AzDo
-        ls -la
-
     - name: Test
       run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
 
