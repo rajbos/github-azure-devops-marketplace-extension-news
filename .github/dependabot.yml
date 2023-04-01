@@ -11,33 +11,32 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-patch"]
 
-
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: daily
+      interval: monthly
 
   - package-ecosystem: nuget
     directory: /AzDoExtensionNews/AzDoExtensionNews.UnitTests
     schedule:
-      interval: daily
+      interval: monthly
 
   - package-ecosystem: nuget
     directory: /AzDoExtensionNews/AzDoExtensionNews
     schedule:
-      interval: daily
+      interval: monthly
 
   - package-ecosystem: nuget
     directory: /AzDoExtensionNews/GitHubActionsNews.Tests
     schedule:
-      interval: daily
+      interval: monthly
 
   - package-ecosystem: nuget
     directory: /AzDoExtensionNews/GitHubActionsNews
     schedule:
-      interval: daily
+      interval: monthly
 
   - package-ecosystem: nuget
     directory: /AzDoExtensionNews/News.Library
     schedule:
-      interval: daily
+      interval: monthly
