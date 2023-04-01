@@ -18,5 +18,20 @@ namespace News.Library
             var timeTag = DateTime.UtcNow.ToString(Format);
             logger.AppendLine($"{timeTag}  {message}");
         }
+         
+        public static void Message(string message, bool logsummary)
+        {
+            // log to both the console and the GITHUB_STEP_SUMMARY environment variable
+            var timeTag = DateTime.UtcNow.ToString(Format);
+            Console.WriteLine($"{timeTag}  {message}");
+            if (logsummary) {
+                // get environment variable
+                var summary = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
+                if (summary != null) {
+                    // append to the file in that location
+                    System.IO.File.AppendAllText(summary, $"{timeTag}  {message} {Environment.NewLine}");
+                }
+            }
+        }
     }
 }

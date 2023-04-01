@@ -189,7 +189,7 @@ namespace GitHubActionsNews
             }
 
             var count = existingActions.Where(item => !String.IsNullOrEmpty(item.RepoUrl)).Count();
-            Log.Message($"Found [{existingActions.Count}] unique actions with [{count}] repo urls");
+            Log.Message($"Found [{existingActions.Count}] unique actions with [{count}] repo urls", logsummary: true);
             // store the new information:
             Storage.SaveJson(existingActions, storeFileName);
 
@@ -215,7 +215,7 @@ namespace GitHubActionsNews
                 var actionList = ScrapePage(driver, 1, sb);
                 var emptyRepoUrl = actionList.Where(x => String.IsNullOrEmpty(x.RepoUrl)).Count();
 
-                Log.Message($"Found {actionList.Count} actions for search url [{searchUrl}] in {(DateTime.Now - started).TotalMinutes:N2} minutes, with [{emptyRepoUrl}] not filled repo urls");
+                Log.Message($"Found {actionList.Count} actions for search url [{searchUrl}] in {(DateTime.Now - started).TotalMinutes:N2} minutes, with [{emptyRepoUrl}] not filled repo urls", logsummary: true);
                 return actionList;
             }
             catch (Exception e)
@@ -289,7 +289,8 @@ namespace GitHubActionsNews
 
                     // wait for the next button to be available again
                     waitForElement.Until(ExpectedConditions.UrlToBe(nextUrl));
-                    waitForElement.Until(ExpectedConditions.ElementIsVisible(By.LinkText("Next")));
+                    // the 'next' link is not a link in the last page, so by waiting for it we would miss that page!
+                    // waitForElement.Until(ExpectedConditions.ElementIsVisible(By.LinkText("Next")));
                     waitForElement.Until(ExpectedConditions.ElementIsVisible(By.ClassName("paginate-container")));
 
                     // scrape the new page again
