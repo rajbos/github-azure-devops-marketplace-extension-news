@@ -49,7 +49,7 @@ jobs:
     concurrency: GatherCharacterJsons-${{ matrix.character }}
     strategy:
       matrix:
-        character: [c,b,e,g,h,j,k,l,m,n,u,w,x,y,z,o,p,r,s,t,v,ai,ae,ia,ea,0,1,2,3,4,5,6,7,8,9]
+        character: [c,b,e,g,h,j,k,l,m,n,u,w,x,y,z,o,p,r,s,t,v,ai,ae,ia,ea,0,1,2,3,4,5,6,7,8,9,check,pr,spell,pub,k8s,kubernetes,docker]
     steps:
       - uses: actions/checkout@v3
 
