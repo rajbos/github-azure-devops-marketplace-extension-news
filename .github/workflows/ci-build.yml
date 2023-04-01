@@ -8,13 +8,21 @@ on:
     
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     # setup the environment:
-    - uses: actions/checkout@v2
-    - uses: actions/cache@v3
+    - name: Harden Runner
+      uses: step-security/harden-runner@1f99358870fe1c846a3ccba386cc2b2246836776 # v2.2.1
+      with:
+        egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
+
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+    - uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-${{ hashFiles('**/**.csproj') }}-1
@@ -34,7 +42,7 @@ jobs:
       run: dotnet publish AzDoExtensionNews/AzDoExtensionNews/AzDoExtensionNews.csproj -c Release -o publish/AzDo/
 
     - name: Publish AzDo Artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # v2.3.1
       with:
         path: publish/AzDo
         name: AzDoNews
@@ -44,7 +52,7 @@ jobs:
       run: dotnet publish AzDoExtensionNews/GitHubActionsNews/GitHubActionsNews.csproj -c Release -o publish/GitHub/
 
     - name: Publish GitHub Artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # v2.3.1
       with:
         path: publish/GitHub
         name: GitHubNews
