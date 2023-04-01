@@ -112,7 +112,6 @@ namespace GitHubActionsNews
         private static List<List<GitHubAction>> GetAllActionsFromLetters(string[] args)
         {
             List<List<GitHubAction>> allActions = new List<List<GitHubAction>>();
-            // skipping common letters to prevent lots of double searches
             var searchList = args;
             Parallel.ForEach(searchList, item =>
             {
@@ -125,8 +124,8 @@ namespace GitHubActionsNews
         private static List<GitHubAction> GetActionsForSearchQuery(string query)
         {
             var actions = new List<GitHubAction>();
-            // check if query is not a number
-            if (query.Length == 1 && !int.TryParse(query, out)) {
+            // check if query is a single letter, but is not a number
+            if (query.Length == 1 && !int.TryParse(query, out var a)) {
                 // running the search for individual letters is to slow and has to much results (pagination stops at 1000 results)
                 // run for all two letter combinations instead
                 var letters = "abcdefghijklmnopqrstuvwxyz".ToCharArray();
