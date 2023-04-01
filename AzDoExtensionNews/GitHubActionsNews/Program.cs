@@ -216,6 +216,10 @@ namespace GitHubActionsNews
                 var emptyRepoUrl = actionList.Where(x => String.IsNullOrEmpty(x.RepoUrl)).Count();
 
                 Log.Message($"Found {actionList.Count} actions for search url [{searchUrl}] in {(DateTime.Now - started).TotalMinutes:N2} minutes, with [{emptyRepoUrl}] not filled repo urls", logsummary: true);
+                if (actionList.Count == 1000)
+                {
+                    Log.Message($"Found 1000 actions for searchurl [{searchUrl}], this is the maximum amount of actions that can be found on a single page, so time to split this search query into multiple queries", logsummary: true);
+                }
                 return actionList;
             }
             catch (Exception e)
