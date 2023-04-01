@@ -10,3 +10,34 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-patch"]
+
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
+
+  - package-ecosystem: nuget
+    directory: /AzDoExtensionNews/AzDoExtensionNews.UnitTests
+    schedule:
+      interval: daily
+
+  - package-ecosystem: nuget
+    directory: /AzDoExtensionNews/AzDoExtensionNews
+    schedule:
+      interval: daily
+
+  - package-ecosystem: nuget
+    directory: /AzDoExtensionNews/GitHubActionsNews.Tests
+    schedule:
+      interval: daily
+
+  - package-ecosystem: nuget
+    directory: /AzDoExtensionNews/GitHubActionsNews
+    schedule:
+      interval: daily
+
+  - package-ecosystem: nuget
+    directory: /AzDoExtensionNews/News.Library
+    schedule:
+      interval: daily

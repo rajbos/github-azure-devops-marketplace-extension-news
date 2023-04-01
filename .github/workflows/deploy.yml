@@ -18,8 +18,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/cache@v3
+    - name: Harden Runner
+      uses: step-security/harden-runner@1f99358870fe1c846a3ccba386cc2b2246836776 # v2.2.1
+      with:
+        egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
+
+    - uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3.5.0
+    - uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-${{ hashFiles('**/**.csproj') }}-1
@@ -37,7 +42,7 @@ jobs:
       run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
 
     - name: Publish AzDo Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
       with:
         path: publish/AzDo
         name: ${{ env.ArtifactName }}
@@ -51,7 +56,12 @@ jobs:
       matrix:
         character: [c,b,e,g,h,j,k,l,m,n,u,w,x,y,z,o,p,r,s,t,v,ai,ae,ia,ea,0,1,2,3,4,5,6,7,8,9,check,pr,spell,pub,k8s,kubernetes,docker]
     steps:
-      - uses: actions/checkout@v3
+      - name: Harden Runner
+        uses: step-security/harden-runner@1f99358870fe1c846a3ccba386cc2b2246836776 # v2.2.1
+        with:
+          egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
+
+      - uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3.5.0
 
       - name: Run Character Command
         uses: ./.github/actions/character-to-run/
@@ -71,14 +81,19 @@ jobs:
     concurrency: there-can-only-be-one
     if: ${{ always() }}
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1f99358870fe1c846a3ccba386cc2b2246836776 # v2.2.1
+        with:
+          egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
+
       - name: Download artifact from build job
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
         with:
           name: ${{ env.artifactName }}
           path: ./ArtifactFolder
 
       - name: App Settings Variable Substitution
-        uses: rajbos-actions/variable-substitution@v1.1
+        uses: rajbos-actions/variable-substitution@a4367a66ba128295f7dddf8964a0ac429766492d # v1.1
         with:
           files: 'ArtifactFolder/appsettings.json'
         env:
