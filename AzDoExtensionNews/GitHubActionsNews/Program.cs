@@ -129,12 +129,16 @@ namespace GitHubActionsNews
                 // running the search for individual letters is to slow and has to much results (pagination stops at 1000 results)
                 // run for all two letter combinations instead
                 var letters = "abcdefghijklmnopqrstuvwxyz".ToCharArray();
+                // some letter combos still return over a 1000 results
+                var skipLetterCombo = new List<string>() { "ci", "ch", "gi", "up", "of", "or", "pr", "pu", "re", "se" };
                 foreach (var letter in letters)
                 {
                     var twoLetterQuery = $"{query}{letter}";
-                    Log.Message($"Loading latest states for all actions starting with [{twoLetterQuery}]");
-                    var queriedGitHubMarketplaceUrl = $"{GitHubMarketplaceUrl}&query={twoLetterQuery}";
-                    actions.AddRange(GetAllActions(queriedGitHubMarketplaceUrl));
+                    if (!skipLetterCombo.Contains(twoLetterQuery)) {
+                        Log.Message($"Loading latest states for all actions starting with [{twoLetterQuery}]");
+                        var queriedGitHubMarketplaceUrl = $"{GitHubMarketplaceUrl}&query={twoLetterQuery}";
+                        actions.AddRange(GetAllActions(queriedGitHubMarketplaceUrl));
+                    }
                 }
             }
             else 
