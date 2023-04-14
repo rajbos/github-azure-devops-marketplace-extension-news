@@ -130,7 +130,7 @@ namespace GitHubActionsNews
                 // run for all two letter combinations instead
                 var letters = "abcdefghijklmnopqrstuvwxyz".ToCharArray();
                 // some letter combos still return over a 1000 results
-                var skipLetterCombo = new List<string>() { "ci", "ch", "gi", "up", "of", "or", "pr", "pu", "re", "se" };
+                var skipLetterCombo = new List<string>() { "bu", "ci", "ch", "cl", "co", "gi", "ma", "up", "of", "or", "pr", "pu", "re", "se", "to", "te" };
                 foreach (var letter in letters)
                 {
                     var twoLetterQuery = $"{query}{letter}";
