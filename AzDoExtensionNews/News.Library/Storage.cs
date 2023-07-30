@@ -19,7 +19,7 @@ namespace News.Library
             return filePath;
         }
 
-        public static void SaveJson<T>(List<T> extensions, string fileName)
+        public static void SaveJson<T>(List<T> extensions, string fileName, bool uploadToAzure = true)
         {
             // rename the old file
             RenameOldFile(fileName);
@@ -28,7 +28,10 @@ namespace News.Library
             var text = JsonConvert.SerializeObject(extensions, Formatting.Indented);
             WriteDataToFile(text, fileName);
 
-            UploadFileAsync(GetFilePath(fileName)).GetAwaiter().GetResult();
+            if (uploadToAzure)
+            {
+                UploadFileAsync(GetFilePath(fileName)).GetAwaiter().GetResult();
+            }
         }
 
         private static void WriteDataToFile(string text, string fileName)

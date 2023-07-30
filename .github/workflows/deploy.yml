@@ -108,3 +108,6 @@ jobs:
         run: |
           cd .\ArtifactFolder
           dotnet GitHubActionsNews.dll "consolidate"
+
+          ls -la
+          cat Actions-Full-Overview
