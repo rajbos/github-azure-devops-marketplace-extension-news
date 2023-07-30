@@ -22,9 +22,9 @@ function CreateBlogPost{
     )
     # create the file name based on the repoUrl
     $splitted = $update.RepoUrl.Split("/")
-    $fileName = "$($splitted[0])-$($splitted[1])"
+    $fileName = "$((Get-Date).ToString("dd"))-$($splitted[0])-$($splitted[1])"
     # get current date and split ISO representation into yyyy/MM/dd
-    $date = (Get-Date).ToString("yyyy/MM/dd")
+    $date = (Get-Date).ToString("yyyy/MM")
     $fileName = "$($date)-$($fileName).md"
     # create the file in the following folder 'content/posts/yyyy/MM'
     $filePath = "content/posts/$($date)/$($fileName)"
