@@ -9,6 +9,7 @@ namespace GitHubActionsNews
     public static class Consolidate
     {
         private const string FullOverview = "Actions-Full-Overview";
+        private const string UpdatedOverview = "Actions-Updated-Overview";
 
         public static async Task Run(Twitter twitter)
         {
@@ -73,6 +74,8 @@ namespace GitHubActionsNews
             {
                 var test = updatedActions.Where(item => item.Url == "https://github.com/marketplace/actions/version-forget-me-not");
 
+                // store the updated actions as an extra file
+                Storage.SaveJson<GitHubAction>(updatedActions, UpdatedOverview);
                 // store current set as overview
                 Storage.SaveJson<GitHubAction>(updatedActions, FullOverview);
             }

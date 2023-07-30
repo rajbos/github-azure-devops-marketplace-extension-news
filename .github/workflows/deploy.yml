@@ -110,4 +110,24 @@ jobs:
           dotnet GitHubActionsNews.dll "consolidate"
 
           ls -la
-          cat Actions-Full-Overview
+          cat Actions-Updated-Overview.json
+      
+      - name: Upload Updated Json
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          path: ArtifactFolder/Actions-Updated-Overview.json
+          name: UpdatedActions
+
+  PostNews:
+    runs-on: ubuntu-latest
+    needs: ConsolidateTweet
+    steps:
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: UpdatedActions
+          path: ./ArtifactFolder
+
+      - name: show data
+        run: |
+          ls -la
+          cat ArtifactFolder/Actions-Updated-Overview.json
