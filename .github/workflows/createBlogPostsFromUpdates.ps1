@@ -2,6 +2,10 @@ Param(
     [Parameter(Mandatory=$true)]
     [string]$token
 )
+
+# load the dependents functions
+. $PSScriptRoot/dependents.ps1
+
 $repositoryUrl = "https://x:$token@github.com/devops-actions/azure-devops-extension-news.git"
 # load the json file from disk
 $updates = Get-Content -Path ./ArtifactFolder/Actions-Updated-Overview.json | ConvertFrom-Json
@@ -20,6 +24,9 @@ function CreateBlogPost{
         [Parameter(Mandatory=$true)]
         [PSCustomObject]$update
     )
+    
+    $dependentsNumber = GetDependentsForRepo -repo $repo -owner $owner
+
     # create the file name based on the repoUrl
     $splitted = $update.RepoUrl.Split("/")
     $fileName = "$((Get-Date).ToString("dd"))-$($splitted[0])-$($splitted[1])"
@@ -31,7 +38,7 @@ function CreateBlogPost{
     # create the file
     New-Item -Path $filePath -ItemType File -Force
     # get the content to write into the file
-    $content = GetContent -update $update
+    $content = GetContent -update $update -dependentsNumber $dependentsNumber
     # write the content into the file
     Set-Content -Path $filePath -Value $content
 }
@@ -39,7 +46,9 @@ function CreateBlogPost{
 function GetContent {
     Params (
         [Parameter(Mandatory=$true)]
-        [PSCustomObject]$update
+        [PSCustomObject]$update,
+        [Parameter(Mandatory=$true)]
+        [string]$dependentsNumber
     )
     
     # write the content as a multiline array
@@ -58,7 +67,11 @@ function GetContent {
     $content += ""
     # add the content of the update
     if ($update.Version) {
-        $content += "Version updated for $($update.RepoUrl) to version $($update.Version)"
+        $content += "Version updated for $($update.RepoUrl) to version $($update.Version)."
+    }
+
+    if ("" -ne $dependentsNumber) {
+        $content += "This action is used across all versions by $dependentsNumber repositories."
     }
     $content += ""
     $content += "Go to the [GitHub Marketplace]($($update.Url)) to find the latest changes."
