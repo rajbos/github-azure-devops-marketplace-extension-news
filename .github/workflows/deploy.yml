@@ -109,7 +109,10 @@ jobs:
           cd .\ArtifactFolder
           dotnet GitHubActionsNews.dll "consolidate"
 
-          ls
+      - name: Show consolidated json
+        shell: pwsh
+        run: |
+          cd .\ArtifactFolder
           cat Actions-Updated-Overview.json
       
       - name: Upload Updated Json
@@ -135,6 +138,8 @@ jobs:
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
 
       - name: Create blogposts updates for updates
+        shell: pwsh
         run: |
           cd .github/workflows/
+          ls
           createBlogPostsFromUpdates.ps1 -token ${{ secrets.PAT }}
