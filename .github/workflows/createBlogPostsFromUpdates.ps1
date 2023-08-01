@@ -8,7 +8,7 @@ Param(
 
 $repositoryUrl = "https://x:$token@github.com/devops-actions/azure-devops-extension-news.git"
 # load the json file from disk
-$updates = Get-Content -Path ./ArtifactFolder/Actions-Updated-Overview.json | ConvertFrom-Json
+$updates = Get-Content -Path ../.././ArtifactFolder/Actions-Updated-Overview.json | ConvertFrom-Json
 
 Wrie-Host "Got a token with length $($token.Length)"
 
