@@ -143,4 +143,4 @@ jobs:
         run: |
           cd .github/workflows/
           ls
-          createBlogPostsFromUpdates.ps1 -token ${{ secrets.PAT }}
+          .\createBlogPostsFromUpdates.ps1 -token ${{ secrets.PAT }}
