@@ -1,6 +1,8 @@
 Param(
     [Parameter(Mandatory=$true)]
-    [string]$token
+    [string]$token,
+    [Parameter(Mandatory=$true)]
+    [string]$filePath
 )
 
 # load the dependents functions
@@ -8,7 +10,11 @@ Param(
 
 $repositoryUrl = "https://x:$token@github.com/devops-actions/azure-devops-extension-news.git"
 # load the json file from disk
-$updates = Get-Content -Path ../../ArtifactFolder/Actions-Updated-Overview.json | ConvertFrom-Json
+$updates = Get-Content -Path $filePath | ConvertFrom-Json
+if ($null -eq $updates) {
+    Write-Host "No updates found"
+    exit 0
+}
 
 Wrie-Host "Got a token with length $($token.Length)"
 
