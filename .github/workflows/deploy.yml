@@ -146,4 +146,11 @@ jobs:
           ls
           cd .github/workflows/
           ls
-          .\createBlogPostsFromUpdates.ps1 -token ${{ secrets.PAT }} -filePath "../../ArtifactFolder/Actions-Updated-Overview.json"
+          try {
+            .\createBlogPostsFromUpdates.ps1 -token ${{ secrets.PAT }} -filePath "../../ArtifactFolder/Actions-Updated-Overview.json"
+          }
+          catch {
+            Write-Error $_
+            Write-Host "Retry with root path"
+            .\createBlogPostsFromUpdates.ps1 -token ${{ secrets.PAT }} -filePath "ArtifactFolder/Actions-Updated-Overview.json"
+          }

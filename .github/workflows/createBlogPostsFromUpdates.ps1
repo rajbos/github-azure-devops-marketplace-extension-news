@@ -7,8 +7,10 @@ Param(
 
 # load the dependents functions
 . $PSScriptRoot/dependents.ps1
-
+Write-Host "Got a token with length $($token.Length)"
+Write-Host "Got this file path $($filePath)"
 $repositoryUrl = "https://x:$token@github.com/devops-actions/azure-devops-extension-news.git"
+
 # load the json file from disk
 $updates = Get-Content -Path $filePath | ConvertFrom-Json
 if ($null -eq $updates) {
@@ -16,31 +18,40 @@ if ($null -eq $updates) {
     exit 0
 }
 
-Wrie-Host "Got a token with length $($token.Length)"
+# get the name of the new folder
+$folderName = $repositoryUrl.Split("/")[-1].Split(".")[0]
+# remove the folder if it already exists
+if (Test-Path -Path $folderName) {
+    Remove-Item -Path $folderName -Recurse -Force
+}
 
 # clone the git repository
 git clone $repositoryUrl
-# get the name of the new folder
-$folderName = $repositoryUrl.Split("/")[-1].Split(".")[0]
 # change into the repository
 Set-Location $folderName
 
 function CreateBlogPost{
-    Param(
+    Param (
         [Parameter(Mandatory=$true)]
         [PSCustomObject]$update
     )
+
+    $splitted = $update.RepoUrl.Split("/")
+    $owner = $splitted[0]
+    $repo = $splitted[1]
     
     $dependentsNumber = GetDependentsForRepo -repo $repo -owner $owner
 
-    # create the file name based on the repoUrl
-    $splitted = $update.RepoUrl.Split("/")
-    $fileName = "$((Get-Date).ToString("dd"))-$($splitted[0])-$($splitted[1])"
-    # get current date and split ISO representation into yyyy/MM/dd
+    # create the file name based on the repo    
+    $fileName = "$((Get-Date).ToString("dd-HH"))-$owner-$repo"
+    # get current date and split ISO representation into yyyy/MM
     $date = (Get-Date).ToString("yyyy/MM")
-    $fileName = "$($date)-$($fileName).md"
+    Write-Host("This is the value of date [$date]")
+    $fileName = "$($fileName).md"
+    Write-Host("This is the value of fileName [$fileName]")
     # create the file in the following folder 'content/posts/yyyy/MM'
     $filePath = "content/posts/$($date)/$($fileName)"
+    Write-Host("This is the value of filePath [$filePath]")
     # create the file
     New-Item -Path $filePath -ItemType File -Force
     # get the content to write into the file
@@ -50,7 +61,7 @@ function CreateBlogPost{
 }
 
 function GetContent {
-    Params (
+    Param (
         [Parameter(Mandatory=$true)]
         [PSCustomObject]$update,
         [Parameter(Mandatory=$true)]
@@ -61,7 +72,7 @@ function GetContent {
     $content = @(
         "---"
         "title: $($update.Title)"
-        "date: $(Get-Date -Format yyyy-MM-ddTHH:mm:ssZ)"
+        "date: $(Get-Date -Format yyyy-MM-dd)"
         "tags:"
         "  - $($update.Publisher)"
         "  - GitHub Actions"
