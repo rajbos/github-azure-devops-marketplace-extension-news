@@ -57,7 +57,7 @@ function CreateBlogPost{
     # create the file
     New-Item -Path $filePath -ItemType File -Force
     # get the content to write into the file
-    $content = GetContent -update $update -dependentsNumber $dependentsNumber
+    $content = GetContent -update $update -dependentsNumber "$dependentsNumber"
     # write the content into the file
     Set-Content -Path $filePath -Value $content
 }

@@ -24,13 +24,13 @@ function GetDependentsForRepo {
         }
         else {
             Write-Debug "Found $($myMatches.Count) matches for owner [$owner] and repo [$repo]: https://github.com/$owner/$repo/network/dependents"
-            return ""
+            return "?"
         }
     }
     catch {
         Write-Host "Error loading dependents for owner [$owner] and repo [$repo]:"
         Write-Host "$_"
-        return ""
+        return "?"
     }
 }
 
