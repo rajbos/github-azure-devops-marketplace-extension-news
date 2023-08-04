@@ -9,6 +9,8 @@ Param(
 . $PSScriptRoot/dependents.ps1
 Write-Host "Got a token with length $($token.Length)"
 Write-Host "Got this file path $($filePath)"
+Write-Host "We are running from this location: $PSScriptRoot"
+Get-Location
 $repositoryUrl = "https://x:$token@github.com/devops-actions/azure-devops-extension-news.git"
 
 # load the json file from disk
