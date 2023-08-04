@@ -119,41 +119,38 @@ jobs:
           Get-Content Actions-Updated-Overview.json
           // check if the file is empty
           if ((Get-Content Actions-Updated-Overview.json).Length -eq 0) {
-            // write something to the file so we can test the next - name: 
-            // first create an array to hold the data
-            $data = @()
-            // add a multiline
+            // write something to the file so we can test the next step
             $data += @"
-              [            
-                {
-                  "Url": "https://github.com/marketplace/actions/unity-build-pipeline-utility",
-                  "Title": "Unity Build Pipeline Utility",
-                  "Publisher": "RageAgainstThePixel",
-                  "Version": "v6",
-                  "Updated": "2023-08-01T22:22:13.5974967Z",
-                  "RepoUrl": "RageAgainstThePixel/unity-build"
-                },
-                {
-                  "Url": "https://github.com/marketplace/actions/setup-kustomizegen",
-                  "Title": "Setup Kustomizegen",
-                  "Publisher": "josephrodriguez",
-                  "Version": "v1-alpha1",
-                  "Updated": "2023-08-01T22:22:52.2169806Z",
-                  "RepoUrl": "josephrodriguez/setup-kustomizegen"
-                },
-                {
-                  "Url": "https://github.com/marketplace/actions/ai-based-pr-reviewer-summarizer-with-chat-capabilities",
-                  "Title": "AI-based PR Reviewer & Summarizer with Chat Capabilities",
-                  "Publisher": "coderabbitai",
-                  "Version": "1.11.0",
-                  "Updated": "2023-08-01T21:58:09.943294Z",
-                  "RepoUrl": "coderabbitai/ai-pr-reviewer"
-                }
-              ]
-            "@
+            [            
+              {
+                "Url": "https://github.com/marketplace/actions/unity-build-pipeline-utility",
+                "Title": "Unity Build Pipeline Utility",
+                "Publisher": "RageAgainstThePixel",
+                "Version": "v6",
+                "Updated": "2023-08-01T22:22:13.5974967Z",
+                "RepoUrl": "RageAgainstThePixel/unity-build"
+              },
+              {
+                "Url": "https://github.com/marketplace/actions/setup-kustomizegen",
+                "Title": "Setup Kustomizegen",
+                "Publisher": "josephrodriguez",
+                "Version": "v1-alpha1",
+                "Updated": "2023-08-01T22:22:52.2169806Z",
+                "RepoUrl": "josephrodriguez/setup-kustomizegen"
+              },
+              {
+                "Url": "https://github.com/marketplace/actions/ai-based-pr-reviewer-summarizer-with-chat-capabilities",
+                "Title": "AI-based PR Reviewer & Summarizer with Chat Capabilities",
+                "Publisher": "coderabbitai",
+                "Version": "1.11.0",
+                "Updated": "2023-08-01T21:58:09.943294Z",
+                "RepoUrl": "coderabbitai/ai-pr-reviewer"
+              }
+            ]"@
+              
+            // write the data to the file
+            $data | Out-File Actions-Updated-Overview.json -Encoding utf8
           }
-          // write the data to the file
-          $data | Out-File Actions-Updated-Overview.json -Encoding utf8
       
       - name: Upload Updated Json
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
