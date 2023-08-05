@@ -140,7 +140,6 @@ jobs:
           ls -la
           cat ArtifactFolder/Actions-Updated-Overview.json
 
-
       - name: Create blogposts updates for updates
         shell: pwsh
         run: |
