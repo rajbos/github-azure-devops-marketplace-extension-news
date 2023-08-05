@@ -15,6 +15,8 @@ namespace AzDoExtensionNews
     {
         private const bool TestingTweet = false;
         private static readonly string StorageFileName = "Extensions";
+        private static readonly string NewExtensionsFileName = $"NewExtensions.json";
+        private static readonly string UpdatedExtensionsFileName = $"UpdatedExtensions.json";
         private static Twitter twitter;
 
         static void Main(string[] args)
@@ -108,13 +110,22 @@ namespace AzDoExtensionNews
             CSV.SaveCSV(extensions);
         }
 
-        private static bool PostUpdates(List<Extension> newExtensions, List<Extension> updateExtension, List<PublisherHandles> publisherHandles)
+        private static void SaveExtensionNewsJson(List<Extension> newExtensions, List<Extension> updatedExtensions)
         {
+            Storage.SaveJson(newExtensions, NewExtensionsFileName, uploadToAzure: false);
+            Storage.SaveJson(updatedExtensions, UpdatedExtensionsFileName, uploadToAzure: false);
+        }
+
+        private static bool PostUpdates(List<Extension> newExtensions, List<Extension> updateExtension, List<PublisherHandles> publisherHandles)
+        {            
+            // store all extension updates in files on disk
+            SaveExtensionNewsJson(newExtensions, updatedExtensions: updateExtension);
+
             // limit throughput to only a small number of tweets to prevent disabling of the twitter account
             if (newExtensions.Count + updateExtension.Count > 50)
             {
-                // something must be wrong, number is way to larger
-                Log.Message($"Found {newExtensions.Count + updateExtension.Count} extensions to tweet about, number is way to high. Skipping sending the tweets");
+                // something must be wrong, number is way to large
+                Log.Message($"Found {newExtensions.Count + updateExtension.Count} extensions to update about, number is way to high. Skipping sending the updates");
                 return true;
             }
 
@@ -134,7 +145,7 @@ namespace AzDoExtensionNews
                 {
                     //success = false;
                 }
-            }
+            }            
 
             return success;
         }

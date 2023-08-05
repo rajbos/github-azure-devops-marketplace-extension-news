@@ -9,6 +9,7 @@ namespace GitHubActionsNews
     public static class Consolidate
     {
         private const string FullOverview = "Actions-Full-Overview";
+        private const string UpdatedOverview = "Actions-Updated-Overview";
 
         public static async Task Run(Twitter twitter)
         {
@@ -20,6 +21,7 @@ namespace GitHubActionsNews
             var allActions = await Storage.DownloadAllFilesThatStartWith<GitHubAction>(FullOverview);
 
             var tweetsSend = 0;
+            var actionsNotifications = new List<GitHubAction>();
             if (allActions?.Count > 0)
             {
                 // check for changes
@@ -63,6 +65,8 @@ namespace GitHubActionsNews
                         // send the tweet
                         twitter.SendTweet(tweetText, "", previousVersion == null ? null : $"Old version: [{previousVersion?.Version}]");
                         tweetsSend++;
+
+                        actionsNotifications.Add(action);
                     }
                 }
 
@@ -73,6 +77,8 @@ namespace GitHubActionsNews
             {
                 var test = updatedActions.Where(item => item.Url == "https://github.com/marketplace/actions/version-forget-me-not");
 
+                // store the updated actions as an extra file
+                Storage.SaveJson<GitHubAction>(actionsNotifications, UpdatedOverview);
                 // store current set as overview
                 Storage.SaveJson<GitHubAction>(updatedActions, FullOverview);
             }

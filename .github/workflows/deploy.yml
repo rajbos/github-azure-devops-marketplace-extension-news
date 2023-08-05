@@ -13,6 +13,7 @@ on:
    paths:
    - .github/workflows/deploy.yml
    - .github/actions/character-to-run/*
+   - .github/workflows/createBlogPostsFromUpdates.ps1 # temp!
 
 jobs:
   build:
@@ -55,6 +56,7 @@ jobs:
     strategy:
       matrix:
         character: [c,b,e,g,h,j,k,l,m,n,u,w,x,y,z,o,p,r,s,t,v,ai,ae,ia,ea,0,1,2,3,4,5,6,7,8,9]
+        #character: [9] # temp for faster testing of consolidate updates
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@cba0d00b1fc9a034e1e642ea0f1103c282990604 # v2.5.0
@@ -75,7 +77,7 @@ jobs:
           TwitterAccessTokenSecret: 'TwitterAccessTokenSecret'
           BlobStorageConnectionString: ${{ secrets.BLOB_CONNECTION_STRING }}
 
-  ConsolidateTweet:
+  ConsolidateUpdates:
     runs-on: windows-latest
     needs: GatherCharacterJsons
     concurrency: there-can-only-be-one
@@ -108,3 +110,43 @@ jobs:
         run: |
           cd .\ArtifactFolder
           dotnet GitHubActionsNews.dll "consolidate"
+
+      - name: Show consolidated json
+        shell: pwsh
+        run: |
+          cd .\ArtifactFolder
+          cat Actions-Updated-Overview.json
+          Get-Content Actions-Updated-Overview.json
+                
+      - name: Upload Updated Json
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          path: ArtifactFolder/Actions-Updated-Overview.json
+          name: UpdatedActions
+
+  PostNews:
+    runs-on: ubuntu-latest
+    needs: ConsolidateUpdates
+    steps:
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: UpdatedActions
+          path: ./ArtifactFolder
+
+      - name: show data
+        run: |
+          ls -la
+          cat ArtifactFolder/Actions-Updated-Overview.json
+
+      - name: Create blogposts updates for updates
+        shell: pwsh
+        run: |
+          ls
+          cd .github/workflows/
+          ls
+          
+          $filePath = Resolve-Path "..\..\ArtifactFolder\Actions-Updated-Overview.json"
+          .\createBlogPostsFromUpdates.ps1 -token ${{ secrets.PAT }} -filePath $filePath
+          
