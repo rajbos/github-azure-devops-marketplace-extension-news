@@ -11,7 +11,7 @@ Write-Host "Got a token with length $($token.Length)"
 Write-Host "Got this file path $($filePath)"
 Write-Host "We are running from this location: $PSScriptRoot"
 Get-Location
-$repositoryUrl = "https://x:$token@github.com/devops-actions/github-actions-marketpace-news.git"
+$repositoryUrl = "https://x:$token@github.com/devops-actions/github-actions-marketplace-news.git"
 
 # load the json file from disk
 $updates = Get-Content -Path $filePath | ConvertFrom-Json
