@@ -124,6 +124,7 @@ namespace GitHubActionsNews
         private static List<GitHubAction> GetActionsForSearchQuery(string query)
         {
             var actions = new List<GitHubAction>();
+            var started = DateTime.Now;
             // check if query is a single letter, but is not a number
             if (query.Length == 1 && !int.TryParse(query, out var a)) {
                 // running the search for individual letters is to slow and has to much results (pagination stops at 1000 results)
@@ -198,6 +199,7 @@ namespace GitHubActionsNews
                         existingAction.Publisher = action.Publisher;
                         existingAction.Updated = DateTime.UtcNow;
                         existingAction.RepoUrl = action.RepoUrl;
+                        existingAction.Verified = action.Verified;
                     }
                     else
                     {
@@ -209,7 +211,8 @@ namespace GitHubActionsNews
             }
 
             var count = existingActions.Where(item => !String.IsNullOrEmpty(item.RepoUrl)).Count();
-            Log.Message($"Found [{existingActions.Count}] unique actions with [{count}] repo urls", logsummary: true);
+            Log.Message($"Found [{existingActions.Count}] unique actions with [{count}] repo urls for query [{query}] in {(DateTime.Now - started).TotalMinutes:N2} minutes", logsummary: true);
+            
             // store the new information:
             Storage.SaveJson(existingActions, storeFileName);
 
@@ -238,7 +241,7 @@ namespace GitHubActionsNews
                 Log.Message($"Found {actionList.Count} actions for search url [{searchUrl}] in {(DateTime.Now - started).TotalMinutes:N2} minutes, with [{emptyRepoUrl}] not filled repo urls", logsummary: true);
                 if (actionList.Count == 1000)
                 {
-                    Log.Message($"Found 1000 actions for searchurl [{searchUrl}], this is the maximum amount of actions that can be found on a single page, so time to split this search query into multiple queries", logsummary: true);
+                    Log.Message($"::error ::Found 1000 actions for searchurl [{searchUrl}], this is the maximum amount of actions that can be found on a single page, so time to split this search query into multiple queries", logsummary: true);
                 }
                 return actionList;
             }
@@ -287,7 +290,7 @@ namespace GitHubActionsNews
                     {
                         actionList.Add(ghAction);
 
-                        logger.AppendLine($"\tFound action:{ghAction.Url}, {ghAction.Title}, {ghAction.Publisher}, {ghAction.Version}, {ghAction.RepoUrl}");
+                        logger.AppendLine($"\tFound action:{ghAction.Url}, {ghAction.Title}, {ghAction.Publisher}, Version:{ghAction.Version}, RepoUrl: {ghAction.RepoUrl}, Verified: {ghAction.Verified}");
                     }
                 }
 
@@ -360,7 +363,6 @@ namespace GitHubActionsNews
 
             try
             {
-                //todo: hide cookie message
                 var bannerClassName = "hx_cookie-banner";
                 var banner = driver.FindElement(By.ClassName(bannerClassName));
 
@@ -399,6 +401,7 @@ namespace GitHubActionsNews
                 driver.SwitchTo().Window(newTab);
                 var version = "";
                 var actionRepoUrl = "";
+                var verified = false;
                 Thread.Sleep(2000);
                 if (driver.Title.StartsWith("about:blank"))
                 {
@@ -410,6 +413,15 @@ namespace GitHubActionsNews
                     // act
                     try
                     {
+                        // check if the verified class exists
+                        try {
+                            driver.FindElements(By.ClassName("octicon-verified"));
+                            verified = true;
+                        }
+                        catch {
+                            // verified class not found, use default value
+                        }
+
                         version = ActionPageInteraction.GetVersionFromAction(driver);
                         Log.Message($"Found version [{version}] for url [{url}]");
 
@@ -453,6 +465,7 @@ namespace GitHubActionsNews
                     Version = version,
                     Updated = DateTime.UtcNow,
                     RepoUrl = actionRepoUrl,
+                    Verified = verified
                 };
             }
             catch (Exception e)
