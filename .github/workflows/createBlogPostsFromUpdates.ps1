@@ -78,7 +78,7 @@ function GetContent {
     $content = @(
         "---"
         "title: $($update.Title)"
-        "date: $(Get-Date -Format yyyy-MM-dd)"
+        "date: $(Get-Date -Format yyyy-MM-dd HH:mm:ss +00:00)"
         "tags:"
         "  - $($update.Publisher)"
         "  - GitHub Actions"
@@ -116,6 +116,8 @@ foreach ($update in $updates) {
     # create the file name
     try {
         CreateBlogPost -update $update
+        # sleep 2 seconds
+        Start-Sleep -Seconds 2
     }
     catch {
         Write-Host "Error creating blog post for update [$update]"
