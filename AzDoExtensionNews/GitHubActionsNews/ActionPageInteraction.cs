@@ -12,13 +12,12 @@ namespace GitHubActionsNews
         public static string GetRepoFromAction(IWebDriver driver)
         {
             var links = driver.FindElements(By.TagName("a"));
-            foreach (var link in links)
-            {
+            //foreach (var link in links)
+            //{
                 //Console.WriteLine(link.Text);
-            }
+            //}
 
             var foundIssueLink = links.FirstOrDefault(a => a.Text.StartsWith("Report abuse"));
-
             if (foundIssueLink == null)
             {
                 return null;
@@ -70,14 +69,14 @@ namespace GitHubActionsNews
                 var publisherParent = divWithTitle.FindElement(By.XPath("./..")); // find parent element
                 var allChildElements = publisherParent.FindElements(By.XPath(".//*")); // find all child elements  
                 sb.AppendLine($"childElements.Count: [{allChildElements.Count}]");
-                foreach (var el in allChildElements)
-                {
-                    sb.AppendLine($"{el.Text} - {el.TagName}");                   
-                }
 
                 if (Debugger.IsAttached)
                 {
-                    //Log.Message(sb.ToString());
+                    foreach (var el in allChildElements)
+                    {
+                        sb.AppendLine($"{el.Text} - {el.TagName}");                   
+                    }
+                    Log.Message(sb.ToString());
                 }
 
                 return allChildElements[2].Text;
