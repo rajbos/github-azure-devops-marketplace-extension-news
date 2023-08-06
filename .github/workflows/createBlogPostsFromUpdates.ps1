@@ -38,12 +38,15 @@ function CreateBlogPost{
         [PSCustomObject]$update
     )
 
+    if (!$update.RepoUrl || $update.RepoUrl -eq "") {
+        Write-Warning "RepoUrl is empty for update [$update], skipping blogpost creation"
+        return
+    }    
+
     $splitted = $update.RepoUrl.Split("/")
     $owner = $splitted[0]
-    $repo = $splitted[1]
-    
+    $repo = $splitted[1]        
     $dependentsNumber = GetDependentsForRepo -repo $repo -owner $owner
-
     # create the file name based on the repo    
     $fileName = "$((Get-Date).ToString("dd-HH"))-$owner-$repo"
     # get current date and split ISO representation into yyyy/MM
@@ -59,7 +62,7 @@ function CreateBlogPost{
     # get the content to write into the file
     $content = GetContent -update $update -dependentsNumber "$dependentsNumber"
     # write the content into the file
-    Set-Content -Path $filePath -Value $content
+    Set-Content -Path $filePath -Value $content | Out-Null
 }
 
 function GetContent {
@@ -86,7 +89,7 @@ function GetContent {
     $content += ""
     # add the content of the update
     if ($update.Version) {
-        $content += "Version updated for $($update.RepoUrl) to version $($update.Version)."
+        $content += "Version updated for **$($update.RepoUrl)** to version **$($update.Version)**."
     }
 
     if ("" -ne $dependentsNumber) {
@@ -110,7 +113,13 @@ function GetContent {
 #   }
 foreach ($update in $updates) {
     # create the file name
-    CreateBlogPost -update $update
+    try {
+        CreateBlogPost -update $update
+    }
+    catch {
+        Write-Host "Error creating blog post for update [$update]"
+        Write-Host "$_"
+    }
 }
 
 # use git porcelain to check if there are any changes
