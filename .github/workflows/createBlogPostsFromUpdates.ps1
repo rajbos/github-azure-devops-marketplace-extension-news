@@ -47,6 +47,7 @@ function CreateBlogPost{
     $owner = $splitted[0]
     $repo = $splitted[1]        
     $dependentsNumber = GetDependentsForRepo -repo $repo -owner $owner
+
     # create the file name based on the repo    
     $fileName = "$((Get-Date).ToString("dd-HH"))-$owner-$repo"
     # get current date and split ISO representation into yyyy/MM
