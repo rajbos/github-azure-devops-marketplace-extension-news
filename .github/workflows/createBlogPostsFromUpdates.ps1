@@ -59,11 +59,11 @@ function CreateBlogPost{
     $filePath = "content/posts/$($date)/$($fileName)"
     Write-Host("This is the value of filePath [$filePath]")
     # create the file
-    New-Item -Path $filePath -ItemType File -Force
+    New-Item -Path $filePath -ItemType File -Force | Out-Null
     # get the content to write into the file
     $content = GetContent -update $update -dependentsNumber "$dependentsNumber"
     # write the content into the file
-    Set-Content -Path $filePath -Value $content | Out-Null
+    Set-Content -Path $filePath -Value $content
 }
 
 function GetContent {
@@ -135,7 +135,7 @@ if ($changes) {
     # add all changes
     git add .
     # commit the changes
-    git commit -m "Update blog posts for $(Get-Date -Format yyyy-MM-ddTHH:mm:ssZ)"
+    git commit -m "Update blog posts for $(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")"
     # push the changes
     git push
 }
