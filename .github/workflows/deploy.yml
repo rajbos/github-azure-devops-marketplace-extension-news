@@ -48,7 +48,7 @@ jobs:
         path: publish/AzDo
         name: ${{ env.ArtifactName }}
 
-  GatherCharacterJsons:
+  GatherCharacter:
     runs-on: windows-latest
     needs: build
     continue-on-error: true
@@ -79,7 +79,7 @@ jobs:
 
   ConsolidateUpdates:
     runs-on: windows-latest
-    needs: GatherCharacterJsons
+    needs: GatherCharacter
     concurrency: there-can-only-be-one
     if: ${{ always() }}
     steps:
