@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/AzDoExtensionNews/AzDoExtensionNews/AzDoExtensionNews.csproj",
+                "${workspaceFolder}/AzDoExtensionNews/AzDoExtensionNews.sln",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],

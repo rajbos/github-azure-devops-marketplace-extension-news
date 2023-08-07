@@ -6,6 +6,7 @@ using OpenQA.Selenium.Support.UI;
 using SeleniumExtras.WaitHelpers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -23,10 +24,11 @@ namespace GitHubActionsNews
         {
             if (args.Length == 0)
             {
-                Log.Message("Please add a parameter to the run");
+                Log.Message("Please add a parameter to the run:");
                 Log.Message(" all = run through each action result in the list");
                 Log.Message(" One or more comma separated letters = run through each action result that matches the search string");
                 Log.Message(" consolidate = download all previous result files and consolidate to 1 file");
+                Log.Message(" verify = verify all actions in the storage account for overlap");
             }
 
             Configuration.LoadSettings();
@@ -43,6 +45,9 @@ namespace GitHubActionsNews
                     break;
                 case "consolidate":
                     await RunConsolidate();
+                    break;
+                case "verify":
+                    await RunVerify();
                     break;
                 case "test":
                     RunTest();
@@ -74,6 +79,11 @@ namespace GitHubActionsNews
         private static async Task RunConsolidate()
         {
             await Consolidate.Run(twitter);
+        }
+
+        private static async Task RunVerify()
+        {
+            await Verify.Run();
         }
 
         private static async Task RunGroupAction()
@@ -131,7 +141,7 @@ namespace GitHubActionsNews
                 // run for all two letter combinations instead
                 var letters = "abcdefghijklmnopqrstuvwxyz".ToCharArray();
                 // some letter combos still return over a 1000 results
-                var skipLetterCombo = new List<string>() { "bu", "ci", "ch", "cl", "co", "gi", "ma", "up", "of", "or", "pr", "pu", "re", "se", "to", "te" };
+                var skipLetterCombo = new List<string>() { "bu", "ci", "ch", "cl", "co", "gi", "ma", "up", "of", "or", "pr", "pu", "re", "sa", "se", "to", "te", "lo", "le", "ng", "ns", "on", "or", "ta", "te", "th", "ti", "ub", "up", "et", "el", "er", "en", "ct", "cu" };
                 foreach (var letter in letters)
                 {
                     var twoLetterQuery = $"{query}{letter}";
@@ -261,7 +271,7 @@ namespace GitHubActionsNews
         private static ChromeDriver GetDriver()
         {
             var chromeOptions = new ChromeOptions();
-            //if (!Debugger.IsAttached)
+            if (!Debugger.IsAttached)
             {
                 chromeOptions.AddArguments("headless");
             }

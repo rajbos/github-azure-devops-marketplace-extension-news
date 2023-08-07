@@ -10,8 +10,21 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/AzDoExtensionNews/AzDoExtensionNews/bin/Debug/netcoreapp3.1/AzDoExtensionNews.dll",
+            "program": "${workspaceFolder}/AzDoExtensionNews/AzDoExtensionNews/bin/Debug/net7.0/AzDoExtensionNews.dll",
             "args": [],
+            "cwd": "${workspaceFolder}/AzDoExtensionNews/AzDoExtensionNews",
+            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "RunVerify GitHubActionsNews",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/AzDoExtensionNews/GitHubActionsNews/bin/Debug/net7.0/GitHubActionsNews.dll",
+            "args": ["verify"],
             "cwd": "${workspaceFolder}/AzDoExtensionNews/AzDoExtensionNews",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",

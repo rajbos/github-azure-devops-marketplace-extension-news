@@ -9,6 +9,11 @@ using System.Linq;
 
 namespace News.Library
 {
+    public class ActionFile 
+    {
+        public string FileName { get; set; }
+        public List<GitHubAction> Actions { get; set; }
+    }
     public static class Storage
     {
         #region LocalStorage
@@ -72,7 +77,7 @@ namespace News.Library
         {
             Log.Message($"Reading data from file [{fileName}]");
             var filePath = GetFilePath(fileName);
-            DownloadFileAsync(filePath).GetAwaiter().GetResult();
+            // xxx DownloadFileAsync(filePath).GetAwaiter().GetResult();
             var text = File.ReadAllText(filePath);
             return text;
         }
@@ -189,6 +194,36 @@ namespace News.Library
                 var itemsFromFile = ReadFromJson<T>(fileName, $"extensions with [{startsWith}]");
 
                 allItems.AddRange(itemsFromFile);
+            }
+
+            return allItems;
+        }
+
+        public static async Task<List<ActionFile>> SeparateDownloadAllFilesThatStartWith(string startsWith)
+        {
+            // get all file refs that start with startsWith
+            var connectionString = GetConnectionString();
+            await GetBlobClientAsync(connectionString);
+
+            var list = CloudBlobContainer.ListBlobs(prefix: startsWith);
+
+            var allItems = new List<ActionFile>();
+            foreach (var item in list)
+            {
+                // download them all
+                var splitted = item.StorageUri.PrimaryUri.ToString().Split('/');
+                var fileName = Path.GetFileNameWithoutExtension(splitted[splitted.Length - 1]);
+
+                // prevent the full overview files from being downloaded
+                if (fileName.EndsWith("-Full-Overview") || fileName.EndsWith("Updated-Overview"))
+                {
+                    continue;
+                }
+             
+                // group the results
+                var itemsFromFile = ReadFromJson<GitHubAction>(fileName, $"extensions with [{startsWith}]");
+
+                allItems.Add(new ActionFile { FileName = fileName, Actions = itemsFromFile });
             }
 
             return allItems;

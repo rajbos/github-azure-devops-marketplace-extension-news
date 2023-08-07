@@ -35,7 +35,7 @@ namespace GitHubActionsNews
 
                     if (action.Url == "https://github.com/marketplace/actions/version-forget-me-not")
                     {
-                        var wait = true;
+                        _ = true;
                     }
 
                     var previousVersions = allActions.Where(item => item.Url == action.Url)
