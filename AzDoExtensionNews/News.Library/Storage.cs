@@ -77,7 +77,7 @@ namespace News.Library
         {
             Log.Message($"Reading data from file [{fileName}]");
             var filePath = GetFilePath(fileName);
-            // xxx DownloadFileAsync(filePath).GetAwaiter().GetResult();
+            DownloadFileAsync(filePath).GetAwaiter().GetResult();
             var text = File.ReadAllText(filePath);
             return text;
         }
