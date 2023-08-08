@@ -78,7 +78,7 @@ function GetContent {
     $content = @(
         "---"
         "title: $($update.Title)"
-        "date: $(Get-Date -Format \"yyyy-MM-dd HH:mm:ss +00:00\")"
+        "date: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss +00:00")"
         "tags:"
         "  - $($update.Publisher)"
         "  - GitHub Actions"
