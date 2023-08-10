@@ -83,6 +83,9 @@ function GetContent {
         "  - $($update.Publisher)"
         "  - GitHub Actions"
         "draft: false"
+        "repo: $($update.RepoUrl)"
+        "marketplace: $($update.Url)"
+        "version: $($update.Version)"
         "---"
         ""
     )
