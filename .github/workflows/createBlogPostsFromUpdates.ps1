@@ -32,6 +32,58 @@ git clone $repositoryUrl
 # change into the repository
 Set-Location $folderName
 
+function GetBasicAuthenticationHeader(){
+    Param (
+        $access_token = $env:GITHUB_TOKEN
+    )
+
+    $CredPair = "x:$access_token"
+    $EncodedCredentials = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($CredPair))
+    
+    return "Basic $EncodedCredentials";
+}
+
+function ApiCall {
+    Param (
+        $url,
+        $access_token = $env:GITHUB_TOKEN
+    )
+    $headers = @{
+        Authorization = GetBasicAuthenticationHeader -access_token $access_token
+    }
+    if ($null -ne $body) {
+        $headers.Add('Content-Type', 'application/json')
+        $headers.Add('User-Agent', 'rajbos')
+    }
+    $result = Invoke-WebRequest -Uri $url -Headers $headers -Method $method -ErrorVariable $errvar -ErrorAction Continue
+    $response = $result.Content | ConvertFrom-Json
+
+    return $response
+}
+
+function GetReleaseBody {
+    Param (
+        [Parameter(Mandatory=$true)]
+        [string] $repo,
+        [Parameter(Mandatory=$true)]
+        [string] $owner,
+        [Parameter(Mandatory=$true)]
+        [string] $tag
+    )
+
+    $url = "https://api.github.com/repos/$owner/$repo/releases/tags/$tag"
+    try {
+        $release = ApiCall -url $url -access_token $token
+        return $release.body
+    }
+    catch {
+        Write-Warning "Error getting release body for repo [$repo] and tag [$tag]"
+        Write-Warning "$_"
+        return ""
+    }
+
+}
+
 function CreateBlogPost{
     Param (
         [Parameter(Mandatory=$true)]
@@ -48,6 +100,8 @@ function CreateBlogPost{
     $repo = $splitted[1]        
     $dependentsNumber = GetDependentsForRepo -repo $repo -owner $owner
 
+    $releaseBody = GetReleaseBody -repo $repo -owner $owner -tag $update.Version
+
     # create the file name based on the repo    
     $fileName = "$((Get-Date).ToString("dd-HH"))-$owner-$repo"
     # get current date and split ISO representation into yyyy/MM
@@ -61,7 +115,7 @@ function CreateBlogPost{
     # create the file
     New-Item -Path $filePath -ItemType File -Force | Out-Null
     # get the content to write into the file
-    $content = GetContent -update $update -dependentsNumber "$dependentsNumber"
+    $content = GetContent -update $update -dependentsNumber "$dependentsNumber" -releaseBody $releaseBody
     # write the content into the file
     Set-Content -Path $filePath -Value $content
 }
@@ -71,7 +125,9 @@ function GetContent {
         [Parameter(Mandatory=$true)]
         [PSCustomObject]$update,
         [Parameter(Mandatory=$true)]
-        [string]$dependentsNumber
+        [string]$dependentsNumber,
+        [Parameter(Mandatory=$true)]
+        [string]$releaseBody
     )
     
     # write the content as a multiline array
@@ -86,6 +142,7 @@ function GetContent {
         "repo: $($update.RepoUrl)"
         "marketplace: $($update.Url)"
         "version: $($update.Version)"
+        "dependentsNumber: $dependentsNumber"
         "---"
         ""
     )
@@ -96,11 +153,24 @@ function GetContent {
         $content += "Version updated for **$($update.RepoUrl)** to version **$($update.Version)**."
     }
 
+    if ($update.Verified) {
+        $content += "- This publisher is shown verified by GitHub."
+    } 
     if ("" -ne $dependentsNumber) {
-        $content += "This action is used across all versions by $dependentsNumber repositories."
+        $content += "- This action is used across all versions by $dependentsNumber repositories."
     }
     $content += ""
     $content += "Go to the [GitHub Marketplace]($($update.Url)) to find the latest changes."
+    $content += ""
+    if ($releaseBody) {
+        $content += "## Release notes"
+        $content += ""
+        # convert the \r\n in the text to lines in the array
+        foreach ($line in $releaseBody.Split("\r\n")) {
+            $content += $line
+        }
+    }
+    
     # return the content of the update
     return $content
 }
