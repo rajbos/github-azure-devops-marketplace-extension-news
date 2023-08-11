@@ -55,6 +55,7 @@ function ApiCall {
         $headers.Add('Content-Type', 'application/json')
         $headers.Add('User-Agent', 'rajbos')
     }
+    $method = "GET"
     $result = Invoke-WebRequest -Uri $url -Headers $headers -Method $method -ErrorVariable $errvar -ErrorAction Continue
     $response = $result.Content | ConvertFrom-Json
 
