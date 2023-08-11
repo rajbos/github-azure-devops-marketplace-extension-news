@@ -132,6 +132,12 @@ function GetContent {
     )
     
     # write the content as a multiline array
+    if ($dependentsNumber -eq "?") {
+        $dependentsNumberString = "'?'"
+     }
+     else {
+        $dependentsNumberString = $dependentsNumber
+    }
     $content = @(
         "---"
         "title: $($update.Title)"
@@ -143,7 +149,7 @@ function GetContent {
         "repo: $($update.RepoUrl)"
         "marketplace: $($update.Url)"
         "version: $($update.Version)"
-        "dependentsNumber: $dependentsNumber"
+        "dependentsNumber: $dependentsNumberString"
         "---"
         ""
     )
