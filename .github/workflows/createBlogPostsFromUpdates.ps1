@@ -163,7 +163,7 @@ function GetContent {
     $content += ""
     $content += "Go to the [GitHub Marketplace]($($update.Url)) to find the latest changes."
     $content += ""
-    if ($releaseBody) {
+    if ($releaseBody -ne "") {
         $content += "## Release notes"
         $content += ""
         # convert the \r\n in the text to lines in the array
