@@ -121,6 +121,15 @@ function CreateBlogPost{
     Set-Content -Path $filePath -Value $content
 }
 
+function SanitizeContent {
+    Param(
+        [Parameter(Mandatory=$true)]
+        [string]$content
+    )
+    
+    return $content.Replace(":", "")
+}
+
 function GetContent {
     Param (
         [Parameter(Mandatory=$true)]
@@ -140,7 +149,7 @@ function GetContent {
     }
     $content = @(
         "---"
-        "title: $($update.Title)"
+        "title: $(SanitizeContent $update.Title)"
         "date: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss +00:00")"
         "tags:"
         "  - $($update.Publisher)"
@@ -148,7 +157,7 @@ function GetContent {
         "draft: false"
         "repo: $($update.RepoUrl)"
         "marketplace: $($update.Url)"
-        "version: $($update.Version)"
+        "version: $(SanitizeContent $update.Version)"
         "dependentsNumber: $dependentsNumberString"
         "---"
         ""
