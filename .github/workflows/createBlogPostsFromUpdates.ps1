@@ -39,7 +39,7 @@ function GetBasicAuthenticationHeader(){
 
     $CredPair = "x:$access_token"
     $EncodedCredentials = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($CredPair))
-    
+
     return "Basic $EncodedCredentials";
 }
 
@@ -94,16 +94,16 @@ function CreateBlogPost{
     if (!$update.RepoUrl || $update.RepoUrl -eq "") {
         Write-Warning "RepoUrl is empty for update [$update], skipping blogpost creation"
         return
-    }    
+    }
 
     $splitted = $update.RepoUrl.Split("/")
     $owner = $splitted[0]
-    $repo = $splitted[1]        
+    $repo = $splitted[1]
     $dependentsNumber = GetDependentsForRepo -repo $repo -owner $owner
 
     $releaseBody = GetReleaseBody -repo $repo -owner $owner -tag $update.Version
 
-    # create the file name based on the repo    
+    # create the file name based on the repo
     $fileName = "$((Get-Date).ToString("dd-HH"))-$owner-$repo"
     # get current date and split ISO representation into yyyy/MM
     $date = (Get-Date).ToString("yyyy/MM")
@@ -122,12 +122,12 @@ function CreateBlogPost{
 }
 
 function SanitizeContent {
-    Param(
+    Param (
         [Parameter(Mandatory=$true)]
         [string]$content
     )
-    
-    return $content.Replace(":", "").Replace("""", "").Replace("'", "")
+
+    return $content.Replace(":", "").Replace("@", "").Replace("""", "").Replace("'", "")
 }
 
 function GetContent {
@@ -139,7 +139,7 @@ function GetContent {
         [Parameter(Mandatory=$true)]
         [string]$releaseBody
     )
-    
+
     # write the content as a multiline array
     if ($dependentsNumber -eq "?") {
         $dependentsNumberString = "?"
@@ -171,7 +171,7 @@ function GetContent {
 
     if ($update.Verified) {
         $content += "- This publisher is shown as `verified` by GitHub."
-    } 
+    }
     if ("" -ne $dependentsNumber) {
         $content += "- This action is used across all versions by **$dependentsNumber** repositories."
     }
@@ -186,7 +186,7 @@ function GetContent {
             $content += $line
         }
     }
-    
+
     # return the content of the update
     return $content
 }
