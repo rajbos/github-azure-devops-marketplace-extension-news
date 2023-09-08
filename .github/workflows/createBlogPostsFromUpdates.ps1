@@ -127,7 +127,7 @@ function SanitizeContent {
         [string]$content
     )
     
-    return $content.Replace(":", "")
+    return $content.Replace(":", "").Replace("\"", "").Replace("'", "")
 }
 
 function GetContent {
