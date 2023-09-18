@@ -142,7 +142,7 @@ function GetContent {
     
     # write the content as a multiline array
     if ($dependentsNumber -eq "?") {
-        $dependentsNumberString = "'?'"
+        $dependentsNumberString = "?"
      }
      else {
         $dependentsNumberString = $dependentsNumber
