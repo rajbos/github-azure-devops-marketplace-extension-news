@@ -170,7 +170,7 @@ function GetContent {
     }
 
     if ($update.Verified) {
-        $content += "- This publisher is shown as 'verified' by GitHub."
+        $content += "- This publisher is shown as `verified` by GitHub."
     } 
     if ("" -ne $dependentsNumber) {
         $content += "- This action is used across all versions by **$dependentsNumber** repositories."
