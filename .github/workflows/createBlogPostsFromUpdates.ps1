@@ -158,7 +158,7 @@ function GetContent {
         "repo: $($update.RepoUrl)"
         "marketplace: $($update.Url)"
         "version: $(SanitizeContent $update.Version)"
-        "dependentsNumber: $dependentsNumberString"
+        "dependentsNumber: ""$dependentsNumberString"""
         "---"
         ""
     )
