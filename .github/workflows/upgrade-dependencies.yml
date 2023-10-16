@@ -21,9 +21,10 @@ jobs:
           ls
           cd AzDoExtensionNews
           ls
+          cd ..
 
       - name: Build
-        run: dotnet build AzDoExtensionNews\AzDoExtensionNews.sln
+        run: dotnet build $GITHUB_WORKSPACE/AzDoExtensionNews/AzDoExtensionNews.sln
 
       - name: Upgrade packages
         run: |
