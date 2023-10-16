@@ -26,13 +26,13 @@ jobs:
           dotnet outdated --upgrade AzDoExtensionNews\
 
           # check for any updates with git porcelain
-          git status --porcelain "Directory.Build.props"
+          git status --porcelain "Directory.Packages.props"
           if [[ -n $(git status --porcelain Directory.Build.props) ]]; then
             echo "Committing changes to git and pushing to GitHub..."
             git config --global user.email "bot@github-actions.com"
             git config --global user.name "GitHub Actions Bot"
 
-            git add "Directory.Build.props"
+            git add "Directory.Packages.props"
 
             git commit -am "chore: upgrade c# dependencies"
             git push
