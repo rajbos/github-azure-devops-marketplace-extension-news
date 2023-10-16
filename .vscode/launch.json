@@ -31,6 +31,19 @@
             "stopAtEntry": false
         },
         {
+            "name": "Run with arg",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/AzDoExtensionNews/GitHubActionsNews/bin/Debug/net7.0/GitHubActionsNews.dll",
+            "args": ["apprise"],
+            "cwd": "${workspaceFolder}/AzDoExtensionNews/AzDoExtensionNews",
+            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
             "name": ".NET Core Attach",
             "type": "coreclr",
             "request": "attach",
