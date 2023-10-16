@@ -152,9 +152,9 @@ namespace GitHubActionsNews
                     }
                 }
             }
-            else 
+            else
             {
-                Log.Message($"Loading latest states for all actions starting with [{query}]");                
+                Log.Message($"Loading latest states for all actions starting with [{query}]");
 
                 var queriedGitHubMarketplaceUrl = $"{GitHubMarketplaceUrl}&query={query}";
                 actions.AddRange(GetAllActions(queriedGitHubMarketplaceUrl));
@@ -222,7 +222,7 @@ namespace GitHubActionsNews
 
             var count = existingActions.Where(item => !String.IsNullOrEmpty(item.RepoUrl)).Count();
             Log.Message($"Found [{existingActions.Count}] unique actions with [{count}] repo urls for query [{query}] in {(DateTime.Now - started).TotalMinutes:N2} minutes", logsummary: true);
-            
+
             // store the new information:
             Storage.SaveJson(existingActions, storeFileName);
 
@@ -400,7 +400,7 @@ namespace GitHubActionsNews
                 var url = action.GetAttribute("href");
 
                 var publisherParent = divWithTitle.FindElement(By.XPath("./..")); // find parent element
-                var allChildElements = publisherParent.FindElements(By.XPath(".//*")); // find all child elements                
+                var allChildElements = publisherParent.FindElements(By.XPath(".//*")); // find all child elements
                 var publisher = allChildElements[2].Text;
 
                 // open the url in a new tab
@@ -425,8 +425,10 @@ namespace GitHubActionsNews
                     {
                         // check if the verified class exists
                         try {
-                            driver.FindElements(By.ClassName("octicon-verified"));
-                            verified = true;
+                            var el = driver.FindElements(By.ClassName("octicon-verified"));
+                            if (el != null) {
+                                verified = true;
+                            }
                         }
                         catch {
                             // verified class not found, use default value
