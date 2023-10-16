@@ -17,6 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - run: |
+          ls
+          cd AzDoExtensionNews
+          ls
+
       - name: Build
         run: dotnet build AzDoExtensionNews\AzDoExtensionNews.sln
 
