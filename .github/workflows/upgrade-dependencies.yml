@@ -27,8 +27,10 @@ jobs:
 
           # check for any updates with git porcelain
           git status --porcelain "Directory.Packages.props"
-          if [[ -n $(git status --porcelain Directory.Packages.props) ]]; then
+          if [[ -n $(git status --porcelain "Directory.Packages.props") ]]; then
             echo "Committing changes to git and pushing to GitHub..."
+            git checkout -b upgrade-dependencies
+
             git config --global user.email "bot@github-actions.com"
             git config --global user.name "GitHub Actions Bot"
 
