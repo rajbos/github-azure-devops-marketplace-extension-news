@@ -426,7 +426,7 @@ namespace GitHubActionsNews
                         // check if the verified class exists
                         try {
                             var el = driver.FindElements(By.ClassName("octicon-verified"));
-                            if (el != null) {
+                            if (el != null && el.Count > 0) {
                                 verified = true;
                             }
                         }
