@@ -17,12 +17,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - run: |
-          ls
-          cd AzDoExtensionNews
-          ls
-          cd ..
-
       - name: Build
         run: dotnet build $GITHUB_WORKSPACE/AzDoExtensionNews/AzDoExtensionNews.sln
 
@@ -35,8 +29,11 @@ jobs:
           dotnet outdated --upgrade AzDoExtensionNews\
 
           # check for any updates with git porcelain
-          git status --porcelain "Directory.Packages.props"
           if [[ -n $(git status --porcelain "Directory.Packages.props") ]]; then
+
+            # build the solution again to make sure it did not break
+            dotnet build $GITHUB_WORKSPACE/AzDoExtensionNews/AzDoExtensionNews.sln
+
             echo "Committing changes to git and pushing to GitHub..."
             git checkout -b upgrade-dependencies
 
@@ -46,7 +43,7 @@ jobs:
             git add "Directory.Packages.props"
 
             git commit -am "chore: upgrade c# dependencies"
-            git push
+            git push --set-upstream origin upgrade-dependencies
 
             gh pr create --title "chore: upgrade dependencies" --body "This PR upgrades C# dependencies"
           else
