@@ -15,7 +15,7 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Build
         run: dotnet build $GITHUB_WORKSPACE/AzDoExtensionNews/AzDoExtensionNews.sln
