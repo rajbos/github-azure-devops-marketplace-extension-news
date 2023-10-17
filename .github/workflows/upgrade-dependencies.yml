@@ -21,6 +21,8 @@ jobs:
         run: dotnet build $GITHUB_WORKSPACE/AzDoExtensionNews/AzDoExtensionNews.sln
 
       - name: Upgrade packages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # get the tool
           dotnet tool install --global dotnet-outdated-tool
