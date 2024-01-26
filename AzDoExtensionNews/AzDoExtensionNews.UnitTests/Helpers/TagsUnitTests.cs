@@ -1,6 +1,7 @@
 using AzDoExtensionNews.Helpers;
 using AzDoExtensionNews.Models;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace Tests.Helpers
 {
@@ -19,7 +20,7 @@ namespace Tests.Helpers
             var hashTags = Tags.GetHashTags(extension, 100);
 
             // Assert
-            Assert.AreEqual("Trial: 18 Days", hashTags);
+            ClassicAssert.AreEqual("Trial: 18 Days", hashTags);
         }
 
         [Test]
@@ -35,7 +36,7 @@ namespace Tests.Helpers
             var hashTags = Tags.GetHashTags(extension, 100);
 
             // Assert
-            Assert.AreEqual(char.ConvertFromUtf32(0x1F4B3), hashTags);
+            ClassicAssert.AreEqual(char.ConvertFromUtf32(0x1F4B3), hashTags);
         }
     }
 }
