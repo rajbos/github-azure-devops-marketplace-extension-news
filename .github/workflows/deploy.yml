@@ -78,10 +78,12 @@ jobs:
     concurrency: there-can-only-be-one
     if: ${{ always() }}
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@eb238b55efaa70779f274895e782ed17c84f2895 # v2.6.1
-        with:
-          egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
+      - name: Handle matrix error
+        run: |
+          if [[ "${{ needs.GatherCharacter.result }}" == "failure" ]]; then
+            echo "All matrix jobs failed."
+            exit 1
+          fi
 
       - name: Download artifact from build job
         uses: actions/download-artifact@f44cd7b40bfd40b6aa1cc1b9b5b7bf03d3c67110 # v4.1.0
