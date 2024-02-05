@@ -80,10 +80,10 @@ jobs:
     steps:
       - name: Handle matrix error
         run: |
-          if [[ "${{ needs.GatherCharacter.result }}" == "failure" ]]; then
+          if ( "${{ needs.GatherCharacter.result }}" == "failure" ) {
             echo "All matrix jobs failed."
             exit 1
-          fi
+          }
 
       - name: Download artifact from build job
         uses: actions/download-artifact@f44cd7b40bfd40b6aa1cc1b9b5b7bf03d3c67110 # v4.1.0
