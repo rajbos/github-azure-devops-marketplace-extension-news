@@ -80,7 +80,7 @@ jobs:
     steps:
       - name: Handle matrix error
         run: |
-          if ( "${{ needs.GatherCharacter.result }}" == "failure" ) {
+          if ( "${{ needs.GatherCharacter.result }}" -eq "failure" ) {
             echo "All matrix jobs failed."
             exit 1
           }
