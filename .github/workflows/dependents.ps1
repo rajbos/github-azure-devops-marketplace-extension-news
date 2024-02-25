@@ -12,7 +12,7 @@ function GetDependentsForRepo {
         $content = Invoke-WebRequest -Uri $url -UseBasicParsing
 
         # find the text where it says "10 repositories"
-        $regex = [regex]"\d{1,3}(,\d{1,3})*\s*\n\s*Repositories"
+        $regex = [regex]"\d*(,\d{1,3})*\s*\n\s*Repositories"
         $myMatches = $regex.Matches($content.Content)
         # check for regex matches
         if ($myMatches.Count -eq 1) { 
@@ -35,8 +35,8 @@ function GetDependentsForRepo {
 }
 
 function main {
-    $repo = "load-available-actions"
-    $owner = "devops-actions"
+    $repo = "satis-to-artifact-action"
+    $owner = "mattgrul"
     $dependents = GetDependentsForRepo -repo $repo -owner $owner
     Write-Host "Dependents: $dependents repositories"
 }
