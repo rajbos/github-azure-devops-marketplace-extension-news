@@ -14,12 +14,20 @@ function GetDependentsForRepo {
         # find the text where it says "10 repositories"
         $regex = [regex]"\d*(,\d{1,3})*\s*\n\s*Repositories"
         $myMatches = $regex.Matches($content.Content)
+        foreach ($match in $myMatches) {
+            if ($match.Value -ne "") {
+                $found = $match.Value.Replace(" ", "").Replace("`n", "").Replace("Repositories", "")
+                if ($found -ne "") {
+                    return $found
+                }
+            }
+        }
         # check for regex matches
-        if ($myMatches.Count -eq 1) { 
+        if ($myMatches.Count -eq 1) {
             # replace all spaces with nothing
             $found = $myMatches[0].Value.Replace(" ", "").Replace("`n", "").Replace("Repositories", "")
             Write-Debug "Found match: $found"
-            
+
             return $found
         }
         else {
