@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Selenium.Support" Version="4.17.0" />
+    <PackageVersion Include="Selenium.Support" Version="4.18.1" />
     <PackageVersion Include="Selenium.WebDriver" Version="4.18.1" />
     <PackageVersion Include="Microsoft.Azure.Storage.Blob" Version="11.2.3" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
