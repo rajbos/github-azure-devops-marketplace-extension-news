@@ -1,16 +1,5 @@
 version: 2
 updates:
-  # Enable version updates for npm
-  - package-ecosystem: 'nuget'
-    # folder to check the dependencies in
-    directory: '/AzDoExtensionNews/'    
-    # Check the registry for updates every day (weekdays)
-    schedule:
-      interval: 'weekly'
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-patch"]
-
   - package-ecosystem: github-actions
     directory: /
     schedule:
