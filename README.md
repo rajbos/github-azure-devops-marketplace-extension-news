@@ -17,4 +17,6 @@ The basic setup is as follows:
 - Store all the results as json in Azure Blobstorage
 - On finding new items, post about it.
 
-The posting part has been disabled, as Twitter is no longer a safe place to post things and I will not promote it anymore. Haven't had time or inclination to set this up on Mastodon yet. 
+The posting to social media part has been disabled, as Twitter is no longer a safe place to post things and I will not promote it anymore. Haven't had time or inclination to set this up on Mastodon yet. 
+
+Posting for the GitHub Actions news goes to https://devops-actions.github.io/github-actions-marketplace-news, which can be followed through an RSS feed.
