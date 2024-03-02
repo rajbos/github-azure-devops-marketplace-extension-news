@@ -92,7 +92,7 @@ jobs:
           path: ./ArtifactFolder
 
       - name: App Settings Variable Substitution
-        uses: rajbos-actions/variable-substitution@a4367a66ba128295f7dddf8964a0ac429766492d # v1.1
+        uses: rajbos-actions/variable-substitution@ae7b1f3676ae374dc70282e6b9650bc50b611222 # v1.2
         with:
           files: 'ArtifactFolder/appsettings.json'
         env:
