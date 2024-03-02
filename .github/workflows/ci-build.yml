@@ -3,6 +3,7 @@ name: CI Build
 on:
   push:
     paths:
+    - Directory.Packages.props
     - AzDoExtensionNews/**
     - .github/workflows/ci-build.yml
     
