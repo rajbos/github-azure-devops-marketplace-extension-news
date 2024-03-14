@@ -39,7 +39,8 @@ jobs:
       matrix:
         # Override automatic language detection by changing the below list
         # Supported options are ['csharp', 'cpp', 'go', 'java', 'javascript', 'python']
-        language: ['csharp']
+        # Note: in the custom query pack used, the rules for the action workflows are in the javascript folder, so we need to target that language here
+        language: ['csharp', 'javascript'] 
         # Learn more...
         # https://docs.github.com/en/github/finding-security-vulnerabilities-and-errors-in-your-code/configuring-code-scanning#overriding-automatic-language-detection
 
@@ -66,6 +67,7 @@ jobs:
       uses: github/codeql-action/init@8a470fddafa5cbb6266ee11b37ef4d8aae19c571 # v3.24.6
       with:
         languages: ${{ matrix.language }}
+        packs: githubsecuritylab/codeql-${{ matrix.language }}-queries
         # If you wish to specify custom queries, you can do so here or in a config file.
         # By default, queries listed here will override any specified in a config file. 
         # Prefix the list here with "+" to use these queries and those in the config file.
