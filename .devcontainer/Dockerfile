@@ -19,7 +19,7 @@ RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.d
     && rm google-chrome-stable_current_amd64.deb
 
 # # Install ChromeDriver
-# RUN wget -N http://chromedriver.storage.googleapis.com/$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip \
-#     && unzip chromedriver_linux64.zip -d /usr/local/bin \
-#     && rm chromedriver_linux64.zip \
-#     && chmod +x /usr/local/bin/chromedriver
+RUN wget -N http://chromedriver.storage.googleapis.com/$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip \
+    && unzip chromedriver_linux64.zip -d /usr/local/bin \
+    && rm chromedriver_linux64.zip \
+    && chmod +x /usr/local/bin/chromedriver
