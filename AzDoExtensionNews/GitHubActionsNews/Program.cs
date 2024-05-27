@@ -26,9 +26,10 @@ namespace GitHubActionsNews
             {
                 Log.Message("Please add a parameter to the run:");
                 Log.Message(" all = run through each action result in the list");
-                Log.Message(" One or more comma separated letters = run through each action result that matches the search string");
+                Log.Message(" one or more comma separated letters = run through each action result that matches the search string");
                 Log.Message(" consolidate = download all previous result files and consolidate to 1 file");
                 Log.Message(" verify = verify all actions in the storage account for overlap");
+                Log.Message(" test = run for a single test action to debug");
             }
 
             Configuration.LoadSettings();
@@ -64,10 +65,21 @@ namespace GitHubActionsNews
             var driver = GetDriver();
             try
             {
-                driver.Navigate().GoToUrl("https://github.com/marketplace/actions/glo-parse-card-links");
-                var version = ActionPageInteraction.GetVersionFromAction(driver);
-                var url = ActionPageInteraction.GetRepoFromAction(driver);
-                Log.Message($"Found version [{version}] and url [${url}]");
+                // configure for testing either a single action or a search page
+                var runSingleActionTest = false;
+                if (runSingleActionTest) {
+                    // run for a single action page
+                    driver.Navigate().GoToUrl("https://github.com/marketplace/actions/glo-parse-card-links");
+                    var version = ActionPageInteraction.GetVersionFromAction(driver);
+                    var url = ActionPageInteraction.GetRepoFromAction(driver);
+                    Log.Message($"Found version [{version}] and url [${url}]");
+                }
+                else {
+                    // run fo a search page
+                    var twoLetterQuery = "ca";
+                    var queriedGitHubMarketplaceUrl = $"{GitHubMarketplaceUrl}&query={twoLetterQuery}";
+                    var actions = GetAllActions(queriedGitHubMarketplaceUrl);
+                }
             }
             finally
             {
@@ -271,10 +283,9 @@ namespace GitHubActionsNews
         private static ChromeDriver GetDriver()
         {
             var chromeOptions = new ChromeOptions();
-            if (!Debugger.IsAttached)
-            {
-                chromeOptions.AddArguments("headless");
-            }
+            chromeOptions.AddArguments("headless"); // Run Chrome in headless mode
+            chromeOptions.AddArguments("--no-sandbox"); // Bypass OS security model
+            chromeOptions.AddArguments("--disable-dev-shm-usage"); // Overcome limited resource problems
             var driver = new ChromeDriver(chromeOptions);
             return driver;
         }
@@ -350,12 +361,13 @@ namespace GitHubActionsNews
             var actions = new Actions(driver);
 
             var waitForElement = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(1));
+            var elementName = "TablePaginationSteps";
             try
             {
-                waitForElement.Until(ExpectedConditions.ElementExists(By.ClassName("paginate-container")));
-                waitForElement.Until(ExpectedConditions.ElementIsVisible(By.ClassName("paginate-container")));
-                waitForElement.Until(ExpectedConditions.ElementToBeClickable(By.ClassName("paginate-container")));
-                var paginator = driver.FindElement(By.ClassName("paginate-container"));
+                waitForElement.Until(ExpectedConditions.ElementExists(By.ClassName(elementName)));
+                waitForElement.Until(ExpectedConditions.ElementIsVisible(By.ClassName(elementName)));
+                waitForElement.Until(ExpectedConditions.ElementToBeClickable(By.ClassName(elementName)));
+                var paginator = driver.FindElement(By.ClassName(elementName));
                 actions.MoveToElement(paginator);
                 actions.Perform();
             }
@@ -363,10 +375,10 @@ namespace GitHubActionsNews
             {
                 // wait some time and retry
                 Thread.Sleep(1000);
-                waitForElement.Until(ExpectedConditions.ElementExists(By.ClassName("paginate-container")));
-                waitForElement.Until(ExpectedConditions.ElementIsVisible(By.ClassName("paginate-container")));
-                waitForElement.Until(ExpectedConditions.ElementToBeClickable(By.ClassName("paginate-container")));
-                var paginator = driver.FindElement(By.ClassName("paginate-container"));
+                waitForElement.Until(ExpectedConditions.ElementExists(By.ClassName(elementName)));
+                waitForElement.Until(ExpectedConditions.ElementIsVisible(By.ClassName(elementName)));
+                waitForElement.Until(ExpectedConditions.ElementToBeClickable(By.ClassName(elementName)));
+                var paginator = driver.FindElement(By.ClassName(elementName));
                 actions.MoveToElement(paginator);
                 actions.Perform();
             }
