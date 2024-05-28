@@ -37,7 +37,7 @@
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/AzDoExtensionNews/GitHubActionsNews/bin/Debug/net7.0/GitHubActionsNews.dll",
-            "args": ["apprise"],
+            "args": ["test"],
             "cwd": "${workspaceFolder}/AzDoExtensionNews/AzDoExtensionNews",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",

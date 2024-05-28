@@ -41,6 +41,7 @@ namespace GitHubActionsNews
                 return "";
             }
         }
+
         public static string GetVersionFromAction(IWebDriver driver)
         {
             IWebElement divWithTitle;
@@ -62,19 +63,19 @@ namespace GitHubActionsNews
 
             var sb = new StringBuilder();
             try
-            {                
+            {
                 sb.AppendLine($"{divWithTitle.Text} - {divWithTitle.TagName}");
                 // "contains(text(), 'Latest version')"); ;
 
                 var publisherParent = divWithTitle.FindElement(By.XPath("./..")); // find parent element
-                var allChildElements = publisherParent.FindElements(By.XPath(".//*")); // find all child elements  
+                var allChildElements = publisherParent.FindElements(By.XPath(".//*")); // find all child elements
                 sb.AppendLine($"childElements.Count: [{allChildElements.Count}]");
 
                 if (Debugger.IsAttached)
                 {
                     foreach (var el in allChildElements)
                     {
-                        sb.AppendLine($"{el.Text} - {el.TagName}");                   
+                        sb.AppendLine($"{el.Text} - {el.TagName}");
                     }
                     Log.Message(sb.ToString());
                 }
@@ -85,6 +86,50 @@ namespace GitHubActionsNews
             {
                 Console.WriteLine($"Error loading version from page [{driver.Url}]: {e.Message}{Environment.NewLine}Log messages: {Environment.NewLine}{sb}");
                 throw;
+            }
+        }
+
+        public static string GetVerifiedPublisherFromAction(IWebDriver driver)
+        {
+            // only works for "verified" publisher
+            try
+            {
+                // find the a element with a data-hovercard-type="organization and load the publisher from the href
+                var publisherLink = driver.FindElement(By.CssSelector("a[data-hovercard-type='organization']"));
+                return publisherLink.GetAttribute("href");
+            }
+            catch (NoSuchElementException ex)
+            {
+                Console.WriteLine("Publisher element not found: " + ex.Message);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Publisher: An error occurred: " + ex.Message);
+                return null;
+            }
+        }
+
+        public static string GetTitleFromAction(IWebDriver driver)
+        {
+            // find the div that has these classes "pl-md-3 lh-default"
+            // find the h1 in the div that has the class "f1 text-normal mb-1"
+            // read the text
+            try
+            {
+                var titleDiv = driver.FindElement(By.CssSelector(".pl-md-3.lh-default"));
+                var title = titleDiv.FindElement(By.XPath("./..")).FindElement(By.XPath(".//h1")).Text;
+                return title;
+            }
+            catch (NoSuchElementException ex)
+            {
+                Console.WriteLine("Title element not found: " + ex.Message);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Title: An error occurred: " + ex.Message);
+                return null;
             }
         }
     }
