@@ -13,7 +13,7 @@ updates:
           - "patch"
 
   - package-ecosystem: nuget
-    directory: 
+    directories: 
      - /AzDoExtensionNews/AzDoExtensionNews.UnitTests
      - /AzDoExtensionNews/AzDoExtensionNews
      - /AzDoExtensionNews/GitHubActionsNews.Tests
