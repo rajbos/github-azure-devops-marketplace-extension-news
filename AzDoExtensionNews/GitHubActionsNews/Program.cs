@@ -284,6 +284,10 @@ namespace GitHubActionsNews
         {
             var chromeOptions = new ChromeOptions();
             chromeOptions.AddArguments("headless"); // Run Chrome in headless mode
+            if (!System.Diagnostics.Debugger.IsAttached && Environment.GetEnvironmentVariable("CODESPACES") == null)
+            {
+                chromeOptions.AddArguments("headless"); // Run Chrome in headless mode
+            }
             chromeOptions.AddArguments("--no-sandbox"); // Bypass OS security model
             chromeOptions.AddArguments("--disable-dev-shm-usage"); // Overcome limited resource problems
             var driver = new ChromeDriver(chromeOptions);
@@ -407,13 +411,19 @@ namespace GitHubActionsNews
                 //var hydro = action.GetAttribute("data-hydro-click");
                 //var data = JsonConvert.DeserializeObject(hydro);
 
-                var divWithTitle = action.FindElement(By.TagName("h3"));
-                var title = divWithTitle.Text;
+                //var divWithTitle = action.FindElement(By.TagName("h3"));
+                //var title = divWithTitle.Text;
                 var url = action.GetAttribute("href");
-
+                var divWithTitle = action;
+                // find the action title in the ::before property
+                // IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+                // string script = "return window.getComputedStyle(document.querySelector('selector'),':before').getPropertyValue('content');";
+                // string content = (string)js.ExecuteScript(script);
+                var title = "content";
                 var publisherParent = divWithTitle.FindElement(By.XPath("./..")); // find parent element
                 var allChildElements = publisherParent.FindElements(By.XPath(".//*")); // find all child elements
-                var publisher = allChildElements[2].Text;
+                //var publisher = allChildElements[2].Text; // is empty, find on the detail page
+                var publisher = "";
 
                 // open the url in a new tab
                 action.SendKeys(Keys.Shift + "T");
@@ -448,7 +458,6 @@ namespace GitHubActionsNews
 
                         version = ActionPageInteraction.GetVersionFromAction(driver);
                         Log.Message($"Found version [{version}] for url [{url}]");
-
                         try
                         {
                             actionRepoUrl = ActionPageInteraction.GetRepoFromAction(driver);
@@ -464,6 +473,11 @@ namespace GitHubActionsNews
                             Console.WriteLine(source);
                         }
 
+                        //publisher = ActionPageInteraction.GetVerifiedPublisherFromAction(driver);
+                        publisher = GetPublisher(actionRepoUrl);
+
+                        title = ActionPageInteraction.GetTitleFromAction(driver);
+                        Log.Message($"Found title [{title}] for url [{url}]");
                     }
                     catch (Exception e)
                     {
@@ -497,6 +511,14 @@ namespace GitHubActionsNews
                 Log.Message($"Error parsing action: {e.Message}");
                 return null;
             }
+        }
+
+        private static string GetPublisher(string url)
+        {
+            // cut the string to the first /
+            var firstSlash = url.IndexOf("/");
+            // return the first part of the url
+            return url.Substring(0, firstSlash);
         }
     }
 }

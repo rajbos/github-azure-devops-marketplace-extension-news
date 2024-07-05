@@ -4,28 +4,28 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    groups:
+      all-in-one:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: nuget
-    directory: /AzDoExtensionNews/AzDoExtensionNews.UnitTests
+    directories: 
+     - /AzDoExtensionNews/AzDoExtensionNews.UnitTests
+     - /AzDoExtensionNews/AzDoExtensionNews
+     - /AzDoExtensionNews/GitHubActionsNews.Tests
+     - /AzDoExtensionNews/GitHubActionsNews
+     - /AzDoExtensionNews/News.Library
     schedule:
       interval: monthly
+    groups:
+      all-in-one:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
-  - package-ecosystem: nuget
-    directory: /AzDoExtensionNews/AzDoExtensionNews
-    schedule:
-      interval: monthly
-
-  - package-ecosystem: nuget
-    directory: /AzDoExtensionNews/GitHubActionsNews.Tests
-    schedule:
-      interval: monthly
-
-  - package-ecosystem: nuget
-    directory: /AzDoExtensionNews/GitHubActionsNews
-    schedule:
-      interval: monthly
-
-  - package-ecosystem: nuget
-    directory: /AzDoExtensionNews/News.Library
-    schedule:
-      interval: monthly
