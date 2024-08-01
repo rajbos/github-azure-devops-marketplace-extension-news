@@ -19,7 +19,7 @@ jobs:
     steps:
     # setup the environment:
     - name: Harden Runner
-      uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
+      uses: step-security/harden-runner@0d381219ddf674d61a7572ddd19d7941e271515c # v2.9.0
       with:
         disable-sudo: true
         egress-policy: block
@@ -49,7 +49,7 @@ jobs:
       run: dotnet publish AzDoExtensionNews/AzDoExtensionNews/AzDoExtensionNews.csproj -c Release -o publish/AzDo/
 
     - name: Publish AzDo Artifact
-      uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
       with:
         path: publish/AzDo
         name: AzDoNews
@@ -59,7 +59,7 @@ jobs:
       run: dotnet publish AzDoExtensionNews/GitHubActionsNews/GitHubActionsNews.csproj -c Release -o publish/GitHub/
 
     - name: Publish GitHub Artifact
-      uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
       with:
         path: publish/GitHub
         name: GitHubNews
