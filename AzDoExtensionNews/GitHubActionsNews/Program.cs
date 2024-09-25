@@ -172,6 +172,13 @@ namespace GitHubActionsNews
                 actions.AddRange(GetAllActions(queriedGitHubMarketplaceUrl));
             }
 
+            if (actions.Count() == 0)
+            {
+                // this is strange, we should have found some actions
+                // throw so that a run will fail and e.g. a workflow indicates failure
+                throw new Exception($"No actions found for query [{query}]");
+            }
+
             var storeFileName = $"{StorageFileName}-{query}";
             // get existing actions for this query:
             var existingActions = Storage.ReadFromJson<GitHubAction>(storeFileName, storeFileName);
@@ -302,7 +309,17 @@ namespace GitHubActionsNews
 
                 // Scrape the page
                 var anchors = driver.FindElements(By.TagName("a")).ToList();
-                var actionTags = anchors.Where(item => item.GetAttribute("href").StartsWith("https://github.com/marketplace/actions")).ToList();
+                var actionAnchors = new List<IWebElement>();
+                foreach (var anchor in anchors)
+                {
+                    var href = anchor.GetAttribute("href");
+                    if (href != null && href.StartsWith("https://github.com/marketplace/actions/"))
+                    {
+                        actionAnchors.Add(anchor);
+                    }
+                }
+                //var actionAnchors = anchors.Where(item => item.GetAttribute("href").StartsWith("/marketplace/actions"));
+                var actionTags = actionAnchors.ToList();
 
                 Log.Message($"Page {pageNumber}: Found {actionTags.Count} actions, current url: {driver.Url}", logger);
 
