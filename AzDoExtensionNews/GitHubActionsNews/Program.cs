@@ -172,6 +172,13 @@ namespace GitHubActionsNews
                 actions.AddRange(GetAllActions(queriedGitHubMarketplaceUrl));
             }
 
+            if (actions.Count() == 0)
+            {
+                // this is strange, we should have found some actions
+                // throw so that a run will fail and e.g. a workflow indicates failure
+                throw new Exception($"No actions found for query [{query}]");
+            }
+
             var storeFileName = $"{StorageFileName}-{query}";
             // get existing actions for this query:
             var existingActions = Storage.ReadFromJson<GitHubAction>(storeFileName, storeFileName);
