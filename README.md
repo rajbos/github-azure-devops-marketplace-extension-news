@@ -14,9 +14,15 @@ More information can be found in this [blogpost](https://rajbos.github.io/blog/2
 The basic setup is as follows:
 - Run through the Azure DevOps API
 - Scrape through the pages on the GitHub Marketplace
-- Store all the results as json in Azure Blobstorage
+- Store all the results as json in Azure Blob storage
 - On finding new items, post about it.
 
 The posting to social media part has been disabled, as Twitter is no longer a safe place to post things and I will not promote it anymore. Haven't had time or inclination to set this up on Mastodon yet. 
 
 Posting for the GitHub Actions news goes to https://devops-actions.github.io/github-actions-marketplace-news, which can be followed through an RSS feed.
+
+## Building the solution
+`dotnet build`
+
+## Running the solution
+`dotnet run --project GitHubActionsNews` or just hit F5 in Visual Studio / Code.
