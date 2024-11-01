@@ -25,7 +25,7 @@ jobs:
         egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
 
     - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v3.5.3
-    - uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+    - uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-${{ hashFiles('**/**.csproj') }}-1
@@ -43,7 +43,7 @@ jobs:
       run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
 
     - name: Publish AzDo Artifact
-      uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+      uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
       with:
         path: publish/AzDo
         name: ${{ env.ArtifactName }}
@@ -116,7 +116,7 @@ jobs:
           Get-Content Actions-Updated-Overview.json
                 
       - name: Upload Updated Json
-        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           path: ArtifactFolder/Actions-Updated-Overview.json
           name: UpdatedActions
