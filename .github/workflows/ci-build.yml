@@ -34,6 +34,10 @@ jobs:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-${{ hashFiles('**/**.csproj') }}-1
 
+    - uses: actions/setup-dotnet@3e891b0cb619bf60e2c25674b222b8940e2c1c25 # v4.1.0
+      with:
+        dotnet-version: 8.x
+
     # build it:
     - name: Restore
       run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln

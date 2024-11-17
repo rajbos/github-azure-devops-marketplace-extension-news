@@ -8,7 +8,7 @@ on:
     - cron: "15 */8 * * *"
 
   workflow_dispatch:
-  
+
   push:
    paths:
    - .github/workflows/deploy.yml
@@ -30,15 +30,19 @@ jobs:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-${{ hashFiles('**/**.csproj') }}-1
 
+    - uses: actions/setup-dotnet@3e891b0cb619bf60e2c25674b222b8940e2c1c25 # v4.1.0
+      with:
+        dotnet-version: 8.x
+
     - name: Restore
       run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln
 
     - name: Build
       run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release
-      
+
     - name: Publish
       run: dotnet publish AzDoExtensionNews/AzDoExtensionNews.sln -c Release --property:PublishDir=${{ github.workspace }}/publish/AzDo/
-      
+
     - name: Test
       run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
 
@@ -114,7 +118,7 @@ jobs:
           cd .\ArtifactFolder
           cat Actions-Updated-Overview.json
           Get-Content Actions-Updated-Overview.json
-                
+
       - name: Upload Updated Json
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
@@ -145,7 +149,6 @@ jobs:
           ls
           cd .github/workflows/
           ls
-          
+
           $filePath = Resolve-Path "..\..\ArtifactFolder\Actions-Updated-Overview.json"
           .\createBlogPostsFromUpdates.ps1 -token ${{ secrets.PAT }} -filePath $filePath
-          
