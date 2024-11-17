@@ -126,6 +126,9 @@ jobs:
     needs: ConsolidateUpdates
     permissions:
       contents: write
+    environment:
+      name: BlogSite
+      url: https://github.com/devops-actions/github-actions-marketplace-news
     steps:
       - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
 

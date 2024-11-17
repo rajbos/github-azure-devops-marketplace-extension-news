@@ -19,7 +19,7 @@ The basic setup is as follows:
 
 The posting to social media part has been disabled, as Twitter is no longer a safe place to post things and I will not promote it anymore. Haven't had time or inclination to set this up on Mastodon yet. 
 
-Posting for the GitHub Actions news goes to https://devops-actions.github.io/github-actions-marketplace-news, which can be followed through an RSS feed.
+Posting for the GitHub Actions news goes to https://devops-actions.github.io/github-actions-marketplace-news, which can be followed through an RSS feed. The source repository for that blog is here: https://github.com/devops-actions/github-actions-marketplace-news
 
 ## Building the solution
 `dotnet build`
