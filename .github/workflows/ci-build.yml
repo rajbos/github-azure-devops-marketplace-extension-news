@@ -27,6 +27,7 @@ jobs:
           api.nuget.org:443
           dc.services.visualstudio.com:443
           github.com:443
+          dotnetcli.azureedge.net:443
 
     - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v3.5.3
     - uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
