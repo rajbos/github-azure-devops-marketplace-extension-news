@@ -290,6 +290,7 @@ namespace GitHubActionsNews
         private static ChromeDriver GetDriver()
         {
             var chromeOptions = new ChromeOptions();
+            chromeOptions.AddArguments("headless"); // Run Chrome in headless mode
             if (!System.Diagnostics.Debugger.IsAttached && Environment.GetEnvironmentVariable("CODESPACES") == null)
             {
                 chromeOptions.AddArguments("headless"); // Run Chrome in headless mode
