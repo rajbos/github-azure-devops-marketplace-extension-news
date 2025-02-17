@@ -25,7 +25,8 @@ runs:
     - uses: browser-actions/setup-chrome@v1.7.3
       id: setup-chrome
 
-    - run: |
+    - shell: bash
+      run: |
         ${{ steps.setup-chrome.outputs.chrome-path }} --version
         
     - name: Download artifact from build job
