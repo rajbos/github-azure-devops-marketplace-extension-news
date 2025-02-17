@@ -22,6 +22,12 @@ runs:
   using: "composite"
   # Defining the action steps(Just one step to be simple)
   steps:
+    - uses: browser-actions/setup-chrome@v1.7.3
+      id: setup-chrome
+
+    - run: |
+        ${{ steps.setup-chrome.outputs.chrome-path }} --version
+        
     - name: Download artifact from build job
       uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
       with:
