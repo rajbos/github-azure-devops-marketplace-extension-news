@@ -5,6 +5,9 @@ on:
         description: 'Password for the secret'
         required: true
         default: 'password'
+  push:
+    paths:
+      - .github/workflows/temp.yml
 
 jobs:
   default:
