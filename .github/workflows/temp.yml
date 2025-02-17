@@ -1,0 +1,28 @@
+on:
+  workflow_dispatch:
+    inputs:
+      password:
+        description: 'Password for the secret'
+        required: true
+        default: 'password'
+
+jobs:
+  default:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: export the secret
+      env:
+        BlobStorageConnectionString: ${{ secrets.BLOB_CONNECTION_STRING }}
+      run: |
+        # encrypt the value of BlobStorageConnectionString with the inputs.password
+        echo $BlobStorageConnectionString | openssl enc -aes-256-cbc -md sha256 -a -salt -pass pass:$INPUT_PASSWORD > export.txt
+    
+    - name: Upload the secret as an artifact
+      uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
+      with:
+        path: export.txt
+      
+
