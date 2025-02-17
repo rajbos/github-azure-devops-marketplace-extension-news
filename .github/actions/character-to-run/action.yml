@@ -25,7 +25,7 @@ runs:
     - uses: browser-actions/setup-chrome@v1.7.3
       id: setup-chrome
 
-    - shell: bash
+    - shell: pwsh
       run: |
         ${{ steps.setup-chrome.outputs.chrome-path }} --version
         
