@@ -25,10 +25,6 @@ runs:
     - uses: browser-actions/setup-chrome@v1.7.3
       id: setup-chrome
 
-    - shell: pwsh
-      run: |
-        ${{ steps.setup-chrome.outputs.chrome-path }} --version
-        
     - name: Download artifact from build job
       uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
       with:
@@ -52,6 +48,10 @@ runs:
 
     - name: Perform a Pester test from the command-line
       shell: pwsh
+      env:
+        CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
       run: |
+        Write-Host "Chrome path: [$env:CHROME_PATH]"
+        $env:CHROME_BIN = $env:CHROME_PATH
         cd .\ArtifactFolder
         dotnet GitHubActionsNews.dll ${{ inputs.characters }}

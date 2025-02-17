@@ -1,5 +1,6 @@
 ﻿using News.Library;
 using OpenQA.Selenium;
+using OpenQA.Selenium.BiDi.Modules.Session;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
@@ -290,9 +291,15 @@ namespace GitHubActionsNews
         private static ChromeDriver GetDriver()
         {
             var chromeOptions = new ChromeOptions();
-            if (!System.Diagnostics.Debugger.IsAttached && Environment.GetEnvironmentVariable("CODESPACES") == null)
+            if (!Debugger.IsAttached && Environment.GetEnvironmentVariable("CODESPACES") == null)
             {
                 chromeOptions.AddArguments("headless"); // Run Chrome in headless mode
+            }
+
+            // test for the env var CHROME_BIN
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CHROME_BIN")))
+            {
+                chromeOptions.BinaryLocation = Environment.GetEnvironmentVariable("CHROME_BIN");
             }
             chromeOptions.AddArguments("--no-sandbox"); // Bypass OS security model
             chromeOptions.AddArguments("--disable-dev-shm-usage"); // Overcome limited resource problems
