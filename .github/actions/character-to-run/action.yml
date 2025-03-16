@@ -22,7 +22,7 @@ runs:
   using: "composite"
   # Defining the action steps(Just one step to be simple)
   steps:
-    - uses: browser-actions/setup-chrome@v1.7.3
+    - uses: browser-actions/setup-chrome@c785b87e244131f27c9f19c1a33e2ead956ab7ce # v1.7.3
       id: setup-chrome
       with:
        install-chromedriver: true
@@ -49,8 +49,12 @@ runs:
         dotnet-version: 8.x
 
     - name: Check Chrome Version
+      shell: pwsh
       run: |
         Write-Host "::group::Check Chrome Version"
+        chrome --version
+        sudo ln -sf /opt/hostedtoolcache/setup-chrome/chromium/stable/x64/chrome /usr/bin/google-chrome
+        google-chrome --version
         chrome --version
         Write-Host "::endgroup::"
 
