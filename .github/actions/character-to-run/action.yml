@@ -53,7 +53,9 @@ runs:
       env:
         CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
       run: |
+        Write-Host "::group::Run the GitHubActionsNews application"
         Write-Host "Chrome path: [$env:CHROME_PATH]"
         $env:CHROME_BIN = $env:CHROME_PATH
         cd .\ArtifactFolder
         dotnet GitHubActionsNews.dll ${{ inputs.characters }}
+        Write-Host "::endgroup::"
