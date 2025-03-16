@@ -48,7 +48,7 @@ runs:
       with:
         dotnet-version: 8.x
 
-    - name: Perform a Pester test from the command-line
+    - name: Run the GitHubActionsNews application
       shell: pwsh
       env:
         CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
