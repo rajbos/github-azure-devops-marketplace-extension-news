@@ -53,7 +53,7 @@ runs:
       run: |
         Write-Host "::group::Check Chrome Version"
         chrome --version
-        sudo ln -sf /opt/hostedtoolcache/setup-chrome/chromium/stable/x64/chrome /usr/bin/google-chrome
+        New-Item -ItemType SymbolicLink -Path "/usr/bin/google-chrome" -Target "/opt/hostedtoolcache/setup-chrome/chromium/stable/x64/chrome" -Force
         google-chrome --version
         chrome --version
         Write-Host "::endgroup::"
