@@ -60,7 +60,7 @@ runs:
         #chrome --version
 
         echo "contents of usr/bin"
-        cd /usr/bin/
+        cd /usr/bin/chromedriver 
         ls -la
 
         echo "contents of chrome path"
@@ -75,7 +75,7 @@ runs:
     - name: Run the GitHubActionsNews application
       shell: pwsh
       env:
-        CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+        CHROME_PATH: /usr/bin/chromedriver # ${{ steps.setup-chrome.outputs.chrome-path }}
       run: |
         Write-Host "::group::Run the GitHubActionsNews application"
         Write-Host "Chrome path: [$env:CHROME_PATH]"
