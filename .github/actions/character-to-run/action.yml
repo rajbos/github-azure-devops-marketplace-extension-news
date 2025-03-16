@@ -60,7 +60,11 @@ runs:
         #chrome --version
 
         echo "contents of usr/bin"
-        cd /usr/bin/chromedriver 
+        cd /usr/bin 
+        ls -la
+
+        echo "contents of usr/bin/chromedriver"
+        cd /usr/bin/chromedriver/ 
         ls -la
 
         echo "contents of chrome path"
