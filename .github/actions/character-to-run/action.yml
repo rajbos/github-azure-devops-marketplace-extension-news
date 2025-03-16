@@ -48,6 +48,12 @@ runs:
       with:
         dotnet-version: 8.x
 
+    - name: Check Chrome Version
+      run: |
+        Write-Host "::group::Check Chrome Version"
+        chrome --version
+        Write-Host "::endgroup::"
+
     - name: Run the GitHubActionsNews application
       shell: pwsh
       env:
