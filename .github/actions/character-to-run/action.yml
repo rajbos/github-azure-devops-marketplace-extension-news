@@ -53,8 +53,11 @@ runs:
       run: |
         Write-Host "::group::Check Chrome Version"
         chrome --version
-        New-Item -ItemType SymbolicLink -Path "/usr/bin/google-chrome" -Target "/opt/hostedtoolcache/setup-chrome/chromium/stable/x64/chrome" -Force
-        google-chrome --version
+        Write-Host "---"
+        # add "/opt/hostedtoolcache/setup-chrome/chromium/stable/x64/chrome" to the windows path
+        # to use the installed chrome instead of the one in the system path
+        $AddPath = "/opt/hostedtoolcache/setup-chrome/chromium/stable/x64/chrome"
+        $env:PATH = $AddPath + ";" + $env:PATH
         chrome --version
         Write-Host "::endgroup::"
 
