@@ -58,6 +58,10 @@ runs:
         #$AddPath = "/opt/hostedtoolcache/setup-chrome/chromium/stable/x64/chrome"
         #$env:PATH = $AddPath + ";" + $env:PATH
         #chrome --version
+
+        echo "Modding path"
+        chmod +x /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/ArtifactFolder/selenium-manager/linux/selenium-manager
+
         Write-Host "::endgroup::"
 
     - name: Run the GitHubActionsNews application
