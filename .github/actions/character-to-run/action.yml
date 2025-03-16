@@ -59,6 +59,10 @@ runs:
         #$env:PATH = $AddPath + ";" + $env:PATH
         #chrome --version
 
+        echo "contents of usr/bin"
+        cd /usr/bin/
+        ls -la
+
         echo "Modding path"
         chmod +x /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/ArtifactFolder/selenium-manager/linux/selenium-manager
 
