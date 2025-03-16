@@ -20,12 +20,11 @@ inputs:
 
 runs:
   using: "composite"
-  # Defining the action steps(Just one step to be simple)
   steps:
-    - uses: browser-actions/setup-chrome@c785b87e244131f27c9f19c1a33e2ead956ab7ce # v1.7.3
-      id: setup-chrome
-      with:
-       install-chromedriver: true
+    # - uses: browser-actions/setup-chrome@c785b87e244131f27c9f19c1a33e2ead956ab7ce # v1.7.3
+    #   id: setup-chrome
+    #   with:
+    #    install-chromedriver: true
 
     - name: Download artifact from build job
       uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
@@ -56,9 +55,9 @@ runs:
         Write-Host "---"
         # add "/opt/hostedtoolcache/setup-chrome/chromium/stable/x64/chrome" to the windows path
         # to use the installed chrome instead of the one in the system path
-        $AddPath = "/opt/hostedtoolcache/setup-chrome/chromium/stable/x64/chrome"
-        $env:PATH = $AddPath + ";" + $env:PATH
-        chrome --version
+        #$AddPath = "/opt/hostedtoolcache/setup-chrome/chromium/stable/x64/chrome"
+        #$env:PATH = $AddPath + ";" + $env:PATH
+        #chrome --version
         Write-Host "::endgroup::"
 
     - name: Run the GitHubActionsNews application
