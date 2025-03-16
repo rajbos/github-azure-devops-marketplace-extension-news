@@ -63,23 +63,23 @@ runs:
         cd /usr/bin 
         ls -la
 
-        echo "contents of usr/bin/chromedriver"
-        cd /usr/bin/chromedriver/ 
+        echo "contents of /usr/local/share/chromedriver-linux64/chromedriver"
+        cd  /usr/local/share/chromedriver-linux64/chromedriver
         ls -la
 
         echo "contents of chrome path"
         cd ${{ steps.setup-chrome.outputs.chrome-path }}
         ls -la
 
-        echo "Modding path"
-        chmod +x /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/ArtifactFolder/selenium-manager/linux/selenium-manager
+        #echo "Modding path"
+        #chmod +x /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/ArtifactFolder/selenium-manager/linux/selenium-manager
 
         Write-Host "::endgroup::"
 
     - name: Run the GitHubActionsNews application
       shell: pwsh
       env:
-        CHROME_PATH: /usr/bin/chromedriver # ${{ steps.setup-chrome.outputs.chrome-path }}
+        CHROME_PATH:  /usr/local/share/chromedriver-linux64/chromedriver # ${{ steps.setup-chrome.outputs.chrome-path }}
       run: |
         Write-Host "::group::Run the GitHubActionsNews application"
         Write-Host "Chrome path: [$env:CHROME_PATH]"
