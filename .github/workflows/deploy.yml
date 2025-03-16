@@ -53,7 +53,7 @@ jobs:
         name: ${{ env.ArtifactName }}
 
   GatherCharacter:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.03
     needs: build
     continue-on-error: true
     concurrency: GatherCharacterJsons-${{ matrix.character }}
