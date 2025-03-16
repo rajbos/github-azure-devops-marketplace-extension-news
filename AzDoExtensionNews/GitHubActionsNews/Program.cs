@@ -68,14 +68,16 @@ namespace GitHubActionsNews
             {
                 // configure for testing either a single action or a search page
                 var runSingleActionTest = false;
-                if (runSingleActionTest) {
+                if (runSingleActionTest)
+                {
                     // run for a single action page
                     driver.Navigate().GoToUrl("https://github.com/marketplace/actions/glo-parse-card-links");
                     var version = ActionPageInteraction.GetVersionFromAction(driver);
                     var url = ActionPageInteraction.GetRepoFromAction(driver);
                     Log.Message($"Found version [{version}] and url [${url}]");
                 }
-                else {
+                else
+                {
                     // run fo a search page
                     var twoLetterQuery = "ca";
                     var queriedGitHubMarketplaceUrl = $"{GitHubMarketplaceUrl}&query={twoLetterQuery}";
@@ -149,7 +151,8 @@ namespace GitHubActionsNews
             var actions = new List<GitHubAction>();
             var started = DateTime.Now;
             // check if query is a single letter, but is not a number
-            if (query.Length == 1 && !int.TryParse(query, out var a)) {
+            if (query.Length == 1 && !int.TryParse(query, out var a))
+            {
                 // running the search for individual letters is to slow and has to much results (pagination stops at 1000 results)
                 // run for all two letter combinations instead
                 var letters = "abcdefghijklmnopqrstuvwxyz".ToCharArray();
@@ -158,7 +161,8 @@ namespace GitHubActionsNews
                 foreach (var letter in letters)
                 {
                     var twoLetterQuery = $"{query}{letter}";
-                    if (!skipLetterCombo.Contains(twoLetterQuery)) {
+                    if (!skipLetterCombo.Contains(twoLetterQuery))
+                    {
                         Log.Message($"Loading latest states for all actions starting with [{twoLetterQuery}]");
                         var queriedGitHubMarketplaceUrl = $"{GitHubMarketplaceUrl}&query={twoLetterQuery}";
                         actions.AddRange(GetAllActions(queriedGitHubMarketplaceUrl));
@@ -387,14 +391,16 @@ namespace GitHubActionsNews
             // scroll the paginator into view
             var actions = new Actions(driver);
 
-            var waitForElement = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(1));
-            var elementName = "TablePaginationSteps";
+            var timeoutDurationSeconds = Debugger.IsAttached ? 10 : 1;
+            var waitForElement = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(timeoutDurationSeconds));
+            var elementName = "nav";
+            var elementAriaLabel = "Pagination";
             try
             {
-                waitForElement.Until(ExpectedConditions.ElementExists(By.ClassName(elementName)));
-                waitForElement.Until(ExpectedConditions.ElementIsVisible(By.ClassName(elementName)));
-                waitForElement.Until(ExpectedConditions.ElementToBeClickable(By.ClassName(elementName)));
-                var paginator = driver.FindElement(By.ClassName(elementName));
+                waitForElement.Until(ExpectedConditions.ElementExists(By.CssSelector($"{elementName}[aria-label='{elementAriaLabel}']")));
+                waitForElement.Until(ExpectedConditions.ElementIsVisible(By.CssSelector($"{elementName}[aria-label='{elementAriaLabel}']")));
+                waitForElement.Until(ExpectedConditions.ElementToBeClickable(By.CssSelector($"{elementName}[aria-label='{elementAriaLabel}']")));
+                var paginator = driver.FindElement(By.CssSelector($"{elementName}[aria-label='{elementAriaLabel}']"));
                 actions.MoveToElement(paginator);
                 actions.Perform();
             }
@@ -402,10 +408,10 @@ namespace GitHubActionsNews
             {
                 // wait some time and retry
                 Thread.Sleep(1000);
-                waitForElement.Until(ExpectedConditions.ElementExists(By.ClassName(elementName)));
-                waitForElement.Until(ExpectedConditions.ElementIsVisible(By.ClassName(elementName)));
-                waitForElement.Until(ExpectedConditions.ElementToBeClickable(By.ClassName(elementName)));
-                var paginator = driver.FindElement(By.ClassName(elementName));
+                waitForElement.Until(ExpectedConditions.ElementExists(By.CssSelector($"{elementName}[aria-label='{elementAriaLabel}']")));
+                waitForElement.Until(ExpectedConditions.ElementIsVisible(By.CssSelector($"{elementName}[aria-label='{elementAriaLabel}']")));
+                waitForElement.Until(ExpectedConditions.ElementToBeClickable(By.CssSelector($"{elementName}[aria-label='{elementAriaLabel}']")));
+                var paginator = driver.FindElement(By.CssSelector($"{elementName}[aria-label='{elementAriaLabel}']"));
                 actions.MoveToElement(paginator);
                 actions.Perform();
             }
@@ -469,13 +475,16 @@ namespace GitHubActionsNews
                     try
                     {
                         // check if the verified class exists
-                        try {
+                        try
+                        {
                             var el = driver.FindElements(By.ClassName("octicon-verified"));
-                            if (el != null && el.Count > 0) {
+                            if (el != null && el.Count > 0)
+                            {
                                 verified = true;
                             }
                         }
-                        catch {
+                        catch
+                        {
                             // verified class not found, use default value
                         }
 
@@ -538,7 +547,13 @@ namespace GitHubActionsNews
 
         private static string GetPublisher(string url)
         {
-            // cut the string to the first /
+            var uri = new Uri(url);
+            var segments = uri.Segments;
+            if (segments.Length > 1)
+            {
+                return segments[1].TrimEnd('/');
+            }
+
             var firstSlash = url.IndexOf("/");
             // return the first part of the url
             return url.Substring(0, firstSlash);
