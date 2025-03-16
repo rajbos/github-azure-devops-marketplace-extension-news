@@ -295,14 +295,18 @@ namespace GitHubActionsNews
         private static ChromeDriver GetDriver()
         {
             var chromeOptions = new ChromeOptions();
-            if (!Debugger.IsAttached && Environment.GetEnvironmentVariable("CODESPACES") == null)
+            Console.WriteLine("Initializing Chrome driver");
+            Console.WriteLine($"CI environment?: [{Environment.GetEnvironmentVariable("CI")}]");
+            if (!Debugger.IsAttached && Environment.GetEnvironmentVariable("CODESPACES") == null || Environment.GetEnvironmentVariable("CI") != "")
             {
+                Console.WriteLine("Running in non-debug mode, so using headless Chrome");
                 chromeOptions.AddArguments("headless"); // Run Chrome in headless mode
             }
 
             // test for the env var CHROME_BIN
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CHROME_BIN")))
             {
+                Console.WriteLine($"Using CHROME_BIN from env var: [{Environment.GetEnvironmentVariable("CHROME_BIN")}]");
                 chromeOptions.BinaryLocation = Environment.GetEnvironmentVariable("CHROME_BIN");
             }
             chromeOptions.AddArguments("--no-sandbox"); // Bypass OS security model
