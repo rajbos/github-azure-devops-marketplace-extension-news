@@ -25,14 +25,11 @@ jobs:
         egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
 
     - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v3.5.3
-    - uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-${{ hashFiles('**/**.csproj') }}-1
 
     - uses: actions/setup-dotnet@3951f0dfe7a07e2313ec93c75700083e2005cbab # v4.3.0
       with:
         dotnet-version: 8.x
+        cache: true
 
     - name: Restore
       run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln
