@@ -170,7 +170,7 @@ jobs:
           dotnet-version: '8.x'
 
       - run: |
-          cd AzDoExtensionNews\SeleniumTest\SeleniumTest.csproj
+          cd /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/AzDoExtensionNews/SeleniumTest/SeleniumTest.csproj
           dotnet build
 
       - run: |
@@ -180,4 +180,4 @@ jobs:
 
       - run: |
           echo "Running the project..."
-          dotnet run --project AzDoExtensionNews\SeleniumTest\SeleniumTest.csproj
+          dotnet run --project /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/AzDoExtensionNews/SeleniumTest/SeleniumTest.csproj
