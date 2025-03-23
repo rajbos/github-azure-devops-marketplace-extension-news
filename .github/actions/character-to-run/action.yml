@@ -72,7 +72,8 @@ runs:
         cd ${{ steps.setup-chrome.outputs.chrome-path }}
         ls -la
 
-    - run: |
+    - shell: pwsh
+      run: |
         #echo "Modding path"
         #chmod +x /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/ArtifactFolder/selenium-manager/linux/selenium-manager
         chmod +x /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/ArtifactFolder/linux/selenium-manager
