@@ -317,8 +317,11 @@ namespace GitHubActionsNews
             }
             chromeOptions.AddArguments("--no-sandbox"); // Bypass OS security model
             chromeOptions.AddArguments("--disable-dev-shm-usage"); // Overcome limited resource problems
+            Console.WriteLine("Creating default service");
             var service = ChromeDriverService.CreateDefaultService();
+            Console.WriteLine("Creating Chrome driver");
             var driver = new ChromeDriver(service, chromeOptions, TimeSpan.FromSeconds(300));
+            Console.WriteLine("Chrome driver created");
             return driver;
         }
 
