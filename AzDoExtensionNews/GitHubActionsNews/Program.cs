@@ -66,6 +66,10 @@ namespace GitHubActionsNews
             var driver = GetDriver();
             try
             {
+                driver.Navigate().GoToUrl("https://www.google.com");
+                Console.WriteLine("Navigated to Google");
+                return;
+
                 // configure for testing either a single action or a search page
                 var runSingleActionTest = false;
                 if (runSingleActionTest)
