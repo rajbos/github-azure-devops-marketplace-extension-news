@@ -159,23 +159,23 @@ jobs:
           $filePath = Resolve-Path "..\..\ArtifactFolder\Actions-Updated-Overview.json"
           .\createBlogPostsFromUpdates.ps1 -token ${{ secrets.PAT }} -filePath $filePath
 
-    Test:
-      runs-on: ubuntu-22.04
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v4
-        
-        - uses: actions/setup-dotnet@v4
-          with:
-            dotnet-version: '8.x'
+  Test:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
 
-        - run: dotnet build
+      - run: dotnet build
 
-        - run: |
-            # check the current user
-            echo "Current user: $(uname -a)"
-            echo "Current user: $(whoami)"
+      - run: |
+          # check the current user
+          echo "Current user: $(uname -a)"
+          echo "Current user: $(whoami)"
 
-        - run: |
-            echo "Running the project..."
-            dotnet run --project SeleniumTest/SeleniumTest.csproj
+      - run: |
+          echo "Running the project..."
+          dotnet run --project SeleniumTest/SeleniumTest.csproj
