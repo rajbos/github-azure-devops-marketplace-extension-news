@@ -304,7 +304,7 @@ namespace GitHubActionsNews
             }
 
             // test for the env var CHROME_BIN
-            var variableName = "CHROME_BIN";
+            var variableName = "CHROMEWEBDRIVER";
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable(variableName)))
             {
                 Console.WriteLine($"Using [{variableName}] from env var: [{Environment.GetEnvironmentVariable(variableName)}]");
