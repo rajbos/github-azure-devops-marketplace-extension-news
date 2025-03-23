@@ -169,7 +169,9 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      - run: dotnet build
+      - run: |
+          cd AzDoExtensionNews\SeleniumTest\SeleniumTest.csproj
+          dotnet build
 
       - run: |
           # check the current user
@@ -178,4 +180,4 @@ jobs:
 
       - run: |
           echo "Running the project..."
-          dotnet run --project SeleniumTest/SeleniumTest.csproj
+          dotnet run --project AzDoExtensionNews\SeleniumTest\SeleniumTest.csproj
