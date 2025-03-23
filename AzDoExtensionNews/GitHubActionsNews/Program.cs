@@ -63,14 +63,9 @@ namespace GitHubActionsNews
 
         private static void RunTest()
         {
-            Console.WriteLine("Running");
             var driver = GetDriver();
             try
             {
-                driver.Navigate().GoToUrl("https://www.google.com");
-                Console.WriteLine("Navigated to Google");
-                return;
-
                 // configure for testing either a single action or a search page
                 var runSingleActionTest = false;
                 if (runSingleActionTest)
@@ -268,7 +263,12 @@ namespace GitHubActionsNews
         private static List<GitHubAction> ScrapeGitHubMarketPlace(string searchUrl)
         {
             var started = DateTime.Now;
+            Console.WriteLine("Running");
             var driver = GetDriver();
+
+            driver.Navigate().GoToUrl("https://www.google.com");
+            Console.WriteLine("Navigated to Google");
+            return null;
 
             try
             {
