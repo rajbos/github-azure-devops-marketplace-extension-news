@@ -30,7 +30,11 @@ jobs:
       with:
         dotnet-version: 8.x
         cache: true
-        cache-dependency-path: AzDoExtensionNews/GitHubActionsNews/packages.lock.json
+        cache-dependency-path: |
+          AzDoExtensionNews/AzDoExtensionsNews/packages.lock.json
+          AzDoExtensionNews/AzDoExtensionsNews.UnitTests/packages.lock.json
+          AzDoExtensionNews/GitHubActionsNews/packages.lock.json
+          AzDoExtensionNews/GitHubActionsNews.Tests/packages.lock.json
 
     - name: Restore
       run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode
