@@ -304,11 +304,12 @@ namespace GitHubActionsNews
             }
 
             // test for the env var CHROME_BIN
-            // if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CHROME_BIN")))
-            // {
-            //     Console.WriteLine($"Using CHROME_BIN from env var: [{Environment.GetEnvironmentVariable("CHROME_BIN")}]");
-            //     chromeOptions.BinaryLocation = Environment.GetEnvironmentVariable("CHROME_BIN");
-            // }
+            var variableName = "CHROME_BIN";
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable(variableName)))
+            {
+                Console.WriteLine($"Using [{variableName}] from env var: [{Environment.GetEnvironmentVariable(variableName)}]");
+                chromeOptions.BinaryLocation = Environment.GetEnvironmentVariable(variableName);
+            }
             chromeOptions.AddArguments("--no-sandbox"); // Bypass OS security model
             chromeOptions.AddArguments("--disable-dev-shm-usage"); // Overcome limited resource problems
             var service = ChromeDriverService.CreateDefaultService();
