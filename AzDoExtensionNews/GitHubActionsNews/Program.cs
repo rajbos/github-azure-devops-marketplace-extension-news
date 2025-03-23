@@ -312,8 +312,8 @@ namespace GitHubActionsNews
             var variableName = "CHROMEWEBDRIVER";
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable(variableName)))
             {
-                Console.WriteLine($"Using [{variableName}] from env var: [{Environment.GetEnvironmentVariable(variableName)}]");
-                chromeOptions.BinaryLocation = Environment.GetEnvironmentVariable(variableName);
+                //Console.WriteLine($"Using [{variableName}] from env var: [{Environment.GetEnvironmentVariable(variableName)}]");
+                //chromeOptions.BinaryLocation = Environment.GetEnvironmentVariable(variableName);
             }
             chromeOptions.AddArguments("--no-sandbox"); // Bypass OS security model
             chromeOptions.AddArguments("--disable-dev-shm-usage"); // Overcome limited resource problems
