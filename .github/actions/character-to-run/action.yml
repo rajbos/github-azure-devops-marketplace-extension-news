@@ -74,23 +74,9 @@ runs:
 
     - shell: pwsh
       run: |
-        #echo "Modding path"
-        #chmod +x /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/ArtifactFolder/selenium-manager/linux/selenium-manager
+        echo "CHModding path"
         chmod +x /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/ArtifactFolder/selenium-manager/linux/selenium-manager
 
-        Write-Host "::endgroup::"
-
-    - name: Run the GitHubActionsNews application
-      shell: pwsh
-      if: 1 == 3
-      env:
-        CHROME_PATH:  /usr/local/share/chromedriver-linux64/chromedriver # ${{ steps.setup-chrome.outputs.chrome-path }}
-      run: |
-        Write-Host "::group::Run the GitHubActionsNews application"
-        Write-Host "Chrome path: [$env:CHROME_PATH]"
-        $env:CHROME_BIN = $env:CHROME_PATH
-        cd .\ArtifactFolder
-        dotnet GitHubActionsNews.dll ${{ inputs.characters }}
         Write-Host "::endgroup::"
 
     - name: Run the GitHubActionsNews application
