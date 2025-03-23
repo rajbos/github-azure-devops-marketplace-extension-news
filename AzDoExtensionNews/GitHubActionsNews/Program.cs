@@ -63,6 +63,7 @@ namespace GitHubActionsNews
 
         private static void RunTest()
         {
+            Console.WriteLine("Running");
             var driver = GetDriver();
             try
             {
