@@ -10,7 +10,7 @@ using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
 using SeleniumExtras.WaitHelpers;
 
-internal class Program
+internal static class Program
 {
     private static ChromeDriver GetDriver()
     {
@@ -40,7 +40,7 @@ internal class Program
         return driver;
     }
 
-    private static void Main(string[] args)
+    private static async Task Main(string[] args)
     {
         IWebDriver driver = GetDriver();
         try
