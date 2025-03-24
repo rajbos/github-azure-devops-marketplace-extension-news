@@ -178,12 +178,6 @@ jobs:
         with:
           egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs 
 
-      - name: Download artifact from build job
-        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
-        with:
-          name: ${{ inputs.artifactName }}
-          path: ./ArtifactFolder
-          
       # - name: Checkout code
       #   uses: actions/checkout@v4
       
@@ -202,6 +196,7 @@ jobs:
           path: ./SeleniumTest
 
       - run: |
+          ls
           echo "Running the project..."
           cd .\SeleniumTest
           #dotnet run --project /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/AzDoExtensionNews/SeleniumTest/SeleniumTest.csproj
