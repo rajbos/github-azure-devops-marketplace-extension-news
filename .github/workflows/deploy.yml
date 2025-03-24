@@ -46,6 +46,9 @@ jobs:
     - name: Publish
       run: dotnet publish AzDoExtensionNews/AzDoExtensionNews.sln -c Release --property:PublishDir=${{ github.workspace }}/publish/AzDo/
 
+    - name: Publish
+      run: dotnet publish AzDoExtensionNews/SeleniumTest/SeleniumTest.csproj -c Release --property:PublishDir=${{ github.workspace }}/publish/Selenium/
+
     - name: Test
       run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
 
@@ -54,6 +57,12 @@ jobs:
       with:
         path: publish/AzDo
         name: ${{ env.ArtifactName }}
+      
+    - name: Publish AzDo Artifact
+      uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+      with:
+        path: publish/Selenium
+        name: SeleniumTest
 
   GatherCharacter:
     runs-on: ubuntu-22.04
@@ -62,8 +71,8 @@ jobs:
     concurrency: GatherCharacterJsons-${{ matrix.character }}
     strategy:
       matrix:
-        character: [c,b,e,g,h,j,k,l,m,n,u,w,x,y,z,o,p,r,sa,sb,sc,sd,se,sf,sg,sh,sj,sk,sl,sm,sn,sp,sr,su,sv,sw,t,v,ai,ae,ia,ea,0,1,2,3,4,5,6,7,8,9]
-        #character: [9] # temp for faster testing of consolidate updates
+        #character: [c,b,e,g,h,j,k,l,m,n,u,w,x,y,z,o,p,r,sa,sb,sc,sd,se,sf,sg,sh,sj,sk,sl,sm,sn,sp,sr,su,sv,sw,t,v,ai,ae,ia,ea,0,1,2,3,4,5,6,7,8,9]
+        character: [c] # temp for faster testing of consolidate updates
     steps:
       - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v3.5.3
 
@@ -168,22 +177,32 @@ jobs:
         with:
           egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs 
 
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - uses: actions/setup-dotnet@v4
+      - name: Download artifact from build job
+        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
         with:
-          dotnet-version: '8.x'
+          name: ${{ inputs.artifactName }}
+          path: ./ArtifactFolder
+          
+      # - name: Checkout code
+      #   uses: actions/checkout@v4
+      
+      # - uses: actions/setup-dotnet@3e891b0cb619bf60e2c25674b222b8940e2c1c25 # v4.1.0
+      #   with:
+      #     dotnet-version: '8.x'
 
-      - run: |
-          cd /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/AzDoExtensionNews/SeleniumTest
-          dotnet build
+      # - run: |
+      #     cd /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/AzDoExtensionNews/SeleniumTest
+      #     dotnet build
 
-      - run: |
-          # check the current user
-          echo "Current user: $(uname -a)"
-          echo "Current user: $(whoami)"
+      - name: Download artifact from build job
+        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
+        with:
+          name: Selenium
+          path: ./SeleniumTest
 
       - run: |
           echo "Running the project..."
-          dotnet run --project /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/AzDoExtensionNews/SeleniumTest/SeleniumTest.csproj
+          cd .\SeleniumTest
+          #dotnet run --project /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/AzDoExtensionNews/SeleniumTest/SeleniumTest.csproj
+
+          dotnet run SeleniumTest.dll
