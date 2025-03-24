@@ -9,6 +9,8 @@ using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
 using SeleniumExtras.WaitHelpers;
+using System.Threading;
+using System.Threading.Tasks;
 
 internal static class Program
 {
