@@ -200,7 +200,7 @@ jobs:
           echo "Running the project..."
           cd SeleniumTest
           ls
-          chmod +x /SeleniumTest/selenium-manager/linux/selenium-manager
+          chmod +x SeleniumTest/selenium-manager/linux/selenium-manager
 
           #dotnet run --project /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/AzDoExtensionNews/SeleniumTest/SeleniumTest.csproj
 
