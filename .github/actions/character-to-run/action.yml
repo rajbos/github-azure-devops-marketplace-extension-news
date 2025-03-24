@@ -47,10 +47,10 @@ runs:
       with:
         dotnet-version: 8.x
 
-    - name: Check Chrome Version
+    - name: Set selenium-manager permissions
       shell: pwsh
       run: |
-        Write-Host "::group::Check Chrome Version"
+        Write-Host "::group::Check selenium-manager permissions"
 
         echo "Modding path"
         chmod +x /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/ArtifactFolder/selenium-manager/linux/selenium-manager
