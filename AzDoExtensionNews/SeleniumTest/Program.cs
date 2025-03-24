@@ -39,7 +39,7 @@ internal class Program
             Console.WriteLine("Creating default service");
             var service = ChromeDriverService.CreateDefaultService();
             Console.WriteLine("Creating Chrome driver");
-            var driver = new ChromeDriver(service, chromeOptions, TimeSpan.FromSeconds(300));
+            driver = new ChromeDriver(service, chromeOptions, TimeSpan.FromSeconds(300));
             Console.WriteLine("Chrome driver created");
 
             // go to google.com with the driver
