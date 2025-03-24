@@ -202,4 +202,4 @@ jobs:
           ls
           #dotnet run --project /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/AzDoExtensionNews/SeleniumTest/SeleniumTest.csproj
 
-          dotnet run SeleniumTest.dll
+          dotnet SeleniumTest.dll
