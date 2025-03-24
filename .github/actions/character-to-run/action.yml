@@ -49,7 +49,6 @@ runs:
 
     - name: Check Chrome Version
       shell: pwsh
-      if: 1 == 3
       run: |
         Write-Host "::group::Check Chrome Version"
         #chrome --version
@@ -72,17 +71,19 @@ runs:
         cd ${{ steps.setup-chrome.outputs.chrome-path }}
         ls -la
 
-    - shell: pwsh
-      run: |
-        echo "CHModding path"
-        chmod +x /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/ArtifactFolder/selenium-manager/linux/selenium-manager
+        #echo "Modding path"
+        #chmod +x /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/ArtifactFolder/selenium-manager/linux/selenium-manager
 
         Write-Host "::endgroup::"
 
     - name: Run the GitHubActionsNews application
       shell: pwsh
+      env:
+        CHROME_PATH:  /usr/local/share/chromedriver-linux64/chromedriver # ${{ steps.setup-chrome.outputs.chrome-path }}
       run: |
         Write-Host "::group::Run the GitHubActionsNews application"
+        Write-Host "Chrome path: [$env:CHROME_PATH]"
+        $env:CHROME_BIN = $env:CHROME_PATH
         cd .\ArtifactFolder
         dotnet GitHubActionsNews.dll ${{ inputs.characters }}
         Write-Host "::endgroup::"
