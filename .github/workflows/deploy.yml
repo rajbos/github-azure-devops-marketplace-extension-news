@@ -196,11 +196,12 @@ jobs:
           path: ./SeleniumTest
 
       - name: Check .NET and System.Text.Json versions
+        shell: pwsh
         run: |
           dotnet --info
           cd SeleniumTest
           
-          $systemTextJsonVersion = (Get-ChildItem -Path .\bin\Debug\net8.0\*.dll | Select-String -Pattern "System.Text.Json" | ForEach-Object { $_.Line }) -replace '.*Version=([0-9\.]+).*', '$1'
+          $systemTextJsonVersion = (Get-ChildItem -Path .\*.dll | Select-String -Pattern "System.Text.Json" | ForEach-Object { $_.Line }) -replace '.*Version=([0-9\.]+).*', '$1'
           Write-Host "System.Text.Json version: [$systemTextJsonVersion]"
 
       - run: |
