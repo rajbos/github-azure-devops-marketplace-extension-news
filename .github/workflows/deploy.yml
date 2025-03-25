@@ -201,8 +201,13 @@ jobs:
           dotnet --info
           cd SeleniumTest
           
-          $systemTextJsonVersion = (Get-ChildItem -Path .\*.dll | Select-String -Pattern "System.Text.Json" | ForEach-Object { $_.Line }) -replace '.*Version=([0-9\.]+).*', '$1'
-          Write-Host "System.Text.Json version: [$systemTextJsonVersion]"
+          $assembly = Get-ChildItem -Path .\*.dll | Where-Object { $_.Name -like "System.Text.Json.dll" } | Select-Object -First 1
+          if ($assembly) {
+              $versionInfo = [System.Reflection.AssemblyName]::GetAssemblyName($assembly.FullName)
+              Write-Host "System.Text.Json version: [$($versionInfo.Version)]"
+          } else {
+              Write-Host "System.Text.Json.dll not found."
+          }
 
       - run: |
           ls
