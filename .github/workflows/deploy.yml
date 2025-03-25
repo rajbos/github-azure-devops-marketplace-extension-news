@@ -200,6 +200,7 @@ jobs:
         run: |
           dotnet --info
           cd SeleniumTest
+          ls -la
           
           $assembly = Get-ChildItem -Path .\*.dll | Where-Object { $_.Name -like "System.Text.Json.dll" } | Select-Object -First 1
           if ($assembly) {
