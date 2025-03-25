@@ -66,7 +66,7 @@ runs:
         ls -la
         $fileName = Get-ChildItem -Recurse | Select-String -Pattern "System.Text.Json" | Select-Object -First 1
         # show the version of the file
-        $fileVersion = (Get-Item $fileName).VersionInfo.FileVersion
+        $fileVersion = $(Get-Item $fileName).VersionInfo.FileVersion
         Write-Host "System.Text.Json version: $fileVersion"
 
 
