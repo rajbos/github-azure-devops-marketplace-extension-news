@@ -63,9 +63,7 @@ runs:
         dotnet --info
         cd .\ArtifactFolder
         # find the version of system.text.json
-        $systemTextJsonVersion = (Get-ChildItem -Path .\*.dll | Select-String -Pattern "System.Text.Json" | ForEach-Object { $_.Line }) -replace '.*Version=([0-9\.]+).*', '$1'
-        Write-Host "System.Text.Json version: [$systemTextJsonVersion]"
-
+        ls -la
 
     - name: Run the GitHubActionsNews application
       shell: pwsh

@@ -202,12 +202,16 @@ jobs:
           cd SeleniumTest
           ls -la
           
-          $assembly = Get-ChildItem -Path .\*.dll | Where-Object { $_.Name -like "System.Text.Json.dll" } | Select-Object -First 1
-          if ($assembly) {
-              $versionInfo = [System.Reflection.AssemblyName]::GetAssemblyName($assembly.FullName)
-              Write-Host "System.Text.Json version: [$($versionInfo.Version)]"
+          # Get the system-wide version of System.Text.Json
+          $globalAssemblyCache = [System.AppDomain]::CurrentDomain.GetAssemblies()
+          $systemTextJson = $globalAssemblyCache | Where-Object { $_.FullName -like "System.Text.Json*" }
+
+          if ($systemTextJson) {
+              $systemTextJson | ForEach-Object {
+                  Write-Host "System.Text.Json version: [$($_.GetName().Version)]"
+              }
           } else {
-              Write-Host "System.Text.Json.dll not found."
+              Write-Host "System.Text.Json is not loaded in the current AppDomain."
           }
 
       - run: |
