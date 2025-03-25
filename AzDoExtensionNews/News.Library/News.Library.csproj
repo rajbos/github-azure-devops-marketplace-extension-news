@@ -10,7 +10,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration"/>
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions"/>
     <PackageReference Include="Microsoft.Extensions.Configuration.Json"/>
-    <PackageReference Include="Newtonsoft.Json"/>
+    <!-- <PackageReference Include="Newtonsoft.Json"/> -->
     <PackageReference Include="TweetinviAPI"/>
   </ItemGroup>
 

@@ -11,4 +11,8 @@
     <PackageReference Include="Selenium.WebDriver" />
     <PackageReference Include="Selenium.WebDriver.ChromeDriver" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="9.0.3" />
+  </ItemGroup>
 </Project>
