@@ -199,7 +199,9 @@ jobs:
         run: |
           dotnet --info
           cd SeleniumTest
-          #dotnet list package
+          
+          $systemTextJsonVersion = (Get-ChildItem -Path .\bin\Debug\net8.0\*.dll | Select-String -Pattern "System.Text.Json" | ForEach-Object { $_.Line }) -replace '.*Version=([0-9\.]+).*', '$1'
+          Write-Host "System.Text.Json version: [$systemTextJsonVersion]"
 
       - run: |
           ls
