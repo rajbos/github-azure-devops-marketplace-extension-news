@@ -67,11 +67,6 @@ runs:
         $fileName = Get-ChildItem -Recurse | Select-String -Pattern "System.Text.Json" | Select-Object -First 1
         # show the version of the file
         Write-Host "File name: $fileName"
-        # get the version of the file
-        $item = Get-Item $fileName
-        $fileVersion = $item.VersionInfo.FileVersion
-        Write-Host "System.Text.Json version: $fileVersion"
-
 
     - name: Run the GitHubActionsNews application
       shell: pwsh
