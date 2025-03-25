@@ -69,12 +69,8 @@ runs:
         Write-Host "File name: $fileName"
 
         # delete the System.Text.Json file
-        if ($fileName) {
-          Write-Host "Deleting System.Text.Json file"
-          Remove-Item $fileName
-        } else {
-          Write-Host "No System.Text.Json file found"
-        }
+        Write-Host "Deleting System.Text.Json file"
+        Remove-Item "System.Text.Json.dll" -Force
 
     - name: Run the GitHubActionsNews application
       shell: pwsh
