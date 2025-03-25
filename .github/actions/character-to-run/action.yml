@@ -68,6 +68,14 @@ runs:
         # show the version of the file
         Write-Host "File name: $fileName"
 
+        # delete the System.Text.Json file
+        if ($fileName) {
+          Write-Host "Deleting System.Text.Json file"
+          Remove-Item $fileName
+        } else {
+          Write-Host "No System.Text.Json file found"
+        }
+
     - name: Run the GitHubActionsNews application
       shell: pwsh
       run: |
