@@ -44,13 +44,13 @@ jobs:
       run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release
 
     - name: Publish
-      run: dotnet publish AzDoExtensionNews/AzDoExtensionNews.sln -c Release --self-contained false --property:PublishDir=${{ github.workspace }}/publish/AzDo/
-
-    - name: Publish
-      run: dotnet publish AzDoExtensionNews/SeleniumTest/SeleniumTest.csproj -c Release --self-contained false --property:PublishDir=${{ github.workspace }}/publish/Selenium/
+      run: dotnet publish AzDoExtensionNews/GitHubActionsNews/GitHubActionsNews.csproj -c Release --self-contained false --property:PublishDir=${{ github.workspace }}/publish/AzDo/
 
     - name: Test
       run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
+
+    - name: Publish
+      run: dotnet publish AzDoExtensionNews/SeleniumTest/SeleniumTest.csproj -c Release --self-contained false --property:PublishDir=${{ github.workspace }}/publish/Selenium/
 
     - name: Publish AzDo Artifact
       uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
