@@ -21,11 +21,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # - uses: browser-actions/setup-chrome@c785b87e244131f27c9f19c1a33e2ead956ab7ce # v1.7.3
-    #   id: setup-chrome
-    #   with:
-    #     install-chromedriver: true
-
     - name: Download artifact from build job
       uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
       with:
@@ -43,10 +38,6 @@ runs:
         TwitterAccessTokenSecret: ${{ inputs.TwitterAccessTokenSecret }}
         BlobStorageConnectionString: ${{ inputs.BlobStorageConnectionString }}
 
-    # - uses: actions/setup-dotnet@3e891b0cb619bf60e2c25674b222b8940e2c1c25 # v4.1.0
-    #   with:
-    #     dotnet-version: 8.x
-
     - name: Set selenium-manager permissions
       shell: pwsh
       run: |
@@ -56,21 +47,6 @@ runs:
         chmod +x /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/ArtifactFolder/selenium-manager/linux/selenium-manager
 
         Write-Host "::endgroup::"
-
-    - name: Check .NET and System.Text.Json versions
-      shell: pwsh
-      run: |
-        dotnet --info
-        cd .\ArtifactFolder
-        # find the version of system.text.json
-        ls -la
-        $fileName = Get-ChildItem -Recurse | Select-String -Pattern "System.Text.Json" | Select-Object -First 1
-        # show the version of the file
-        Write-Host "File name: $fileName"
-
-        # delete the System.Text.Json file
-        # Write-Host "Deleting System.Text.Json file"
-        # Remove-Item "System.Text.Json.dll" -Force
 
     - name: Run the GitHubActionsNews application
       shell: pwsh
