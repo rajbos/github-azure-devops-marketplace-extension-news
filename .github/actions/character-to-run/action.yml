@@ -58,8 +58,10 @@ runs:
         Write-Host "::endgroup::"
 
     - name: Check .NET and System.Text.Json versions
+      shell: pwsh
       run: |
         dotnet --info
+        cd .\ArtifactFolder
         dotnet list package
 
     - name: Run the GitHubActionsNews application

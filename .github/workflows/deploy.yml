@@ -198,8 +198,9 @@ jobs:
       - name: Check .NET and System.Text.Json versions
         run: |
           dotnet --info
+          cd .\ArtifactFolder
           dotnet list package
-          
+
       - run: |
           ls
           echo "Running the project..."
