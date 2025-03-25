@@ -62,7 +62,7 @@ runs:
       run: |
         dotnet --info
         cd .\ArtifactFolder
-        dotnet list package
+        #dotnet list package
 
     - name: Run the GitHubActionsNews application
       shell: pwsh

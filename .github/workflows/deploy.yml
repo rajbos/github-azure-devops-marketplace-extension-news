@@ -47,7 +47,7 @@ jobs:
       run: dotnet publish AzDoExtensionNews/AzDoExtensionNews.sln -c Release --property:PublishDir=${{ github.workspace }}/publish/AzDo/
 
     - name: Publish
-      run: dotnet publish AzDoExtensionNews/SeleniumTest/SeleniumTest.csproj -c Release --property:PublishDir=${{ github.workspace }}/publish/Selenium/
+      run: dotnet publish AzDoExtensionNews/SeleniumTest/SeleniumTest.csproj -c Release --self-contained false --property:PublishDir=${{ github.workspace }}/publish/Selenium/
 
     - name: Test
       run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
@@ -199,7 +199,7 @@ jobs:
         run: |
           dotnet --info
           cd SeleniumTest
-          dotnet list package
+          #dotnet list package
 
       - run: |
           ls
