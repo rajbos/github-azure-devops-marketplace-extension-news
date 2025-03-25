@@ -266,9 +266,9 @@ namespace GitHubActionsNews
             Console.WriteLine("Running");
             var driver = GetDriver();
 
-            driver.Navigate().GoToUrl("https://www.google.com");
-            Console.WriteLine("Navigated to Google");
-            return null;
+            // driver.Navigate().GoToUrl("https://www.google.com");
+            // Console.WriteLine("Navigated to Google");
+            // return null;
 
             try
             {
