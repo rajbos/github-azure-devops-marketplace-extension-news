@@ -40,7 +40,7 @@
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/AzDoExtensionNews/GitHubActionsNews/bin/Debug/net8.0/GitHubActionsNews.dll",
             "args": [
-                "test"
+                "my"
             ],
             "cwd": "${workspaceFolder}/AzDoExtensionNews/AzDoExtensionNews",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console

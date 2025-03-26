@@ -366,10 +366,11 @@ namespace GitHubActionsNews
 
                 // find the 'next' button
                 IWebElement nextButton = null;
+                var nextButtonSearch = By.LinkText("Next");
                 try
                 {
-                    waitForElement.Until(ExpectedConditions.ElementExists(By.LinkText("Next")));
-                    nextButton = driver.FindElement(By.LinkText("Next"));
+                    waitForElement.Until(ExpectedConditions.ElementExists(nextButtonSearch));
+                    nextButton = driver.FindElement(nextButtonSearch);
                 }
                 catch
                 {
@@ -382,13 +383,13 @@ namespace GitHubActionsNews
                     var nextUrl = nextButton.GetAttribute("href");
                     // click the next button
                     nextButton.Click();
+                    waitForElement = ScrollPaginatorIntoView(driver);
 
-                    waitForElement.Until(ExpectedConditions.ElementExists(By.LinkText("Next")));
+                    waitForElement.Until(ExpectedConditions.ElementExists(nextButtonSearch));
 
                     // wait for the next button to be available again
                     waitForElement.Until(ExpectedConditions.UrlToBe(nextUrl));
                     // the 'next' link is not a link in the last page, so by waiting for it we would miss that page!
-                    // waitForElement.Until(ExpectedConditions.ElementIsVisible(By.LinkText("Next")));
                     waitForElement.Until(ExpectedConditions.ElementIsVisible(By.ClassName("paginate-container")));
 
                     // scrape the new page again
