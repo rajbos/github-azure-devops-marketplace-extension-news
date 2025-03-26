@@ -14,10 +14,10 @@ namespace GitHubActionsNews
             var links = driver.FindElements(By.TagName("a"));
             //foreach (var link in links)
             //{
-                //Console.WriteLine(link.Text);
+            //Console.WriteLine(link.Text);
             //}
 
-            var foundIssueLink = links.FirstOrDefault(a => a.Text.StartsWith("Report abuse"));
+            var foundIssueLink = links.FirstOrDefault(a => a.Text.StartsWith("View source code"));
             if (foundIssueLink == null)
             {
                 return null;
@@ -28,13 +28,13 @@ namespace GitHubActionsNews
             var linkDiv = foundIssueLink;
 
             var linkDivParent = linkDiv.FindElement(By.XPath("./..")); // find parent element
-            //Console.WriteLine($"{linkDivParent.Text}");
-            // find first link in this div
-             links = linkDivParent.FindElements(By.TagName("a"));
+                                                                       //Console.WriteLine($"{linkDivParent.Text}");
+                                                                       // find first link in this div
+            links = linkDivParent.FindElements(By.TagName("a"));
             if (links.Count > 0)
             {
                 var link = links[0];
-                return link.Text;
+                return link.GetAttribute("href");
             }
             else
             {
@@ -47,7 +47,7 @@ namespace GitHubActionsNews
             IWebElement divWithTitle;
             try
             {
-                divWithTitle = driver.FindElement(By.XPath("//*[contains(text(),'Latest version')]"));
+                divWithTitle = driver.FindElement(By.XPath("//*[contains(text(),'Latest')]"));
             }
             catch (OpenQA.Selenium.NoSuchElementException)
             {
@@ -57,14 +57,18 @@ namespace GitHubActionsNews
                 }
                 catch (OpenQA.Selenium.NoSuchElementException)
                 {
-                    return $"Error loading version from page [{driver.Url}], cannot find 'Latest version' or 'Pre-release' on this page";
+                    return $"Error loading version from page [{driver.Url}], cannot find 'Latest' or 'Pre-release' on this page";
                 }
             }
 
             var sb = new StringBuilder();
             try
             {
-                sb.AppendLine($"{divWithTitle.Text} - {divWithTitle.TagName}");
+                if (Debugger.IsAttached)
+                {
+                    sb.AppendLine($"{divWithTitle.Text} - {divWithTitle.TagName} - {divWithTitle.GetAttribute("Title")}");
+                    Console.WriteLine($"divWithTitle.Text: {divWithTitle.Text}, divWithTitle.TagName: {divWithTitle.TagName}, divWithTitle.GetAttribute(\"Title\"): {divWithTitle.GetAttribute("Title")}");
+                }
                 // "contains(text(), 'Latest version')"); ;
 
                 var publisherParent = divWithTitle.FindElement(By.XPath("./..")); // find parent element
@@ -73,14 +77,15 @@ namespace GitHubActionsNews
 
                 if (Debugger.IsAttached)
                 {
-                    foreach (var el in allChildElements)
+                    for (int i = 0; i < allChildElements.Count; i++)
                     {
-                        sb.AppendLine($"{el.Text} - {el.TagName}");
+                        var el = allChildElements[i];
+                        sb.AppendLine($"{i}: {el.Text} - {el.TagName} - {el.GetAttribute("Title")}");
                     }
                     Log.Message(sb.ToString());
                 }
 
-                return allChildElements[2].Text;
+                return allChildElements[0].GetAttribute("Title"); // get the title attribute of the first child element
             }
             catch (Exception e)
             {
@@ -112,14 +117,13 @@ namespace GitHubActionsNews
 
         public static string GetTitleFromAction(IWebDriver driver)
         {
-            // find the div that has these classes "pl-md-3 lh-default"
-            // find the h1 in the div that has the class "f1 text-normal mb-1"
-            // read the text
             try
             {
-                var titleDiv = driver.FindElement(By.CssSelector(".pl-md-3.lh-default"));
-                var title = titleDiv.FindElement(By.XPath("./..")).FindElement(By.XPath(".//h1")).Text;
-                return title;
+                // load the webpage title
+                var title = driver.Title;
+                // remove the default part from the title to find the actions title
+                // e.g. Super-Linter · Actions · GitHub Marketplace · GitHub
+                return title.Split('·')[0].Trim(); // extract and return the actual action title
             }
             catch (NoSuchElementException ex)
             {

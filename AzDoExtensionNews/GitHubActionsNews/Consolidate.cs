@@ -27,7 +27,7 @@ namespace GitHubActionsNews
                 // check for changes
                 foreach (var action in updatedActions)
                 {
-                    if (tweetsSend > 25) 
+                    if (tweetsSend > 25)
                     {
                         // to many tweets to send, stop sending any more to prevent ratelimiting issues
                         break;
@@ -45,16 +45,21 @@ namespace GitHubActionsNews
                     var tweetText = "";
                     if (previousVersion == null)
                     {
+                        Console.WriteLine($"No previous version found for [{action.Url}], skipping...");
                         // tweet new action                        
                         tweetText = $"A new GitHub Action has been added to the marketplace!" + Environment.NewLine + Environment.NewLine + $"Check out '{action.Title}' from {action.Publisher}. {action.Url}";
                     }
-                    else if (!string.IsNullOrWhiteSpace(action.Version) && !action.Version.Equals(previousVersion.Version, StringComparison.InvariantCultureIgnoreCase))
+                    else
                     {
-                        // only tweet when nothing went wrong with loading the version text from either the current version or the new one
-                        if (action.Version.IndexOf(Constants.ErrorText) == -1 && (previousVersion.Version == null || previousVersion.Version.IndexOf(Constants.ErrorText) == -1))
+                        Console.WriteLine($"Previous version [{action.Version}] found for [{action.Url}], comparing with [{previousVersion.Version}]");
+                        if (!string.IsNullOrWhiteSpace(action.Version) && !action.Version.Equals(previousVersion.Version, StringComparison.InvariantCultureIgnoreCase))
                         {
-                            // tweet changes
-                            tweetText = $"GitHub Action '{action.Title}' from {action.Publisher} has been updated to version {action.Version}. {action.Url}";
+                            // only tweet when nothing went wrong with loading the version text from either the current version or the new one
+                            if (action.Version.IndexOf(Constants.ErrorText) == -1 && (previousVersion.Version == null || previousVersion.Version.IndexOf(Constants.ErrorText) == -1))
+                            {
+                                // tweet changes
+                                tweetText = $"GitHub Action '{action.Title}' from {action.Publisher} has been updated to version {action.Version}. {action.Url}";
+                            }
                         }
                     }
 
@@ -81,6 +86,10 @@ namespace GitHubActionsNews
                 Storage.SaveJson<GitHubAction>(actionsNotifications, UpdatedOverview);
                 // store current set as overview
                 Storage.SaveJson<GitHubAction>(updatedActions, FullOverview);
+            }
+            else
+            {
+                Log.Message($"No new actions found, nothing to store");
             }
         }
 
@@ -126,12 +135,12 @@ namespace GitHubActionsNews
                 // prevent adding it twice
                 if (latest == null)
                 {
-                   latestVersions.Add(action);
+                    latestVersions.Add(action);
                 }
             }
             notEmpty = latestVersions.Where(item => !String.IsNullOrEmpty(item.RepoUrl)).Count();
             Log.Message($"End of de-dupe we have [{latestVersions.Count()}] actions with [{notEmpty}] filled repo urls");
-            
+
             return latestVersions;
         }
     }
