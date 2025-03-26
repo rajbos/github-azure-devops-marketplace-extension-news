@@ -96,7 +96,7 @@ function CreateBlogPost {
         return
     }
 
-    $splitted = $update.RepoUrl.Replace(";", "").Split("/")
+    $splitted = $update.RepoUrl.Replace(";", "").Replace("https://github.com/", "").Split("/")
     $owner = $splitted[0]
     $repo = $splitted[1]
     Write-Host "Found repo [$repo] and owner [$owner] for update [$update]"
