@@ -51,7 +51,7 @@ namespace GitHubActionsNews
                     }
                     else
                     {
-                        Console.WriteLine($"Previous version found for [{action.Url}], comparing with [{previousVersion.Version}]");
+                        Console.WriteLine($"Previous version [{action.Version}] found for [{action.Url}], comparing with [{previousVersion.Version}]");
                         if (!string.IsNullOrWhiteSpace(action.Version) && !action.Version.Equals(previousVersion.Version, StringComparison.InvariantCultureIgnoreCase))
                         {
                             // only tweet when nothing went wrong with loading the version text from either the current version or the new one
