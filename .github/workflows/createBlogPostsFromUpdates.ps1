@@ -1,7 +1,7 @@
 Param(
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$token,
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$filePath
 )
 
@@ -32,7 +32,7 @@ git clone $repositoryUrl
 # change into the repository
 Set-Location $folderName
 
-function GetBasicAuthenticationHeader(){
+function GetBasicAuthenticationHeader() {
     Param (
         $access_token = $env:GITHUB_TOKEN
     )
@@ -64,11 +64,11 @@ function ApiCall {
 
 function GetReleaseBody {
     Param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string] $repo,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string] $owner,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string] $tag
     )
 
@@ -85,9 +85,9 @@ function GetReleaseBody {
 
 }
 
-function CreateBlogPost{
+function CreateBlogPost {
     Param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [PSCustomObject]$update
     )
 
@@ -123,7 +123,7 @@ function CreateBlogPost{
 
 function SanitizeContent {
     Param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$content
     )
 
@@ -132,19 +132,19 @@ function SanitizeContent {
 
 function GetContent {
     Param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [PSCustomObject]$update,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$dependentsNumber,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$releaseBody
     )
 
     # write the content as a multiline array
     if ($dependentsNumber -eq "?") {
         $dependentsNumberString = "?"
-     }
-     else {
+    }
+    else {
         $dependentsNumberString = $dependentsNumber
     }
     $content = @(
@@ -201,17 +201,27 @@ function GetContent {
 #     "Updated": "2020-12-09T17:25:39.0724078Z",
 #     "RepoUrl": "zzzze/webhook-trigger"
 #   }
+$counter = 0
 foreach ($update in $updates) {
     # create the file name
     try {
         CreateBlogPost -update $update
         # sleep 2 seconds
         Start-Sleep -Seconds 2
+        $counter++
     }
     catch {
         Write-Host "Error creating blog post for update [$update]"
         Write-Host "$_"
     }
+}
+
+# show what we did
+Write-Host "Created [$counter] blog posts"
+# also write to the step summary file
+$summaryFile = "$GITHUB_STEP_SUMMARY"
+if (Test-Path -Path $summaryFile) {
+    Add-Content -Path $summaryFile -Value "Created [$counter] blog posts"
 }
 
 # use git porcelain to check if there are any changes
