@@ -368,6 +368,7 @@ namespace GitHubActionsNews
                 IWebElement nextButton = null;
                 try
                 {
+                    waitForElement.Until(ExpectedConditions.ElementExists(By.LinkText("Next")));
                     nextButton = driver.FindElement(By.LinkText("Next"));
                 }
                 catch
@@ -399,6 +400,7 @@ namespace GitHubActionsNews
                 Log.Message($"Error scraping page {pageNumber}. Exception message: {e.Message}{Environment.NewLine}{e.InnerException?.Message}");
                 Log.Message($"Logs for run with url [{driver.Url}]:");
                 Log.Message(logger.ToString());
+                SaveScreenshot(driver, $"Error_Page_{pageNumber}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png");
             }
 
             return actionList;
@@ -575,6 +577,20 @@ namespace GitHubActionsNews
             var firstSlash = url.IndexOf("/");
             // return the first part of the url
             return url.Substring(0, firstSlash);
+        }
+
+        private static void SaveScreenshot(IWebDriver driver, string fileName)
+        {
+            try
+            {
+                var screenshot = ((ITakesScreenshot)driver).GetScreenshot();
+                screenshot.SaveAsFile(fileName);
+                Log.Message($"Screenshot saved to {fileName}");
+            }
+            catch (Exception ex)
+            {
+                Log.Message($"Error saving screenshot: {ex.Message}");
+            }
         }
     }
 }
