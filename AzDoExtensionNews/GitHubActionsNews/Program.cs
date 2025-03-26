@@ -409,7 +409,7 @@ namespace GitHubActionsNews
             // scroll the paginator into view
             var actions = new Actions(driver);
 
-            var timeoutDurationSeconds = Debugger.IsAttached ? 10 : 1;
+            var timeoutDurationSeconds = Debugger.IsAttached ? 10 : 5;
             var waitForElement = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(timeoutDurationSeconds));
             var elementName = "nav";
             var elementAriaLabel = "Pagination";
