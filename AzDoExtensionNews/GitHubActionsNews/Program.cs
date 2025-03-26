@@ -255,9 +255,17 @@ namespace GitHubActionsNews
 
         private static List<GitHubAction> GetAllActions(string searchUrl)
         {
-            var actions = ScrapeGitHubMarketPlace(searchUrl);
+            try
+            {
+                var actions = ScrapeGitHubMarketPlace(searchUrl);
 
-            return actions;
+                return actions;
+            }
+            catch (Exception e)
+            {
+                Log.Message($"Error getting all actions from GitHub marketplace for searchUrl [{searchUrl}]: {e.Message}");
+            }
+            return [];
         }
 
         private static List<GitHubAction> ScrapeGitHubMarketPlace(string searchUrl)
@@ -290,7 +298,7 @@ namespace GitHubActionsNews
                 driver.Quit();
             }
 
-            return new List<GitHubAction>();
+            return [];
         }
 
         private static ChromeDriver GetDriver()
