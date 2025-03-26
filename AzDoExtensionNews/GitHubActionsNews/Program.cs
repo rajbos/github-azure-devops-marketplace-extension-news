@@ -223,7 +223,7 @@ namespace GitHubActionsNews
                     }
 
                     // check version number
-                    if (existingAction?.Version != action?.Version && action?.Version.IndexOf(Constants.ErrorText) == -1)
+                    if (existingAction?.Version != action?.Version && action?.Version?.IndexOf(Constants.ErrorText) == -1)
                     {
                         Log.Message($"Found an updated action: {action.Title}: old version [{existingAction.Version}], new version [{action.Version}]");
 
