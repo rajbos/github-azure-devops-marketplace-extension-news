@@ -96,9 +96,10 @@ function CreateBlogPost {
         return
     }
 
-    $splitted = $update.RepoUrl.Split("/")
+    $splitted = $update.RepoUrl.Replace(";", "").Split("/")
     $owner = $splitted[0]
     $repo = $splitted[1]
+    Write-Host "Found repo [$repo] and owner [$owner] for update [$update]"
     $dependentsNumber = GetDependentsForRepo -repo $repo -owner $owner
 
     $releaseBody = GetReleaseBody -repo $repo -owner $owner -tag $update.Version
