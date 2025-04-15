@@ -3,12 +3,12 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Selenium.Support" Version="4.30.0" />
-    <PackageVersion Include="Selenium.WebDriver" Version="4.30.0" />
+    <PackageVersion Include="Selenium.Support" Version="4.31.0" />
+    <PackageVersion Include="Selenium.WebDriver" Version="4.31.0" />
     <PackageVersion Include="Microsoft.Azure.Storage.Blob" Version="11.2.3" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.3" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.3" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="9.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.4" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.4" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="9.0.4" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="TweetinviAPI" Version="5.0.4" />
     <PackageVersion Include="nunit" Version="4.3.2" />
@@ -18,6 +18,6 @@
     <PackageVersion Include="MSTest.TestFramework" Version="3.8.3" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="DotNetSeleniumExtras.WaitHelpers" Version="3.11.0" />
-    <PackageVersion Include="Selenium.WebDriver.ChromeDriver" Version="134.0.6998.16500" />
+    <PackageVersion Include="Selenium.WebDriver.ChromeDriver" Version="135.0.7049.8400" />
   </ItemGroup>
 </Project>
