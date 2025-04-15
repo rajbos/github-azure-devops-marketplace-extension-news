@@ -13,24 +13,24 @@
       },
       "Selenium.Support": {
         "type": "Direct",
-        "requested": "[4.29.0, )",
-        "resolved": "4.29.0",
-        "contentHash": "Edeldo2R/H4mfh1CW1YNr8g8ASnF/5d9YlvBKtAW93dMImnzaQ47eHbMjoJp4kU4CeyQ22UA300d7VFutzddmw==",
+        "requested": "[4.30.0, )",
+        "resolved": "4.30.0",
+        "contentHash": "mpUvloTX1Nj7JdCZUSlLRIxcVBoPFAirLoqAEfO246f0nuxp8ibtEHGTBfRvJGReO0nbvqfOKyVW3fU6a/z7kw==",
         "dependencies": {
-          "Selenium.WebDriver": "4.29.0"
+          "Selenium.WebDriver": "4.30.0"
         }
       },
       "Selenium.WebDriver": {
         "type": "Direct",
-        "requested": "[4.29.0, )",
-        "resolved": "4.29.0",
-        "contentHash": "bxUeeyGPoPFqqZX/RQAmcuE8fvdi08ep9519rFpONfC/rmBemezfCbbwDKPLE0xkb/cW1asH5WbDYLXs5giVeg=="
+        "requested": "[4.30.0, )",
+        "resolved": "4.30.0",
+        "contentHash": "POEESh6f408SNst9kT+mf4g9zVahIWXjo+/8qkjUt8dNRllD+am2Fdj30j5b54kpRIx5Nz2b08AREYvaOyQQMA=="
       },
       "Selenium.WebDriver.ChromeDriver": {
         "type": "Direct",
-        "requested": "[134.0.6998.8800, )",
-        "resolved": "134.0.6998.8800",
-        "contentHash": "LKvQL2yVI+ZsCXUMuLnLbFPjQBIYUjXqwUERprpuZyttZo9wY8dOp1Qto4P7XV23jGYxSW+5I5CeuOQHIT3wNg=="
+        "requested": "[134.0.6998.16500, )",
+        "resolved": "134.0.6998.16500",
+        "contentHash": "Mb1ajy5zmY+yXDhpUtl90spvY/OWkDcPmnFqextFEudLPbp7sFcRoQFrhNSiPa5VmTFMh1rFTpx90aIpDXrSTw=="
       },
       "Autofac": {
         "type": "Transitive",

@@ -27,12 +27,12 @@ jobs:
 
     - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v3.5.3
 
-    - uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
+    - uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-${{ hashFiles('**/**.csproj') }}-1
 
-    - uses: actions/setup-dotnet@3951f0dfe7a07e2313ec93c75700083e2005cbab # v4.3.0
+    - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
       with:
         dotnet-version: 8.x
         cache: true
@@ -55,7 +55,7 @@ jobs:
       run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
 
     - name: Publish AzDo Artifact
-      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         path: publish/AzDo
         name: ${{ env.ArtifactName }}
@@ -98,7 +98,7 @@ jobs:
           }
 
       - name: Download artifact from build job
-        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
         with:
           name: ${{ env.artifactName }}
           path: ./ArtifactFolder
@@ -128,7 +128,7 @@ jobs:
           Get-Content Actions-Updated-Overview.json
 
       - name: Upload Updated Json
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           path: ArtifactFolder/Actions-Updated-Overview.json
           name: UpdatedActions
@@ -144,7 +144,7 @@ jobs:
     steps:
       - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
 
-      - uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+      - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
         with:
           name: UpdatedActions
           path: ./ArtifactFolder
