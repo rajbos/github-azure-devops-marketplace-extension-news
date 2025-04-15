@@ -22,7 +22,16 @@ The posting to social media part has been disabled, as Twitter is no longer a sa
 Posting for the GitHub Actions news goes to https://devops-actions.github.io/github-actions-marketplace-news, which can be followed through an RSS feed. The source repository for that blog is here: https://github.com/devops-actions/github-actions-marketplace-news
 
 ## Building the solution
-`dotnet build`
+``` shell
+dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode
+dotnet build AzDoExtensionNews/AzDoExtensionNews.sln
+```
+
+If the restore fails with changed dependencies, consider to update the lock files after carefully reviewing the changes:
+``` shell
+dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --use-lock-file --force-evaluate
+```
 
 ## Running the solution
 `dotnet run --project GitHubActionsNews` or just hit F5 in Visual Studio / Code.
+
