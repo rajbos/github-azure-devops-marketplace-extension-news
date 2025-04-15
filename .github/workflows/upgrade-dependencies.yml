@@ -31,8 +31,11 @@ jobs:
           # get the tool
           dotnet tool install --global dotnet-outdated-tool
 
-          # run the tool
-          dotnet outdated --upgrade AzDoExtensionNews\
+          # run the tool, skip the restore to prevent issues with the lock file
+          dotnet outdated --upgrade AzDoExtensionNews\ --no-restore  
+
+          # now try a restore, if it succeeds, we can still continue
+          dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --use-lock-file --force-evaluate
 
           # check for any updates with git porcelain
           if [[ -n $(git status --porcelain "Directory.Packages.props") ]]; then
