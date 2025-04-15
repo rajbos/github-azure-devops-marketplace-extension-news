@@ -32,7 +32,7 @@ jobs:
           dotnet tool install --global dotnet-outdated-tool
 
           # run the tool, skip the restore to prevent issues with the lock file
-          dotnet outdated --upgrade AzDoExtensionNews\ --no-restore  
+          dotnet outdated --no-restore --upgrade AzDoExtensionNews\
 
           # now try a restore, if it succeeds, we can still continue
           dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --use-lock-file --force-evaluate
