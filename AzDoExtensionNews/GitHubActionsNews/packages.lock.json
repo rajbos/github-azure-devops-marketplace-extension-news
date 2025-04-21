@@ -28,9 +28,9 @@
       },
       "Selenium.WebDriver.ChromeDriver": {
         "type": "Direct",
-        "requested": "[135.0.7049.8400, )",
-        "resolved": "135.0.7049.8400",
-        "contentHash": "QndVENpH0irVmhx8IE4n8b3UcLZn7XfpeNCAaX6UCIvwsI9CHowbfUCeHj1qKHtGOiC2QFiBFrhFFdVifhGT/A=="
+        "requested": "[135.0.7049.9500, )",
+        "resolved": "135.0.7049.9500",
+        "contentHash": "MxJ4s+rpsmiDwXkha1ZtMIDfNzzHltpNKvt2vfEkva9pZNOJfy1zRIIVFn59YA59G00/TaNiZpkBw1crlOfhBg=="
       },
       "Autofac": {
         "type": "Transitive",
