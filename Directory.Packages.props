@@ -18,6 +18,6 @@
     <PackageVersion Include="MSTest.TestFramework" Version="3.8.3" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="DotNetSeleniumExtras.WaitHelpers" Version="3.11.0" />
-    <PackageVersion Include="Selenium.WebDriver.ChromeDriver" Version="135.0.7049.8400" />
+    <PackageVersion Include="Selenium.WebDriver.ChromeDriver" Version="136.0.7103.4900" />
   </ItemGroup>
 </Project>
