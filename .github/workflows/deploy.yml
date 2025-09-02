@@ -25,7 +25,7 @@ jobs:
       with:
         egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
 
-    - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v3.5.3
+    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v3.5.3
 
     - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
       with:
@@ -70,7 +70,7 @@ jobs:
         character: [c,b,e,g,h,j,k,l,m,n,u,w,x,y,z,o,p,r,sa,sb,sc,sd,se,sf,sg,sh,sj,sk,sl,sm,sn,sp,sr,su,sv,sw,t,v,ai,ae,ia,ea,0,1,2,3,4,5,6,7,8,9]
         #character: [c] # temp for faster testing of consolidate updates
     steps:
-      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v3.5.3
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v3.5.3
 
       - name: Run Character Command
         uses: ./.github/actions/character-to-run/
@@ -142,7 +142,7 @@ jobs:
       name: BlogSite
       url: https://github.com/devops-actions/github-actions-marketplace-news
     steps:
-      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
