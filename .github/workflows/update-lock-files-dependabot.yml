@@ -1,0 +1,68 @@
+name: Update Lock Files for Dependabot PRs
+
+on:
+  pull_request:
+    paths:
+      - 'Directory.Packages.props'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-lock-files:
+    # Only run on Dependabot PRs
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Harden Runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+      with:
+        disable-sudo: true
+        egress-policy: block
+        allowed-endpoints: >
+          api.nuget.org:443
+          dc.services.visualstudio.com:443
+          github.com:443
+          dotnetcli.azureedge.net:443
+          aka.ms:443
+          builds.dotnet.microsoft.com:443
+          ci.dot.net:443
+
+    - name: Checkout PR
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcb5dd907a8 # v3.5.3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        ref: ${{ github.head_ref }}
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5.0.0
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Update lock files
+      run: |
+        echo "Updating package lock files to match updated Directory.Packages.props"
+        dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --use-lock-file --force-evaluate
+
+    - name: Check for lock file changes
+      id: check_changes
+      run: |
+        if [[ -n $(git status --porcelain "**/packages.lock.json") ]]; then
+          echo "changes=true" >> $GITHUB_OUTPUT
+          echo "Lock files have been updated"
+        else
+          echo "changes=false" >> $GITHUB_OUTPUT
+          echo "No lock file changes needed"
+        fi
+
+    - name: Commit updated lock files
+      if: steps.check_changes.outputs.changes == 'true'
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add "**/packages.lock.json"
+        git commit -m "chore: update package lock files for dependency changes
+
+        Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>"
+        git push

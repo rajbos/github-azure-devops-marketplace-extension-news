@@ -32,6 +32,8 @@ If the restore fails with changed dependencies, consider to update the lock file
 dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --use-lock-file --force-evaluate
 ```
 
+**Note for Dependabot PRs:** The CI build is configured to automatically handle lock file updates for Dependabot PRs. When Dependabot updates dependencies in `Directory.Packages.props`, the build process will automatically update the corresponding `packages.lock.json` files to maintain security while preventing build failures.
+
 ## Running the solution
 `dotnet run --project GitHubActionsNews` or just hit F5 in Visual Studio / Code.
 

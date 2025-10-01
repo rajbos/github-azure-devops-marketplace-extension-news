@@ -44,7 +44,18 @@ jobs:
 
     # build it:
     - name: Restore
-      run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode
+      run: |
+        # Try locked mode first for security
+        if ! dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode; then
+          # If locked mode fails and this is a Dependabot PR, try updating lock files
+          if [[ "${{ github.actor }}" == "dependabot[bot]" ]]; then
+            echo "Locked mode failed on Dependabot PR, updating lock files"
+            dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --use-lock-file --force-evaluate
+          else
+            echo "Locked mode failed on non-Dependabot PR, failing build"
+            exit 1
+          fi
+        fi
 
     - name: Build
       run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release
