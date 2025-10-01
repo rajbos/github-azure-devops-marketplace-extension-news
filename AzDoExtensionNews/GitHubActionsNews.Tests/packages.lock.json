@@ -39,18 +39,22 @@
       },
       "Selenium.Support": {
         "type": "Direct",
-        "requested": "[4.35.0, )",
-        "resolved": "4.35.0",
-        "contentHash": "K6DiLdDQNDSWI/zh14bk9vRjW8vEX2mhMI2Cq8bD72FM5rOnLhQwZABJHrWCZ3U1wb7KFFd7iQeUhvpyHVt2AA==",
+        "requested": "[4.15.0, )",
+        "resolved": "4.15.0",
+        "contentHash": "zqkSQYMS2JcAd+AKavADPoe/RyYjiklc/TRms/nzDH9Wo/OpYOqE7h9D8ggwXr4auErNvbAIqEGqIkAWElTkpg==",
         "dependencies": {
-          "Selenium.WebDriver": "4.35.0"
+          "Selenium.WebDriver": "4.15.0"
         }
       },
       "Selenium.WebDriver": {
         "type": "Direct",
-        "requested": "[4.35.0, )",
-        "resolved": "4.35.0",
-        "contentHash": "C9OrObS2KLyUQDJNRY883JAc4n5q58pBYmY954hf+lGMQQcsz4Ias2mk91lHkLXFX+2qMttya4df9lGP1SLiGQ=="
+        "requested": "[4.15.0, )",
+        "resolved": "4.15.0",
+        "contentHash": "/uMlgsPdsmAAwOADxA4lzz777Xgbhm/SjmvizBpiRDyZtnAxDZ0uON5bpTN+De9F81xB/1z/S8jKN1P7ebYssw==",
+        "dependencies": {
+          "Newtonsoft.Json": "13.0.1",
+          "System.Drawing.Common": "7.0.0"
+        }
       },
       "Selenium.WebDriver.ChromeDriver": {
         "type": "Direct",
@@ -208,6 +212,11 @@
           "Microsoft.TestPlatform.ObjectModel": "17.14.1",
           "Newtonsoft.Json": "13.0.3"
         }
+      },
+      "Microsoft.Win32.SystemEvents": {
+        "type": "Transitive",
+        "resolved": "7.0.0",
+        "contentHash": "2nXPrhdAyAzir0gLl8Yy8S5Mnm/uBSQQA7jEsILOS1MTyS7DbmV1NgViMtvV1sfCD1ebITpNwb1NIinKeJgUVQ=="
       },
       "MSTest.Analyzers": {
         "type": "Transitive",
@@ -367,6 +376,14 @@
           "Microsoft.NETCore.Platforms": "1.1.0",
           "Microsoft.NETCore.Targets": "1.1.0",
           "System.Runtime": "4.3.0"
+        }
+      },
+      "System.Drawing.Common": {
+        "type": "Transitive",
+        "resolved": "7.0.0",
+        "contentHash": "KIX+oBU38pxkKPxvLcLfIkOV5Ien8ReN78wro7OF5/erwcmortzeFx+iBswlh2Vz6gVne0khocQudGwaO1Ey6A==",
+        "dependencies": {
+          "Microsoft.Win32.SystemEvents": "7.0.0"
         }
       },
       "System.Globalization": {
@@ -791,8 +808,8 @@
         "dependencies": {
           "DotNetSeleniumExtras.WaitHelpers": "[3.11.0, )",
           "News.Library": "[1.0.0, )",
-          "Selenium.Support": "[4.35.0, )",
-          "Selenium.WebDriver": "[4.35.0, )",
+          "Selenium.Support": "[4.15.0, )",
+          "Selenium.WebDriver": "[4.15.0, )",
           "Selenium.WebDriver.ChromeDriver": "[141.0.7390.5400, )"
         }
       },

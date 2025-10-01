@@ -1,6 +1,5 @@
 ﻿using News.Library;
 using OpenQA.Selenium;
-using OpenQA.Selenium.BiDi.Modules.Session;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
