@@ -1,60 +1,72 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using GitHubActionsNews;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
+using Microsoft.Playwright;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace GitHubActionsNews.Tests
 {
     [TestClass]
     public class GetVersionFromAction_Tests
     {
-        private IWebDriver Driver = null;
+        private IPlaywright Playwright = null;
+        private IBrowser Browser = null;
+        private IPage Page = null;
 
         [TestInitialize] 
-        public void TestInitialize()
+        public async Task TestInitialize()
         {
-            var chromeOptions = new ChromeOptions();
+            Playwright = await Microsoft.Playwright.Playwright.CreateAsync();
+            var launchOptions = new BrowserTypeLaunchOptions();
             if (Debugger.IsAttached)
             {
-                chromeOptions.AddArguments("headless");
+                launchOptions.Headless = true;
             }
-            Driver = new ChromeDriver(chromeOptions);
+            else
+            {
+                launchOptions.Headless = true;
+            }
+            Browser = await Playwright.Chromium.LaunchAsync(launchOptions);
+            var context = await Browser.NewContextAsync();
+            Page = await context.NewPageAsync();
         }
 
         //[TestMethod]
-        public void OnlyPrerelease_Test()
+        public async Task OnlyPrerelease_Test()
         {
             // go to url with only a prerelease version:            
             var url = "https://github.com/marketplace/actions/c-c-code-linter-clang-tidy-clang-format-and-cppcheck";
-            Driver.Navigate().GoToUrl(url);
+            await Page.GotoAsync(url);
 
             // get version info
-            var version = ActionPageInteraction.GetVersionFromAction(Driver);
+            var version = await ActionPageInteraction.GetVersionFromAction(Page);
 
             Assert.AreNotEqual("", version);
             Assert.AreNotEqual("latest", version);
         }
 
         //[TestMethod]
-        public void LatestVersion_Test()
+        public async Task LatestVersion_Test()
         {
             // go to url with a latest version:            
             var url = "https://github.com/marketplace/actions/vault-secrets";
-            Driver.Navigate().GoToUrl(url);
+            await Page.GotoAsync(url);
 
             // get version info
-            var version = ActionPageInteraction.GetVersionFromAction(Driver);
+            var version = await ActionPageInteraction.GetVersionFromAction(Page);
 
             Assert.AreNotEqual("", version);
             Assert.AreNotEqual("v2.0.0", version);
         }        
 
         [TestCleanup]
-        public void TestCleanup()
+        public async Task TestCleanup()
         {
-            Driver.Close();
-            Driver.Quit();
+            if (Page != null)
+                await Page.CloseAsync();
+            if (Browser != null)
+                await Browser.CloseAsync();
+            Playwright?.Dispose();
         }
     }
 }

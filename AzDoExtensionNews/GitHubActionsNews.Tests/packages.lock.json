@@ -18,6 +18,17 @@
           "Microsoft.TestPlatform.TestHost": "17.14.1"
         }
       },
+      "Microsoft.Playwright": {
+        "type": "Direct",
+        "requested": "[1.50.0, )",
+        "resolved": "1.50.0",
+        "contentHash": "Mq7Ro8vosaADFVU9plNbFvIzi+iVaoCY7y8umE+L9lUK+5DrBnKPHTwARYqi0koYsIikKkwNwoBEsceLdP4Udg==",
+        "dependencies": {
+          "Microsoft.Bcl.AsyncInterfaces": "6.0.0",
+          "System.ComponentModel.Annotations": "5.0.0",
+          "System.Text.Json": "6.0.10"
+        }
+      },
       "MSTest.TestAdapter": {
         "type": "Direct",
         "requested": "[3.10.5, )",
@@ -36,31 +47,6 @@
         "dependencies": {
           "MSTest.Analyzers": "3.10.5"
         }
-      },
-      "Selenium.Support": {
-        "type": "Direct",
-        "requested": "[4.15.0, )",
-        "resolved": "4.15.0",
-        "contentHash": "zqkSQYMS2JcAd+AKavADPoe/RyYjiklc/TRms/nzDH9Wo/OpYOqE7h9D8ggwXr4auErNvbAIqEGqIkAWElTkpg==",
-        "dependencies": {
-          "Selenium.WebDriver": "4.15.0"
-        }
-      },
-      "Selenium.WebDriver": {
-        "type": "Direct",
-        "requested": "[4.15.0, )",
-        "resolved": "4.15.0",
-        "contentHash": "/uMlgsPdsmAAwOADxA4lzz777Xgbhm/SjmvizBpiRDyZtnAxDZ0uON5bpTN+De9F81xB/1z/S8jKN1P7ebYssw==",
-        "dependencies": {
-          "Newtonsoft.Json": "13.0.1",
-          "System.Drawing.Common": "7.0.0"
-        }
-      },
-      "Selenium.WebDriver.ChromeDriver": {
-        "type": "Direct",
-        "requested": "[141.0.7390.5400, )",
-        "resolved": "141.0.7390.5400",
-        "contentHash": "Yax9Z5NB7Fw7VKiqo7wdeULGdbMHr4euapgZgAWuStJSsP/8JKjbUzKwv4zvk3mszPvBx3esvngVjCF7hiFDjQ=="
       },
       "Autofac": {
         "type": "Transitive",
@@ -93,6 +79,11 @@
           "NETStandard.Library": "2.0.1",
           "Newtonsoft.Json": "10.0.2"
         }
+      },
+      "Microsoft.Bcl.AsyncInterfaces": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "UcSjPsst+DfAdJGVDsu346FX0ci0ah+lw3WRtn18NUwEqRt70HaOQ7lI72vy3+1LxtqI3T5GWwV39rQSrCzAeg=="
       },
       "Microsoft.CodeCoverage": {
         "type": "Transitive",
@@ -212,11 +203,6 @@
           "Microsoft.TestPlatform.ObjectModel": "17.14.1",
           "Newtonsoft.Json": "13.0.3"
         }
-      },
-      "Microsoft.Win32.SystemEvents": {
-        "type": "Transitive",
-        "resolved": "7.0.0",
-        "contentHash": "2nXPrhdAyAzir0gLl8Yy8S5Mnm/uBSQQA7jEsILOS1MTyS7DbmV1NgViMtvV1sfCD1ebITpNwb1NIinKeJgUVQ=="
       },
       "MSTest.Analyzers": {
         "type": "Transitive",
@@ -353,6 +339,11 @@
         "resolved": "8.0.0",
         "contentHash": "AurL6Y5BA1WotzlEvVaIDpqzpIPvYnnldxru8oXJU2yFxFUy3+pNXjXd1ymO+RA0rq0+590Q8gaz2l3Sr7fmqg=="
       },
+      "System.ComponentModel.Annotations": {
+        "type": "Transitive",
+        "resolved": "5.0.0",
+        "contentHash": "dMkqfy2el8A8/I76n2Hi1oBFEbG1SfxD2l5nhwXV3XjlnOmwxJlQbYpJH4W51odnU9sARCSAgv7S3CyAFMkpYg=="
+      },
       "System.Diagnostics.Debug": {
         "type": "Transitive",
         "resolved": "4.3.0",
@@ -376,14 +367,6 @@
           "Microsoft.NETCore.Platforms": "1.1.0",
           "Microsoft.NETCore.Targets": "1.1.0",
           "System.Runtime": "4.3.0"
-        }
-      },
-      "System.Drawing.Common": {
-        "type": "Transitive",
-        "resolved": "7.0.0",
-        "contentHash": "KIX+oBU38pxkKPxvLcLfIkOV5Ien8ReN78wro7OF5/erwcmortzeFx+iBswlh2Vz6gVne0khocQudGwaO1Ey6A==",
-        "dependencies": {
-          "Microsoft.Win32.SystemEvents": "7.0.0"
         }
       },
       "System.Globalization": {
@@ -806,11 +789,8 @@
       "githubactionsnews": {
         "type": "Project",
         "dependencies": {
-          "DotNetSeleniumExtras.WaitHelpers": "[3.11.0, )",
-          "News.Library": "[1.0.0, )",
-          "Selenium.Support": "[4.15.0, )",
-          "Selenium.WebDriver": "[4.15.0, )",
-          "Selenium.WebDriver.ChromeDriver": "[141.0.7390.5400, )"
+          "Microsoft.Playwright": "[1.50.0, )",
+          "News.Library": "[1.0.0, )"
         }
       },
       "news.library": {
@@ -822,15 +802,6 @@
           "Microsoft.Extensions.Configuration.Json": "[9.0.9, )",
           "Newtonsoft.Json": "[13.0.1, )",
           "TweetinviAPI": "[5.0.4, )"
-        }
-      },
-      "DotNetSeleniumExtras.WaitHelpers": {
-        "type": "CentralTransitive",
-        "requested": "[3.11.0, )",
-        "resolved": "3.11.0",
-        "contentHash": "xc6jVVl5ymgk3ZNWnC/KHxkEup1QpnwYbrwF+NQoCOGERsD8YMlLwmsX4lGhLXCLo/YQTRTIwlKCN9E/doGUNg==",
-        "dependencies": {
-          "Selenium.WebDriver": "3.10.0"
         }
       },
       "Microsoft.Azure.Storage.Blob": {

@@ -1,40 +1,42 @@
 ﻿using News.Library;
-using OpenQA.Selenium;
+using Microsoft.Playwright;
 using System;
 using System.Diagnostics;
 using System.Text;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace GitHubActionsNews
 {
     public static class ActionPageInteraction
     {
-        public static string GetRepoFromAction(IWebDriver driver)
+        public static async Task<string> GetRepoFromAction(IPage page)
         {
-            var links = driver.FindElements(By.TagName("a"));
-            //foreach (var link in links)
-            //{
-            //Console.WriteLine(link.Text);
-            //}
+            var links = await page.Locator("a").AllAsync();
 
-            var foundIssueLink = links.FirstOrDefault(a => a.Text.StartsWith("View source code"));
+            ILocator foundIssueLink = null;
+            foreach (var link in links)
+            {
+                var text = await link.TextContentAsync();
+                if (text != null && text.StartsWith("View source code"))
+                {
+                    foundIssueLink = link;
+                    break;
+                }
+            }
+
             if (foundIssueLink == null)
             {
                 return null;
             }
 
-            // find the div that has Links in the title
-            //var linkDiv = driver.FindElement(By.XPath("//*[contains(text(),'Open issues')]"));
             var linkDiv = foundIssueLink;
-
-            var linkDivParent = linkDiv.FindElement(By.XPath("./..")); // find parent element
-                                                                       //Console.WriteLine($"{linkDivParent.Text}");
-                                                                       // find first link in this div
-            links = linkDivParent.FindElements(By.TagName("a"));
-            if (links.Count > 0)
+            var linkDivParent = linkDiv.Locator("..");
+            var firstLink = linkDivParent.Locator("a").First;
+            
+            if (await firstLink.CountAsync() > 0)
             {
-                var link = links[0];
-                return link.GetAttribute("href");
+                return await firstLink.GetAttributeAsync("href");
             }
             else
             {
@@ -42,22 +44,24 @@ namespace GitHubActionsNews
             }
         }
 
-        public static string GetVersionFromAction(IWebDriver driver)
+        public static async Task<string> GetVersionFromAction(IPage page)
         {
-            IWebElement divWithTitle;
+            ILocator divWithTitle;
             try
             {
-                divWithTitle = driver.FindElement(By.XPath("//*[contains(text(),'Latest')]"));
+                divWithTitle = page.Locator("//*[contains(text(),'Latest')]").First;
+                await divWithTitle.WaitForAsync(new LocatorWaitForOptions { Timeout = 5000 });
             }
-            catch (OpenQA.Selenium.NoSuchElementException)
+            catch (TimeoutException)
             {
                 try
                 {
-                    divWithTitle = driver.FindElement(By.XPath("//*[contains(text(),'Pre-release')]"));
+                    divWithTitle = page.Locator("//*[contains(text(),'Pre-release')]").First;
+                    await divWithTitle.WaitForAsync(new LocatorWaitForOptions { Timeout = 5000 });
                 }
-                catch (OpenQA.Selenium.NoSuchElementException)
+                catch (TimeoutException)
                 {
-                    return $"Error loading version from page [{driver.Url}], cannot find 'Latest' or 'Pre-release' on this page";
+                    return $"Error loading version from page [{page.Url}], cannot find 'Latest' or 'Pre-release' on this page";
                 }
             }
 
@@ -66,13 +70,15 @@ namespace GitHubActionsNews
             {
                 if (Debugger.IsAttached)
                 {
-                    sb.AppendLine($"{divWithTitle.Text} - {divWithTitle.TagName} - {divWithTitle.GetAttribute("Title")}");
-                    Console.WriteLine($"divWithTitle.Text: {divWithTitle.Text}, divWithTitle.TagName: {divWithTitle.TagName}, divWithTitle.GetAttribute(\"Title\"): {divWithTitle.GetAttribute("Title")}");
+                    var text = await divWithTitle.TextContentAsync();
+                    var tagName = await divWithTitle.EvaluateAsync<string>("el => el.tagName");
+                    var title = await divWithTitle.GetAttributeAsync("Title");
+                    sb.AppendLine($"{text} - {tagName} - {title}");
+                    Console.WriteLine($"divWithTitle.Text: {text}, divWithTitle.TagName: {tagName}, divWithTitle.GetAttribute(\"Title\"): {title}");
                 }
-                // "contains(text(), 'Latest version')"); ;
 
-                var publisherParent = divWithTitle.FindElement(By.XPath("./..")); // find parent element
-                var allChildElements = publisherParent.FindElements(By.XPath(".//*")); // find all child elements
+                var publisherParent = divWithTitle.Locator("..");
+                var allChildElements = await publisherParent.Locator("*").AllAsync();
                 sb.AppendLine($"childElements.Count: [{allChildElements.Count}]");
 
                 if (Debugger.IsAttached)
@@ -80,30 +86,31 @@ namespace GitHubActionsNews
                     for (int i = 0; i < allChildElements.Count; i++)
                     {
                         var el = allChildElements[i];
-                        sb.AppendLine($"{i}: {el.Text} - {el.TagName} - {el.GetAttribute("Title")}");
+                        var text = await el.TextContentAsync();
+                        var tagName = await el.EvaluateAsync<string>("el => el.tagName");
+                        var title = await el.GetAttributeAsync("Title");
+                        sb.AppendLine($"{i}: {text} - {tagName} - {title}");
                     }
                     Log.Message(sb.ToString());
                 }
 
-                return allChildElements[0].GetAttribute("Title"); // get the title attribute of the first child element
+                return await allChildElements[0].GetAttributeAsync("Title");
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Error loading version from page [{driver.Url}]: {e.Message}{Environment.NewLine}Log messages: {Environment.NewLine}{sb}");
+                Console.WriteLine($"Error loading version from page [{page.Url}]: {e.Message}{Environment.NewLine}Log messages: {Environment.NewLine}{sb}");
                 throw;
             }
         }
 
-        public static string GetVerifiedPublisherFromAction(IWebDriver driver)
+        public static async Task<string> GetVerifiedPublisherFromAction(IPage page)
         {
-            // only works for "verified" publisher
             try
             {
-                // find the a element with a data-hovercard-type="organization and load the publisher from the href
-                var publisherLink = driver.FindElement(By.CssSelector("a[data-hovercard-type='organization']"));
-                return publisherLink.GetAttribute("href");
+                var publisherLink = page.Locator("a[data-hovercard-type='organization']").First;
+                return await publisherLink.GetAttributeAsync("href");
             }
-            catch (NoSuchElementException ex)
+            catch (TimeoutException ex)
             {
                 Console.WriteLine("Publisher element not found: " + ex.Message);
                 return null;
@@ -115,20 +122,12 @@ namespace GitHubActionsNews
             }
         }
 
-        public static string GetTitleFromAction(IWebDriver driver)
+        public static async Task<string> GetTitleFromAction(IPage page)
         {
             try
             {
-                // load the webpage title
-                var title = driver.Title;
-                // remove the default part from the title to find the actions title
-                // e.g. Super-Linter · Actions · GitHub Marketplace · GitHub
-                return title.Split('·')[0].Trim(); // extract and return the actual action title
-            }
-            catch (NoSuchElementException ex)
-            {
-                Console.WriteLine("Title element not found: " + ex.Message);
-                return null;
+                var title = await page.TitleAsync();
+                return title.Split('·')[0].Trim();
             }
             catch (Exception ex)
             {
