@@ -21,9 +21,11 @@ jobs:
   detect-and-fix:
     runs-on: ubuntu-latest
     # Only run if the workflow failed or if manually triggered
+    # Don't run on fork PRs to prevent untrusted code execution
     if: |
-      github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'failure'
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.conclusion == 'failure' &&
+        github.event.workflow_run.head_repository.full_name == github.repository))
     steps:
     - name: Harden Runner
       uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
@@ -43,7 +45,9 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcb5dd907a8 # v3.5.3
       with:
-        ref: ${{ github.event.workflow_run.head_branch || github.ref }}
+        # For workflow_run, always check out from the base repository (not from forks)
+        # to prevent untrusted code execution with write permissions
+        ref: ${{ github.event.workflow_run.head_sha || github.sha }}
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Check for NU1004 errors
