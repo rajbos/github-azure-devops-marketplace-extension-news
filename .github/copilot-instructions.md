@@ -19,7 +19,7 @@ The solution (`AzDoExtensionNews.sln`) contains five projects:
 - Uses central package management via `Directory.Packages.props`
 - Locked mode dependency restoration for security
 - Major dependencies include:
-  - Microsoft.Azure.Storage.Blob for Azure blob storage
+  - Microsoft.Azure.Storage.Blob for Azure blob storage (note: this is a legacy package; Azure.Storage.Blobs is recommended for new development)
   - Microsoft.Extensions.Configuration for configuration management
   - Newtonsoft.Json for JSON serialization
   - Selenium WebDriver for web scraping
@@ -74,7 +74,7 @@ dotnet run --project AzDoExtensionNews/AzDoExtensionNews/AzDoExtensionNews.cspro
 - Dependency review workflow checks for vulnerabilities
 
 ### Code Quality
-- Use C# 8.0+ features where appropriate
+- Project targets .NET 8.0, so use C# 12.0+ features where appropriate
 - Follow existing code patterns and conventions in the repository
 - Ensure proper error handling and logging
 - Keep shared functionality in `News.Library` project
