@@ -106,8 +106,7 @@ jobs:
       - name: Install Playwright browsers
         shell: pwsh
         run: |
-          cd .\ArtifactFolder
-          .\playwright.ps1 install chromium --with-deps
+          pwsh -c "dotnet tool install --global Microsoft.Playwright.CLI --version 1.2.3 2>&1 | Out-Null; playwright install chromium --with-deps"
 
       - name: App Settings Variable Substitution
         uses: rajbos-actions/variable-substitution@ae7b1f3676ae374dc70282e6b9650bc50b611222 # v1.2

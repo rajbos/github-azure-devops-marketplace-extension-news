@@ -42,8 +42,7 @@ runs:
       shell: pwsh
       run: |
         Write-Host "::group::Install Playwright browsers"
-        cd ArtifactFolder
-        .\playwright.ps1 install chromium --with-deps
+        pwsh -c "dotnet tool install --global Microsoft.Playwright.CLI --version 1.2.3 2>&1 | Out-Null; playwright install chromium --with-deps"
         Write-Host "::endgroup::"
 
     - name: Run the GitHubActionsNews application
