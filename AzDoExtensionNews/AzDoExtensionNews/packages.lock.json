@@ -705,6 +705,7 @@
           "Microsoft.Extensions.Configuration": "[9.0.9, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.9, )",
           "Microsoft.Extensions.Configuration.Json": "[9.0.9, )",
+          "Newtonsoft.Json": "[13.0.1, )",
           "TweetinviAPI": "[5.0.4, )"
         }
       },
