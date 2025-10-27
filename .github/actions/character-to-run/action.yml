@@ -38,14 +38,11 @@ runs:
         TwitterAccessTokenSecret: ${{ inputs.TwitterAccessTokenSecret }}
         BlobStorageConnectionString: ${{ inputs.BlobStorageConnectionString }}
 
-    - name: Set selenium-manager permissions
+    - name: Install Playwright browsers
       shell: pwsh
       run: |
-        Write-Host "::group::Check selenium-manager permissions"
-
-        echo "Modding path"
-        chmod +x /home/runner/work/github-azure-devops-marketplace-extension-news/github-azure-devops-marketplace-extension-news/ArtifactFolder/selenium-manager/linux/selenium-manager
-
+        Write-Host "::group::Install Playwright browsers"
+        pwsh -c "dotnet tool install --global Microsoft.Playwright.CLI --version 1.2.3 2>&1 | Out-Null; playwright install chromium --with-deps"
         Write-Host "::endgroup::"
 
     - name: Run the GitHubActionsNews application
