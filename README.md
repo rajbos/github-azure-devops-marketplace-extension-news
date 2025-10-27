@@ -32,7 +32,23 @@ If the restore fails with changed dependencies, consider to update the lock file
 dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --use-lock-file --force-evaluate
 ```
 
-**Note for Dependabot PRs:** The CI build is configured to automatically handle lock file updates for Dependabot PRs. When Dependabot updates dependencies in `Directory.Packages.props`, the build process will automatically update the corresponding `packages.lock.json` files to maintain security while preventing build failures.
+**Note for Dependabot PRs:** The CI build is configured to automatically handle lock file updates for Dependabot PRs. When Dependabot updates dependencies in `Directory.Packages.props` or project files (`.csproj`), the build process will automatically update the corresponding `packages.lock.json` files to maintain security while preventing build failures.
+
+### Automated NU1004 Error Resolution
+This repository includes automated workflows to detect and resolve NU1004 errors that occur when project reference dependencies change (e.g., when News.Library adds new package dependencies):
+
+1. **Proactive Prevention** (`update-lock-files-dependabot.yml`):
+   - Automatically updates all package lock files when Dependabot modifies `.csproj` files or `Directory.Packages.props`
+   - Commits lock file updates directly to Dependabot PRs
+   - Prevents NU1004 errors from occurring in the first place
+
+2. **Reactive Fix** (`fix-nu1004-errors.yml`):
+   - Monitors CI Build workflow failures
+   - Detects NU1004 errors in build logs
+   - Automatically updates lock files and creates a PR with the fix
+   - Can also be manually triggered via workflow dispatch
+
+These workflows ensure that transitive dependencies from project references (especially News.Library) are properly reflected in dependent projects' lock files.
 
 ## Running the solution
 `dotnet run --project GitHubActionsNews` or just hit F5 in Visual Studio / Code.
