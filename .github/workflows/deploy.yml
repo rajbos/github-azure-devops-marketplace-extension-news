@@ -107,7 +107,7 @@ jobs:
         shell: pwsh
         run: |
           cd .\ArtifactFolder
-          pwsh playwright.ps1 install chromium --with-deps
+          .\playwright.ps1 install chromium --with-deps
 
       - name: App Settings Variable Substitution
         uses: rajbos-actions/variable-substitution@ae7b1f3676ae374dc70282e6b9650bc50b611222 # v1.2
