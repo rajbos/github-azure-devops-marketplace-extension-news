@@ -1,0 +1,158 @@
+name: Fix NU1004 Errors
+
+on:
+  workflow_run:
+    workflows: ["CI Build"]
+    types:
+      - completed
+  pull_request:
+    paths:
+      - 'Directory.Packages.props'
+      - 'AzDoExtensionNews/**/*.csproj'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force run even if no NU1004 errors detected'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  detect-and-fix:
+    runs-on: ubuntu-latest
+    # Run on: workflow failures, Dependabot PRs, or manual trigger
+    # Don't run on fork PRs to prevent untrusted code execution
+    if: |
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'pull_request' && github.actor == 'dependabot[bot]') ||
+       (github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'failure' &&
+        github.event.workflow_run.head_repository.full_name == github.repository))
+    steps:
+    - name: Harden Runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+      with:
+        disable-sudo: true
+        egress-policy: block
+        allowed-endpoints: >
+          api.github.com:443
+          api.nuget.org:443
+          dc.services.visualstudio.com:443
+          github.com:443
+          dotnetcli.azureedge.net:443
+          aka.ms:443
+          builds.dotnet.microsoft.com:443
+          ci.dot.net:443
+
+    - name: Checkout repository
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcb5dd907a8 # v3.5.3
+      with:
+        # For workflow_run, check out from the base repository (not from forks)
+        # For pull_request, check out the PR branch
+        ref: ${{ github.event_name == 'pull_request' && github.head_ref || (github.event.workflow_run.head_sha || github.sha) }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Check for NU1004 errors
+      id: check_nu1004
+      run: |
+        # Try restore in locked mode to detect NU1004 errors
+        set +e
+        restore_output=$(dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode 2>&1)
+        restore_exit_code=$?
+        set -e
+        
+        echo "$restore_output"
+        
+        if echo "$restore_output" | grep -q "error NU1004.*news.library"; then
+          echo "NU1004 error detected in news.library project reference"
+          echo "has_nu1004=true" >> $GITHUB_OUTPUT
+          echo "error_details<<EOF" >> $GITHUB_OUTPUT
+          echo "$restore_output" | grep "error NU1004" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        elif [ "${{ github.event.inputs.force }}" == "true" ]; then
+          echo "Force mode enabled, proceeding anyway"
+          echo "has_nu1004=true" >> $GITHUB_OUTPUT
+          echo "error_details=Force mode enabled by user" >> $GITHUB_OUTPUT
+        else
+          echo "No NU1004 errors detected"
+          echo "has_nu1004=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Setup .NET
+      if: steps.check_nu1004.outputs.has_nu1004 == 'true'
+      uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5.0.0
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Update package lock files
+      if: steps.check_nu1004.outputs.has_nu1004 == 'true'
+      run: |
+        echo "Updating package lock files to resolve NU1004 errors"
+        dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --use-lock-file --force-evaluate
+
+    - name: Verify fix
+      if: steps.check_nu1004.outputs.has_nu1004 == 'true'
+      run: |
+        echo "Verifying that lock files are now consistent"
+        dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode
+
+    - name: Check for changes
+      if: steps.check_nu1004.outputs.has_nu1004 == 'true'
+      id: check_changes
+      run: |
+        if [[ -n $(git status --porcelain "**/packages.lock.json") ]]; then
+          echo "changes=true" >> $GITHUB_OUTPUT
+          echo "Lock files have been updated:"
+          git status --porcelain "**/packages.lock.json"
+        else
+          echo "changes=false" >> $GITHUB_OUTPUT
+          echo "No lock file changes were needed"
+        fi
+
+    - name: Create Pull Request
+      if: steps.check_nu1004.outputs.has_nu1004 == 'true' && steps.check_changes.outputs.changes == 'true'
+      uses: peter-evans/create-pull-request@5e914681df9dc83aa4e4905692ca88beb2f9e91f # v7.0.5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: |
+          fix: update package lock files to resolve NU1004 errors
+          
+          This commit updates package lock files for projects that depend on News.Library
+          to reflect changes in its dependencies. This resolves NU1004 errors that occur
+          when News.Library's package references are updated.
+          
+          Detected errors:
+          ${{ steps.check_nu1004.outputs.error_details }}
+        branch: fix/nu1004-lock-file-sync
+        delete-branch: true
+        title: 'fix: Resolve NU1004 errors in package lock files'
+        body: |
+          ## Automated Fix for NU1004 Errors
+          
+          This PR automatically updates package lock files to resolve NU1004 errors detected in the build.
+          
+          ### What happened?
+          The News.Library project's dependencies were updated, but dependent projects' lock files
+          were not synchronized. This causes the following error:
+          
+          ```
+          ${{ steps.check_nu1004.outputs.error_details }}
+          ```
+          
+          ### What does this PR do?
+          - Updates all package lock files to reflect current project reference dependencies
+          - Ensures lock files are consistent with News.Library's package dependencies
+          
+          ### Verification
+          - [x] Lock files updated using `dotnet restore --use-lock-file --force-evaluate`
+          - [x] Build verified with `dotnet restore --locked-mode`
+          
+          **This PR was automatically generated by the Fix NU1004 Errors workflow.**
+        labels: |
+          dependencies
+          automated-fix
+        assignees: rajbos

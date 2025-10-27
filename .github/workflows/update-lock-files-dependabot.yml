@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'Directory.Packages.props'
+      - 'AzDoExtensionNews/**/*.csproj'
 
 permissions:
   contents: write
@@ -42,7 +43,8 @@ jobs:
 
     - name: Update lock files
       run: |
-        echo "Updating package lock files to match updated Directory.Packages.props"
+        echo "Updating package lock files to match dependency changes"
+        echo "This includes changes from Directory.Packages.props and .csproj files"
         dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --use-lock-file --force-evaluate
 
     - name: Check for lock file changes
@@ -63,6 +65,9 @@ jobs:
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         git add "**/packages.lock.json"
         git commit -m "chore: update package lock files for dependency changes
+
+        Updates lock files to reflect changes in Directory.Packages.props and project references.
+        This prevents NU1004 errors when project dependencies are updated.
 
         Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>"
         git push
