@@ -111,7 +111,8 @@ namespace News.Library
             CloudStorageAccount storageAccount;
             if (!CloudStorageAccount.TryParse(storageConnectionString, out storageAccount))
             {
-                throw new Exception("Error parsing the blob storage connection string");
+                throw new Exception($"Error parsing the blob storage connection string. Connection string: '{storageConnectionString}'. " +
+                    "Please ensure you have a valid Azure Storage connection string configured in your appsettings.secrets.json file.");
             }
 
             // Create the CloudBlobClient that represents the 
@@ -127,6 +128,12 @@ namespace News.Library
 
         private static async Task UploadFileAsync(string filePath)
         {
+            if (!Configuration.IsBlobStorageConfigured)
+            {
+                Log.Message("Blob storage connection string not configured. Skipping upload to Azure.");
+                return;
+            }
+
             var connectionString = GetConnectionString();
             await GetBlobClientAsync(connectionString);
 
@@ -142,6 +149,12 @@ namespace News.Library
 
         private static async Task DownloadFileAsync(string filePath)
         {
+            if (!Configuration.IsBlobStorageConfigured)
+            {
+                Log.Message("Blob storage connection string not configured. Skipping download from Azure.");
+                return;
+            }
+
             var connectionString = GetConnectionString();
             await GetBlobClientAsync(connectionString);
 
@@ -171,6 +184,12 @@ namespace News.Library
 
         public static async Task<List<T>> DownloadAllFilesThatStartWith<T>(string startsWith)
         {
+            if (!Configuration.IsBlobStorageConfigured)
+            {
+                Log.Message($"Blob storage connection string not configured. Returning empty list for prefix '{startsWith}'.");
+                return new List<T>();
+            }
+
             // get all file refs that start with startsWith
             var connectionString = GetConnectionString();
             await GetBlobClientAsync(connectionString);
@@ -201,6 +220,12 @@ namespace News.Library
 
         public static async Task<List<ActionFile>> SeparateDownloadAllFilesThatStartWith(string startsWith)
         {
+            if (!Configuration.IsBlobStorageConfigured)
+            {
+                Log.Message($"Blob storage connection string not configured. Returning empty action file list for prefix '{startsWith}'.");
+                return new List<ActionFile>();
+            }
+
             // get all file refs that start with startsWith
             var connectionString = GetConnectionString();
             await GetBlobClientAsync(connectionString);
@@ -231,7 +256,13 @@ namespace News.Library
 
         private static string GetConnectionString()
         {
-            return Configuration.BlobStorageConnectionString;
+            var connectionString = Configuration.BlobStorageConnectionString;
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new ConfigurationException("Blob storage connection string is not configured.");
+            }
+
+            return connectionString;
         }
         #endregion
     }
