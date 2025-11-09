@@ -676,7 +676,33 @@ namespace GitHubActionsNews
 
             if (Uri.TryCreate(href, UriKind.Absolute, out var absolute))
             {
-                return absolute.ToString();
+                // Handle scheme-relative URLs (e.g. //github.com/...) that TryCreate marks as absolute.
+                if (string.IsNullOrWhiteSpace(absolute.Scheme))
+                {
+                    return new Uri(new Uri("https://github.com"), absolute.PathAndQuery + absolute.Fragment).ToString();
+                }
+
+                if (absolute.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase) ||
+                    absolute.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
+                {
+                    return absolute.ToString();
+                }
+
+                if (absolute.Scheme.Equals("file", StringComparison.OrdinalIgnoreCase))
+                {
+                    // GitHub sometimes rewrites anchors to file:// when scripts fail to load behind strict egress rules.
+                    // Treat these as relative marketplace paths so navigation still points to github.com.
+                    var normalizedPath = absolute.AbsolutePath;
+                    if (!string.IsNullOrWhiteSpace(normalizedPath))
+                    {
+                        return new Uri(new Uri("https://github.com"), normalizedPath).ToString();
+                    }
+                }
+            }
+
+            if (href.StartsWith("//", StringComparison.Ordinal))
+            {
+                return "https:" + href;
             }
 
             var baseUri = new Uri("https://github.com");
@@ -693,7 +719,30 @@ namespace GitHubActionsNews
 
             if (Uri.TryCreate(href, UriKind.Absolute, out var absolute))
             {
-                return absolute.ToString();
+                if (string.IsNullOrWhiteSpace(absolute.Scheme))
+                {
+                    return new Uri(new Uri("https://github.com"), absolute.PathAndQuery + absolute.Fragment).ToString();
+                }
+
+                if (absolute.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase) ||
+                    absolute.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
+                {
+                    return absolute.ToString();
+                }
+
+                if (absolute.Scheme.Equals("file", StringComparison.OrdinalIgnoreCase))
+                {
+                    var normalizedPath = absolute.AbsolutePath;
+                    if (!string.IsNullOrWhiteSpace(normalizedPath))
+                    {
+                        return new Uri(new Uri("https://github.com"), normalizedPath).ToString();
+                    }
+                }
+            }
+
+            if (href.StartsWith("//", StringComparison.Ordinal))
+            {
+                return "https:" + href;
             }
 
             if (Uri.TryCreate(new Uri("https://github.com"), href, out var combined))
