@@ -21,6 +21,7 @@ inputs:
 runs:
   using: "composite"
   steps:
+    
     - name: Download artifact from build job
       uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
       with:
@@ -31,6 +32,16 @@ runs:
       uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5.0.0
       with:
         dotnet-version: 8.x
+
+    # these are needed to be able to run playwright, as it will not work with just artifact from the build job
+    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v3.5.3
+
+    - name: Restore
+      run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode
+
+    - name: Build
+      run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release
+    # / end of extra stuff
 
     - name: App Settings Variable Substitution
       uses: rajbos-actions/variable-substitution@ae7b1f3676ae374dc70282e6b9650bc50b611222 # v1.2
