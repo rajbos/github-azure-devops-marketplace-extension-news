@@ -74,6 +74,7 @@ runs:
           dotnet tool update --global Microsoft.Playwright.CLI
         }
 
+        cd .\ArtifactFolder
         playwright install chromium --with-deps
 
     - name: Run the GitHubActionsNews application
