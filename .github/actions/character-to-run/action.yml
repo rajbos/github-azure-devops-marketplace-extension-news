@@ -27,6 +27,11 @@ runs:
         name: ${{ inputs.artifactName }}
         path: ./ArtifactFolder
 
+    - name: Setup .NET
+      uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5.0.0
+      with:
+        dotnet-version: 8.x
+
     - name: App Settings Variable Substitution
       uses: rajbos-actions/variable-substitution@ae7b1f3676ae374dc70282e6b9650bc50b611222 # v1.2
       with:
@@ -38,10 +43,38 @@ runs:
         TwitterAccessTokenSecret: ${{ inputs.TwitterAccessTokenSecret }}
         BlobStorageConnectionString: ${{ inputs.BlobStorageConnectionString }}
     
-    - name: Install Playwright.NET with .NET
-      uses: phil-scott-78/setup-playwright-dotnet@v0.1.0-alpha
-      with:
-        dotnet-version: 8.0.x
+    - name: Install Playwright Browsers
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $artifactPath = Join-Path $env:GITHUB_WORKSPACE 'ArtifactFolder'
+        $depsPath = Join-Path $artifactPath 'GitHubActionsNews.deps.json'
+        if (-not (Test-Path $depsPath)) {
+          throw "Unable to locate deps file for GitHubActionsNews at $depsPath"
+        }
+
+        $deps = Get-Content $depsPath | ConvertFrom-Json
+        $playwrightEntry = $deps.libraries.PSObject.Properties | Where-Object { $_.Name -like 'microsoft.playwright/*' } | Select-Object -First 1
+        if (-not $playwrightEntry) {
+          throw 'Unable to resolve Microsoft.Playwright version from deps file.'
+        }
+        
+        $toolsRoot = if ([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)) {
+          Join-Path $env:USERPROFILE '.dotnet/tools'
+        } else {
+          Join-Path $HOME '.dotnet/tools'
+        }
+        $pathSeparator = [System.IO.Path]::PathSeparator
+        if (-not ($env:PATH -split [System.IO.Path]::PathSeparator | Where-Object { $_ -eq $toolsRoot })) {
+          $env:PATH = "$toolsRoot$pathSeparator$env:PATH"
+        }
+
+        dotnet tool install --global Microsoft.Playwright.CLI
+        if ($LASTEXITCODE -ne 0) {
+          dotnet tool update --global Microsoft.Playwright.CLI
+        }
+
+        playwright install chromium --with-deps
 
     - name: Run the GitHubActionsNews application
       shell: pwsh
