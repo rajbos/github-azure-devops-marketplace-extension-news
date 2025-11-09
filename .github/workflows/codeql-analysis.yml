@@ -8,7 +8,7 @@ name: "CodeQL"
 on:
   push:
     branches:
-      - *
+      - "*"
     paths-ignore:
       - README.md
   
