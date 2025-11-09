@@ -1,9 +1,5 @@
 ﻿using News.Library;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.Interactions;
-using OpenQA.Selenium.Support.UI;
-using SeleniumExtras.WaitHelpers;
+using Microsoft.Playwright;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -62,7 +58,16 @@ namespace GitHubActionsNews
 
         private static void RunTest()
         {
-            var driver = GetDriver();
+            RunTestAsync().GetAwaiter().GetResult();
+        }
+
+        private static async Task RunTestAsync()
+        {
+            using var playwright = await Playwright.CreateAsync();
+            var browser = await GetBrowser(playwright);
+            var context = await browser.NewContextAsync();
+            var page = await context.NewPageAsync();
+
             try
             {
                 // configure for testing either a single action or a search page
@@ -70,9 +75,9 @@ namespace GitHubActionsNews
                 if (runSingleActionTest)
                 {
                     // run for a single action page
-                    driver.Navigate().GoToUrl("https://github.com/marketplace/actions/glo-parse-card-links");
-                    var version = ActionPageInteraction.GetVersionFromAction(driver);
-                    var url = ActionPageInteraction.GetRepoFromAction(driver);
+                    await page.GotoAsync("https://github.com/marketplace/actions/glo-parse-card-links");
+                    var version = await ActionPageInteraction.GetVersionFromAction(page);
+                    var url = await ActionPageInteraction.GetRepoFromAction(page);
                     Log.Message($"Found version [{version}] and url [${url}]");
                 }
                 else
@@ -80,13 +85,14 @@ namespace GitHubActionsNews
                     // run fo a search page
                     var twoLetterQuery = "ca";
                     var queriedGitHubMarketplaceUrl = $"{GitHubMarketplaceUrl}&query={twoLetterQuery}";
-                    var actions = GetAllActions(queriedGitHubMarketplaceUrl);
+                    var actions = await GetAllActionsAsync(queriedGitHubMarketplaceUrl);
                 }
             }
             finally
             {
-                driver.Close();
-                driver.Quit();
+                await page.CloseAsync();
+                await context.CloseAsync();
+                await browser.CloseAsync();
             }
         }
 
@@ -147,6 +153,11 @@ namespace GitHubActionsNews
 
         private static List<GitHubAction> GetActionsForSearchQuery(string query)
         {
+            return GetActionsForSearchQueryAsync(query).GetAwaiter().GetResult();
+        }
+
+        private static async Task<List<GitHubAction>> GetActionsForSearchQueryAsync(string query)
+        {
             var actions = new List<GitHubAction>();
             var started = DateTime.Now;
             // check if query is a single letter, but is not a number
@@ -164,7 +175,7 @@ namespace GitHubActionsNews
                     {
                         Log.Message($"Loading latest states for all actions starting with [{twoLetterQuery}]");
                         var queriedGitHubMarketplaceUrl = $"{GitHubMarketplaceUrl}&query={twoLetterQuery}";
-                        actions.AddRange(GetAllActions(queriedGitHubMarketplaceUrl));
+                        actions.AddRange(await GetAllActionsAsync(queriedGitHubMarketplaceUrl));
                     }
                 }
             }
@@ -173,7 +184,7 @@ namespace GitHubActionsNews
                 Log.Message($"Loading latest states for all actions starting with [{query}]");
 
                 var queriedGitHubMarketplaceUrl = $"{GitHubMarketplaceUrl}&query={query}";
-                actions.AddRange(GetAllActions(queriedGitHubMarketplaceUrl));
+                actions.AddRange(await GetAllActionsAsync(queriedGitHubMarketplaceUrl));
             }
 
             if (actions.Count == 0 && 1 == 3) // this is a temporary fix to avoid an exception when running with the new UI refresh
@@ -188,6 +199,8 @@ namespace GitHubActionsNews
             var existingActions = Storage.ReadFromJson<GitHubAction>(storeFileName, storeFileName);
 
             // tweet about updates and new actions:
+            var repoUrlUpdates = 0;
+
             foreach (var action in actions)
             {
                 var allActionsWithThisTitle = existingActions
@@ -204,6 +217,10 @@ namespace GitHubActionsNews
                 }
                 else
                 {
+                    var incomingRepoUrl = action.RepoUrl ?? string.Empty;
+                    var existingRepoUrl = existingAction.RepoUrl ?? string.Empty;
+                    var repoUrlChanged = !string.Equals(existingRepoUrl, incomingRepoUrl, StringComparison.OrdinalIgnoreCase);
+
                     // remove any other action from the list that has the same title
                     if (allActionsWithThisTitle.Count() > 1)
                     {
@@ -231,20 +248,31 @@ namespace GitHubActionsNews
                         existingAction.Url = action.Url;
                         existingAction.Publisher = action.Publisher;
                         existingAction.Updated = DateTime.UtcNow;
+                        if (repoUrlChanged && !string.IsNullOrWhiteSpace(incomingRepoUrl))
+                        {
+                            repoUrlUpdates++;
+                        }
                         existingAction.RepoUrl = action.RepoUrl;
                         existingAction.Verified = action.Verified;
                     }
                     else
                     {
-                        // always update the repo url since that is empty in older runs
-                        Log.Message($"No further changes, but updating the repoUrl for [{existingAction.Url}] to [{existingAction.RepoUrl}]");
-                        existingAction.RepoUrl = action.RepoUrl;
+                        if (repoUrlChanged)
+                        {
+                            if (!string.IsNullOrWhiteSpace(incomingRepoUrl))
+                            {
+                                Log.Message($"Updating repoUrl for [{existingAction.Title}] from [{existingAction.RepoUrl}] to [{action.RepoUrl}]");
+                                repoUrlUpdates++;
+                            }
+                            existingAction.RepoUrl = action.RepoUrl;
+                        }
                     }
                 }
             }
 
             var count = existingActions.Where(item => !String.IsNullOrEmpty(item.RepoUrl)).Count();
             Log.Message($"Found [{existingActions.Count}] unique actions with [{count}] repo urls for query [{query}] in {(DateTime.Now - started).TotalMinutes:N2} minutes", logsummary: true);
+            Log.Message($"Summary for query [{query}]: fetched {actions.Count} actions and updated {repoUrlUpdates} repo urls.", logsummary: true);
 
             // store the new information:
             Storage.SaveJson(existingActions, storeFileName);
@@ -254,9 +282,14 @@ namespace GitHubActionsNews
 
         private static List<GitHubAction> GetAllActions(string searchUrl)
         {
+            return GetAllActionsAsync(searchUrl).GetAwaiter().GetResult();
+        }
+
+        internal static async Task<List<GitHubAction>> GetAllActionsAsync(string searchUrl)
+        {
             try
             {
-                var actions = ScrapeGitHubMarketPlace(searchUrl);
+                var actions = await ScrapeGitHubMarketPlaceAsync(searchUrl);
 
                 return actions;
             }
@@ -267,17 +300,21 @@ namespace GitHubActionsNews
             return [];
         }
 
-        private static List<GitHubAction> ScrapeGitHubMarketPlace(string searchUrl)
+        private static async Task<List<GitHubAction>> ScrapeGitHubMarketPlaceAsync(string searchUrl)
         {
             var started = DateTime.Now;
             Console.WriteLine("Running");
-            var driver = GetDriver();
+
+            using var playwright = await Playwright.CreateAsync();
+            var browser = await GetBrowser(playwright);
+            var context = await browser.NewContextAsync();
+            var page = await context.NewPageAsync();
 
             try
             {
-                driver.Url = searchUrl;
+                await page.GotoAsync(searchUrl);
                 var sb = new StringBuilder();
-                var actionList = ScrapePage(driver, 1, sb);
+                var actionList = await ScrapePageAsync(page, 1, sb);
                 var emptyRepoUrl = actionList.Where(x => String.IsNullOrEmpty(x.RepoUrl)).Count();
 
                 Log.Message($"Found {actionList.Count} actions for search url [{searchUrl}] in {(DateTime.Now - started).TotalMinutes:N2} minutes, with [{emptyRepoUrl}] not filled repo urls", logsummary: true);
@@ -293,67 +330,92 @@ namespace GitHubActionsNews
             }
             finally
             {
-                driver.Close();
-                driver.Quit();
+                await page.CloseAsync();
+                await context.CloseAsync();
+                await browser.CloseAsync();
             }
 
             return [];
         }
 
-        private static ChromeDriver GetDriver()
+        private static async Task<IBrowser> GetBrowser(IPlaywright playwright)
         {
-            var chromeOptions = new ChromeOptions();
-            Console.WriteLine("Initializing Chrome driver");
-            Console.WriteLine($"CI environment?: [{Environment.GetEnvironmentVariable("CI")}]");
-            if (!Debugger.IsAttached && Environment.GetEnvironmentVariable("CODESPACES") == null || Environment.GetEnvironmentVariable("CI") != "")
+            var launchOptions = new BrowserTypeLaunchOptions();
+            Console.WriteLine("Initializing Playwright Chromium browser");
+            var ciValue = Environment.GetEnvironmentVariable("CI");
+            var codespacesValue = Environment.GetEnvironmentVariable("CODESPACES");
+            Console.WriteLine($"CI environment?: [{ciValue}]");
+            Console.WriteLine($"Codespaces environment?: [{codespacesValue}]");
+            Console.WriteLine($"Debugger attached?: {Debugger.IsAttached}");
+
+            var headlessOverride = Environment.GetEnvironmentVariable("PLAYWRIGHT_HEADLESS");
+            if (!string.IsNullOrWhiteSpace(headlessOverride) && bool.TryParse(headlessOverride, out var headlessEnvironmentOverride))
             {
-                Console.WriteLine("Running in non-debug mode, so using headless Chrome");
-                chromeOptions.AddArguments("headless"); // Run Chrome in headless mode
+                launchOptions.Headless = headlessEnvironmentOverride;
+                Console.WriteLine($"Using headless override from PLAYWRIGHT_HEADLESS = {headlessEnvironmentOverride}");
+            }
+            else
+            {
+                var runningInCi = !string.IsNullOrWhiteSpace(ciValue);
+                var runningInCodespaces = !string.IsNullOrWhiteSpace(codespacesValue);
+                var debuggerAttached = Debugger.IsAttached;
+
+                launchOptions.Headless = !debuggerAttached || runningInCi || runningInCodespaces;
+
+                if (launchOptions.Headless == true)
+                {
+                    Console.WriteLine("Running headless (CI, Codespaces, or debugger not attached)");
+                }
+                else
+                {
+                    Console.WriteLine("Debugger attached and no CI/Codespaces; running headed browser");
+                }
             }
 
-            // test for the env var CHROME_BIN
-            var variableName = "CHROMEWEBDRIVER";
-            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable(variableName)))
-            {
-                //Console.WriteLine($"Using [{variableName}] from env var: [{Environment.GetEnvironmentVariable(variableName)}]");
-                //chromeOptions.BinaryLocation = Environment.GetEnvironmentVariable(variableName);
-            }
-            chromeOptions.AddArguments("--no-sandbox"); // Bypass OS security model
-            chromeOptions.AddArguments("--disable-dev-shm-usage"); // Overcome limited resource problems
-            Console.WriteLine("Creating default service");
-            var service = ChromeDriverService.CreateDefaultService();
-            Console.WriteLine("Creating Chrome driver");
-            var driver = new ChromeDriver(service, chromeOptions, TimeSpan.FromSeconds(300));
-            Console.WriteLine("Chrome driver created");
-            return driver;
+            launchOptions.Args = new[] { "--no-sandbox", "--disable-dev-shm-usage" };
+
+            Console.WriteLine("Creating Chromium browser");
+            var browser = await playwright.Chromium.LaunchAsync(launchOptions);
+            Console.WriteLine("Chromium browser created");
+            return browser;
         }
 
-        private static List<GitHubAction> ScrapePage(IWebDriver driver, int pageNumber, StringBuilder logger)
+        private static List<GitHubAction> ScrapePage(IPage page, int pageNumber, StringBuilder logger)
+        {
+            return ScrapePageAsync(page, pageNumber, logger).GetAwaiter().GetResult();
+        }
+
+        private static async Task<List<GitHubAction>> ScrapePageAsync(IPage page, int pageNumber, StringBuilder logger)
         {
             var actionList = new List<GitHubAction>();
             try
             {
-                WebDriverWait waitForElement = ScrollPaginatorIntoView(driver);
+                await ScrollPaginatorIntoView(page);
 
                 // Scrape the page
-                var anchors = driver.FindElements(By.TagName("a")).ToList();
-                var actionAnchors = new List<IWebElement>();
+                var anchors = await page.Locator("a").AllAsync();
+                var actionAnchors = new List<ILocator>();
                 foreach (var anchor in anchors)
                 {
-                    var href = anchor.GetAttribute("href");
-                    if (href != null && href.StartsWith("https://github.com/marketplace/actions/"))
+                    var href = await anchor.GetAttributeAsync("href");
+                    if (string.IsNullOrWhiteSpace(href))
+                    {
+                        continue;
+                    }
+
+                    if (href.StartsWith("https://github.com/marketplace/actions/", StringComparison.OrdinalIgnoreCase) ||
+                        href.StartsWith("/marketplace/actions/", StringComparison.OrdinalIgnoreCase))
                     {
                         actionAnchors.Add(anchor);
                     }
                 }
-                //var actionAnchors = anchors.Where(item => item.GetAttribute("href").StartsWith("/marketplace/actions"));
                 var actionTags = actionAnchors.ToList();
 
-                Log.Message($"Page {pageNumber}: Found {actionTags.Count} actions, current url: {driver.Url}", logger);
+                Log.Message($"Page {pageNumber}: Found {actionTags.Count} actions, current url: {page.Url}", logger);
 
                 foreach (var action in actionTags)
                 {
-                    var ghAction = ParseAction(action, driver);
+                    var ghAction = await ParseActionAsync(action, page);
                     Thread.Sleep(2000); // try to cut down on ratelimit messages
                     if (ghAction != null)
                     {
@@ -363,142 +425,174 @@ namespace GitHubActionsNews
                     }
                 }
 
-                // find the 'next' button
-                IWebElement nextButton = null;
-                var nextButtonSearch = By.LinkText("Next");
-                try
+                // find the 'next' button using the new paginator markup
+                var paginatorSelector = "nav[aria-label='Pagination']";
+                var nextButtonLocator = page.Locator($"{paginatorSelector} a[rel='next']");
+                if (await nextButtonLocator.CountAsync() > 0)
                 {
-                    waitForElement.Until(ExpectedConditions.ElementExists(nextButtonSearch));
-                    nextButton = driver.FindElement(nextButtonSearch);
-                }
-                catch
-                {
-                    // if the element doesn't exist, we are at the last page
-                    Log.Message($"Next button not found, current url = [{driver.Url}] on pageNumber [{pageNumber}], logger");
-                }
+                    var nextButton = nextButtonLocator.First;
 
-                if (nextButton != null)
-                {
-                    var nextUrl = nextButton.GetAttribute("href");
-                    // click the next button
-                    nextButton.Click();
-                    waitForElement = ScrollPaginatorIntoView(driver);
+                    // Detect disabled/hidden state instead of waiting for a timeout at the last page
+                    var ariaDisabled = await nextButton.GetAttributeAsync("aria-disabled");
+                    var ariaHidden = await nextButton.GetAttributeAsync("aria-hidden");
+                    var nextHref = await nextButton.GetAttributeAsync("href");
+                    var nextUnavailable = string.Equals(ariaDisabled, "true", StringComparison.OrdinalIgnoreCase)
+                                          || string.Equals(ariaHidden, "true", StringComparison.OrdinalIgnoreCase)
+                                          || string.IsNullOrWhiteSpace(nextHref);
 
-                    waitForElement.Until(ExpectedConditions.ElementExists(nextButtonSearch));
+                    if (nextUnavailable)
+                    {
+                        Log.Message("Next button is disabled or missing a link; reached the final page of results.", logger);
+                        return actionList;
+                    }
 
-                    // wait for the next button to be available again
-                    waitForElement.Until(ExpectedConditions.UrlToBe(nextUrl));
-                    // the 'next' link is not a link in the last page, so by waiting for it we would miss that page!
-                    waitForElement.Until(ExpectedConditions.ElementIsVisible(By.ClassName("paginate-container")));
+                    var currentPageLocator = page.Locator($"{paginatorSelector} a[aria-current='page']").First;
+                    string currentPageNumber = null;
+                    if (await currentPageLocator.CountAsync() > 0)
+                    {
+                        currentPageNumber = (await currentPageLocator.InnerTextAsync())?.Trim();
+                    }
+
+                    Log.Message($"Navigating to next page from current page label [{currentPageNumber ?? "unknown"}]", logger);
+
+                    await nextButton.ClickAsync(new LocatorClickOptions { Timeout = 10000 });
+
+                    // Wait for pagination to update to the next page
+                    if (!string.IsNullOrWhiteSpace(currentPageNumber))
+                    {
+                        try
+                        {
+                            await page.WaitForFunctionAsync(
+                                "args => { const el = document.querySelector(args.selector); return el && el.textContent.trim() !== args.previous; }",
+                                new { selector = $"{paginatorSelector} a[aria-current='page']", previous = currentPageNumber },
+                                new PageWaitForFunctionOptions { Timeout = 10000 });
+                        }
+                        catch
+                        {
+                            Log.Message("Pagination current page indicator did not update in time; continuing with available content", logger);
+                        }
+                    }
+
+                    await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    await ScrollPaginatorIntoView(page);
+
+                    if (!string.IsNullOrWhiteSpace(currentPageNumber))
+                    {
+                        var updatedPageLocator = page.Locator($"{paginatorSelector} a[aria-current='page']").First;
+                        if (await updatedPageLocator.CountAsync() > 0)
+                        {
+                            var updatedPageNumber = (await updatedPageLocator.InnerTextAsync())?.Trim();
+                            if (string.Equals(updatedPageNumber, currentPageNumber, StringComparison.OrdinalIgnoreCase))
+                            {
+                                Log.Message($"Pagination still shows the same current page [{updatedPageNumber}]. Stopping to avoid duplicate scraping.", logger);
+                                return actionList;
+                            }
+                        }
+                    }
 
                     // scrape the new page again
-                    actionList.AddRange(ScrapePage(driver, pageNumber + 1, logger));
+                    actionList.AddRange(await ScrapePageAsync(page, pageNumber + 1, logger));
+                }
+                else
+                {
+                    Log.Message($"Next button not found, current url = [{page.Url}] on pageNumber [{pageNumber}]", logger);
                 }
             }
             catch (Exception e)
             {
                 Log.Message($"Error scraping page {pageNumber}. Exception message: {e.Message}{Environment.NewLine}{e.InnerException?.Message}");
-                Log.Message($"Logs for run with url [{driver.Url}]:");
+                Log.Message($"Logs for run with url [{page.Url}]:");
                 Log.Message(logger.ToString());
-                SaveScreenshot(driver, $"Error_Page_{pageNumber}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png");
+                await SaveScreenshot(page, $"Error_Page_{pageNumber}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png");
             }
 
             return actionList;
         }
 
-        private static WebDriverWait ScrollPaginatorIntoView(IWebDriver driver)
+        private static async Task ScrollPaginatorIntoView(IPage page)
         {
-            // scroll the paginator into view
-            var actions = new Actions(driver);
-
-            var timeoutDurationSeconds = Debugger.IsAttached ? 10 : 5;
-            var waitForElement = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(timeoutDurationSeconds));
+            var timeoutDurationSeconds = Debugger.IsAttached ? 10000 : 5000;
             var elementName = "nav";
             var elementAriaLabel = "Pagination";
+            var selector = $"{elementName}[aria-label='{elementAriaLabel}']";
+
             try
             {
-                waitForElement.Until(ExpectedConditions.ElementExists(By.CssSelector($"{elementName}[aria-label='{elementAriaLabel}']")));
-                waitForElement.Until(ExpectedConditions.ElementIsVisible(By.CssSelector($"{elementName}[aria-label='{elementAriaLabel}']")));
-                waitForElement.Until(ExpectedConditions.ElementToBeClickable(By.CssSelector($"{elementName}[aria-label='{elementAriaLabel}']")));
-                var paginator = driver.FindElement(By.CssSelector($"{elementName}[aria-label='{elementAriaLabel}']"));
-                actions.MoveToElement(paginator);
-                actions.Perform();
+                var paginator = page.Locator(selector);
+                await paginator.WaitForAsync(new LocatorWaitForOptions { Timeout = timeoutDurationSeconds, State = WaitForSelectorState.Visible });
+                await paginator.ScrollIntoViewIfNeededAsync();
             }
             catch
             {
                 try
                 {
                     // wait some time and retry
-                    Thread.Sleep(1000);
-                    waitForElement.Until(ExpectedConditions.ElementExists(By.CssSelector($"{elementName}[aria-label='{elementAriaLabel}']")));
-                    waitForElement.Until(ExpectedConditions.ElementIsVisible(By.CssSelector($"{elementName}[aria-label='{elementAriaLabel}']")));
-                    waitForElement.Until(ExpectedConditions.ElementToBeClickable(By.CssSelector($"{elementName}[aria-label='{elementAriaLabel}']")));
-                    var paginator = driver.FindElement(By.CssSelector($"{elementName}[aria-label='{elementAriaLabel}']"));
-                    actions.MoveToElement(paginator);
-                    actions.Perform();
+                    await Task.Delay(1000);
+                    var paginator = page.Locator(selector);
+                    await paginator.WaitForAsync(new LocatorWaitForOptions { Timeout = timeoutDurationSeconds, State = WaitForSelectorState.Visible });
+                    await paginator.ScrollIntoViewIfNeededAsync();
                 }
                 catch
                 {
-                    // if we can't find the paginator, just return the waitForElement
+                    // if we can't find the paginator, just continue
                     Log.Message($"Paginator not found, continuing without scrolling");
-                    return waitForElement;
+                    return;
                 }
             }
 
             try
             {
                 var bannerClassName = "hx_cookie-banner";
-                var banner = driver.FindElement(By.ClassName(bannerClassName));
-
-                IJavaScriptExecutor js = driver as IJavaScriptExecutor;
-                js.ExecuteScript("arguments[0].style='display: none;'", banner);
+                var banner = page.Locator($".{bannerClassName}");
+                if (await banner.CountAsync() > 0)
+                {
+                    await banner.EvaluateAsync("el => el.style.display = 'none'");
+                }
             }
             catch
             {
                 // nom nom nom
             }
-
-            return waitForElement;
         }
 
-        private static GitHubAction ParseAction(IWebElement action, IWebDriver driver)
+        private static GitHubAction ParseAction(ILocator action, IPage page)
+        {
+            return ParseActionAsync(action, page).GetAwaiter().GetResult();
+        }
+
+        private static async Task<GitHubAction> ParseActionAsync(ILocator action, IPage page)
         {
             try
             {
-                // unfortunately, the hydro info has not enough data so we need to find the missing data points
-                //var hydro = action.GetAttribute("data-hydro-click");
-                //var data = JsonConvert.DeserializeObject(hydro);
+                var href = await action.GetAttributeAsync("href");
+                if (string.IsNullOrWhiteSpace(href))
+                {
+                    return null;
+                }
 
-                //var divWithTitle = action.FindElement(By.TagName("h3"));
-                //var title = divWithTitle.Text;
-                var url = action.GetAttribute("href");
-                var divWithTitle = action;
-                // find the action title in the ::before property
-                // IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
-                // string script = "return window.getComputedStyle(document.querySelector('selector'),':before').getPropertyValue('content');";
-                // string content = (string)js.ExecuteScript(script);
+                var url = NormalizeMarketplaceUrl(href);
                 var title = "content";
-                var publisherParent = divWithTitle.FindElement(By.XPath("./..")); // find parent element
-                var allChildElements = publisherParent.FindElements(By.XPath(".//*")); // find all child elements
-                //var publisher = allChildElements[2].Text; // is empty, find on the detail page
                 var publisher = "";
 
-                // open the url in a new tab
-                action.SendKeys(Keys.Shift + "T");
-                action.SendKeys(Keys.Control + Keys.Enter);
+                // open the url in a new tab by using page context
+                var context = page.Context;
+                var newPage = await context.NewPageAsync();
 
-                var newTab = driver.WindowHandles.Last();
-                driver.SwitchTo().Window(newTab);
                 var version = "";
                 var actionRepoUrl = "";
                 var verified = false;
-                Thread.Sleep(2000);
-                if (driver.Title.StartsWith("about:blank"))
+
+                await newPage.GotoAsync(url);
+                await Task.Delay(2000);
+
+                var pageTitle = await newPage.TitleAsync();
+                if (pageTitle.StartsWith("about:blank"))
                 {
-                    Thread.Sleep(2000); // we need more time for the page to load
+                    await Task.Delay(2000); // we need more time for the page to load
+                    pageTitle = await newPage.TitleAsync();
                 }
 
-                if (!driver.Title.StartsWith("Page not found"))
+                if (!pageTitle.StartsWith("Page not found"))
                 {
                     // act
                     try
@@ -506,8 +600,8 @@ namespace GitHubActionsNews
                         // check if the verified class exists
                         try
                         {
-                            var el = driver.FindElements(By.ClassName("octicon-verified"));
-                            if (el != null && el.Count > 0)
+                            var verifiedLocator = newPage.Locator(".octicon-verified");
+                            if (await verifiedLocator.CountAsync() > 0)
                             {
                                 verified = true;
                             }
@@ -517,44 +611,43 @@ namespace GitHubActionsNews
                             // verified class not found, use default value
                         }
 
-                        version = ActionPageInteraction.GetVersionFromAction(driver);
+                        version = await ActionPageInteraction.GetVersionFromAction(newPage);
                         Log.Message($"Found version [{version}] for url [{url}]");
                         try
                         {
-                            actionRepoUrl = ActionPageInteraction.GetRepoFromAction(driver);
+                            actionRepoUrl = await ActionPageInteraction.GetRepoFromAction(newPage);
                             if (string.IsNullOrEmpty(actionRepoUrl))
                                 throw new Exception("Did not find action repo url");
                             else
+                            {
+                                actionRepoUrl = NormalizeGithubUrl(actionRepoUrl);
                                 Log.Message($"Found repoUrl [{actionRepoUrl}] for url [{url}]");
+                            }
                         }
                         catch (Exception e)
                         {
-                            Log.Message($"Error loading action repo url for action with url [{url}]: {e.Message}, Page title:{driver.Title}, the version we got is: [{version}]");
-                            var source = driver.PageSource.ToString();
+                            Log.Message($"Error loading action repo url for action with url [{url}]: {e.Message}, Page title:{pageTitle}, the version we got is: [{version}]");
+                            var source = await newPage.ContentAsync();
                             Console.WriteLine(source);
                         }
 
-                        //publisher = ActionPageInteraction.GetVerifiedPublisherFromAction(driver);
                         publisher = GetPublisher(actionRepoUrl);
 
-                        title = ActionPageInteraction.GetTitleFromAction(driver);
+                        title = await ActionPageInteraction.GetTitleFromAction(newPage);
                         Log.Message($"Found title [{title}] for url [{url}]");
                     }
                     catch (Exception e)
                     {
-                        Log.Message($"Error loading version for action with url [{url}]: {e.Message}, Page title:{driver.Title}");
+                        Log.Message($"Error loading version for action with url [{url}]: {e.Message}, Page title:{pageTitle}");
                     }
                 }
                 else
                 {
-                    Log.Message($"Action detail page 404's with url [{url}], Page title:{driver.Title}");
+                    Log.Message($"Action detail page 404's with url [{url}], Page title:{pageTitle}");
                 }
 
-                // closing the current window and go back to the original tab
-                driver.Close();
-
-                var orgTab = driver.WindowHandles.First();
-                driver.SwitchTo().Window(orgTab);
+                // closing the new page
+                await newPage.CloseAsync();
 
                 return new GitHubAction
                 {
@@ -574,26 +667,119 @@ namespace GitHubActionsNews
             }
         }
 
-        private static string GetPublisher(string url)
+        private static string NormalizeMarketplaceUrl(string href)
         {
-            var uri = new Uri(url);
-            var segments = uri.Segments;
-            if (segments.Length > 1)
+            if (string.IsNullOrWhiteSpace(href))
             {
-                return segments[1].TrimEnd('/');
+                return href;
             }
 
-            var firstSlash = url.IndexOf("/");
-            // return the first part of the url
-            return url.Substring(0, firstSlash);
+            if (Uri.TryCreate(href, UriKind.Absolute, out var absolute))
+            {
+                // Handle scheme-relative URLs (e.g. //github.com/...) that TryCreate marks as absolute.
+                if (string.IsNullOrWhiteSpace(absolute.Scheme))
+                {
+                    return new Uri(new Uri("https://github.com"), absolute.PathAndQuery + absolute.Fragment).ToString();
+                }
+
+                if (absolute.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase) ||
+                    absolute.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
+                {
+                    return absolute.ToString();
+                }
+
+                if (absolute.Scheme.Equals("file", StringComparison.OrdinalIgnoreCase))
+                {
+                    // GitHub sometimes rewrites anchors to file:// when scripts fail to load behind strict egress rules.
+                    // Treat these as relative marketplace paths so navigation still points to github.com.
+                    var normalizedPath = absolute.AbsolutePath;
+                    if (!string.IsNullOrWhiteSpace(normalizedPath))
+                    {
+                        return new Uri(new Uri("https://github.com"), normalizedPath).ToString();
+                    }
+                }
+            }
+
+            if (href.StartsWith("//", StringComparison.Ordinal))
+            {
+                return "https:" + href;
+            }
+
+            var baseUri = new Uri("https://github.com");
+            var combined = new Uri(baseUri, href);
+            return combined.ToString();
         }
 
-        private static void SaveScreenshot(IWebDriver driver, string fileName)
+        private static string NormalizeGithubUrl(string href)
+        {
+            if (string.IsNullOrWhiteSpace(href))
+            {
+                return href;
+            }
+
+            if (Uri.TryCreate(href, UriKind.Absolute, out var absolute))
+            {
+                if (string.IsNullOrWhiteSpace(absolute.Scheme))
+                {
+                    return new Uri(new Uri("https://github.com"), absolute.PathAndQuery + absolute.Fragment).ToString();
+                }
+
+                if (absolute.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase) ||
+                    absolute.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
+                {
+                    return absolute.ToString();
+                }
+
+                if (absolute.Scheme.Equals("file", StringComparison.OrdinalIgnoreCase))
+                {
+                    var normalizedPath = absolute.AbsolutePath;
+                    if (!string.IsNullOrWhiteSpace(normalizedPath))
+                    {
+                        return new Uri(new Uri("https://github.com"), normalizedPath).ToString();
+                    }
+                }
+            }
+
+            if (href.StartsWith("//", StringComparison.Ordinal))
+            {
+                return "https:" + href;
+            }
+
+            if (Uri.TryCreate(new Uri("https://github.com"), href, out var combined))
+            {
+                return combined.ToString();
+            }
+
+            return href;
+        }
+
+        private static string GetPublisher(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                return string.Empty;
+            }
+
+            var normalizedUrl = NormalizeGithubUrl(url);
+            if (!Uri.TryCreate(normalizedUrl, UriKind.Absolute, out var uri))
+            {
+                return string.Empty;
+            }
+
+            var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length > 0)
+            {
+                return segments[0];
+            }
+
+            return string.Empty;
+        }
+
+        private static async Task SaveScreenshot(IPage page, string fileName)
         {
             try
             {
-                var screenshot = ((ITakesScreenshot)driver).GetScreenshot();
-                screenshot.SaveAsFile(fileName);
+                await page.ScreenshotAsync(new PageScreenshotOptions { Path = fileName });
                 Log.Message($"Screenshot saved to {fileName}");
             }
             catch (Exception ex)

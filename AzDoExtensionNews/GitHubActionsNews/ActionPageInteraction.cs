@@ -1,40 +1,42 @@
 ﻿using News.Library;
-using OpenQA.Selenium;
+using Microsoft.Playwright;
 using System;
 using System.Diagnostics;
 using System.Text;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace GitHubActionsNews
 {
     public static class ActionPageInteraction
     {
-        public static string GetRepoFromAction(IWebDriver driver)
+        public static async Task<string> GetRepoFromAction(IPage page)
         {
-            var links = driver.FindElements(By.TagName("a"));
-            //foreach (var link in links)
-            //{
-            //Console.WriteLine(link.Text);
-            //}
+            var links = await page.Locator("a").AllAsync();
 
-            var foundIssueLink = links.FirstOrDefault(a => a.Text.StartsWith("View source code"));
+            ILocator foundIssueLink = null;
+            foreach (var link in links)
+            {
+                var text = await link.TextContentAsync();
+                if (text != null && text.StartsWith("View source code"))
+                {
+                    foundIssueLink = link;
+                    break;
+                }
+            }
+
             if (foundIssueLink == null)
             {
                 return null;
             }
 
-            // find the div that has Links in the title
-            //var linkDiv = driver.FindElement(By.XPath("//*[contains(text(),'Open issues')]"));
             var linkDiv = foundIssueLink;
-
-            var linkDivParent = linkDiv.FindElement(By.XPath("./..")); // find parent element
-                                                                       //Console.WriteLine($"{linkDivParent.Text}");
-                                                                       // find first link in this div
-            links = linkDivParent.FindElements(By.TagName("a"));
-            if (links.Count > 0)
+            var linkDivParent = linkDiv.Locator("..");
+            var firstLink = linkDivParent.Locator("a").First;
+            
+            if (await firstLink.CountAsync() > 0)
             {
-                var link = links[0];
-                return link.GetAttribute("href");
+                return await firstLink.GetAttributeAsync("href");
             }
             else
             {
@@ -42,68 +44,50 @@ namespace GitHubActionsNews
             }
         }
 
-        public static string GetVersionFromAction(IWebDriver driver)
+        public static async Task<string> GetVersionFromAction(IPage page)
         {
-            IWebElement divWithTitle;
-            try
+            var timeout = Debugger.IsAttached ? 15000 : 5000;
+
+            // The new marketplace layout renders the version inside a Truncate component
+            // next to a small "Latest" label. Capture that first, as it is the fastest path.
+            var version = await TryGetVersionFromLatestLabelStackAsync(page, timeout);
+            if (!string.IsNullOrWhiteSpace(version))
             {
-                divWithTitle = driver.FindElement(By.XPath("//*[contains(text(),'Latest')]"));
-            }
-            catch (OpenQA.Selenium.NoSuchElementException)
-            {
-                try
-                {
-                    divWithTitle = driver.FindElement(By.XPath("//*[contains(text(),'Pre-release')]"));
-                }
-                catch (OpenQA.Selenium.NoSuchElementException)
-                {
-                    return $"Error loading version from page [{driver.Url}], cannot find 'Latest' or 'Pre-release' on this page";
-                }
+                return version;
             }
 
-            var sb = new StringBuilder();
-            try
+            // Try schema.org microdata first
+            version = await TryGetSoftwareVersionAsync(page, timeout);
+            if (!string.IsNullOrWhiteSpace(version))
             {
-                if (Debugger.IsAttached)
-                {
-                    sb.AppendLine($"{divWithTitle.Text} - {divWithTitle.TagName} - {divWithTitle.GetAttribute("Title")}");
-                    Console.WriteLine($"divWithTitle.Text: {divWithTitle.Text}, divWithTitle.TagName: {divWithTitle.TagName}, divWithTitle.GetAttribute(\"Title\"): {divWithTitle.GetAttribute("Title")}");
-                }
-                // "contains(text(), 'Latest version')"); ;
-
-                var publisherParent = divWithTitle.FindElement(By.XPath("./..")); // find parent element
-                var allChildElements = publisherParent.FindElements(By.XPath(".//*")); // find all child elements
-                sb.AppendLine($"childElements.Count: [{allChildElements.Count}]");
-
-                if (Debugger.IsAttached)
-                {
-                    for (int i = 0; i < allChildElements.Count; i++)
-                    {
-                        var el = allChildElements[i];
-                        sb.AppendLine($"{i}: {el.Text} - {el.TagName} - {el.GetAttribute("Title")}");
-                    }
-                    Log.Message(sb.ToString());
-                }
-
-                return allChildElements[0].GetAttribute("Title"); // get the title attribute of the first child element
+                return version;
             }
-            catch (Exception e)
+
+            // Fallback to UI label ("Latest version" / "Latest" / "Pre-release")
+            version = await TryGetVersionFromLatestSectionAsync(page, timeout);
+            if (!string.IsNullOrWhiteSpace(version))
             {
-                Console.WriteLine($"Error loading version from page [{driver.Url}]: {e.Message}{Environment.NewLine}Log messages: {Environment.NewLine}{sb}");
-                throw;
+                return version;
             }
+
+            // Last resort: use release links on the page
+            version = await TryGetVersionFromReleaseLinksAsync(page);
+            if (!string.IsNullOrWhiteSpace(version))
+            {
+                return version;
+            }
+
+            return $"Error loading version from page [{page.Url}], unable to determine latest release";
         }
 
-        public static string GetVerifiedPublisherFromAction(IWebDriver driver)
+        public static async Task<string> GetVerifiedPublisherFromAction(IPage page)
         {
-            // only works for "verified" publisher
             try
             {
-                // find the a element with a data-hovercard-type="organization and load the publisher from the href
-                var publisherLink = driver.FindElement(By.CssSelector("a[data-hovercard-type='organization']"));
-                return publisherLink.GetAttribute("href");
+                var publisherLink = page.Locator("a[data-hovercard-type='organization']").First;
+                return await publisherLink.GetAttributeAsync("href");
             }
-            catch (NoSuchElementException ex)
+            catch (TimeoutException ex)
             {
                 Console.WriteLine("Publisher element not found: " + ex.Message);
                 return null;
@@ -115,24 +99,245 @@ namespace GitHubActionsNews
             }
         }
 
-        public static string GetTitleFromAction(IWebDriver driver)
+        public static async Task<string> GetTitleFromAction(IPage page)
         {
             try
             {
-                // load the webpage title
-                var title = driver.Title;
-                // remove the default part from the title to find the actions title
-                // e.g. Super-Linter · Actions · GitHub Marketplace · GitHub
-                return title.Split('·')[0].Trim(); // extract and return the actual action title
-            }
-            catch (NoSuchElementException ex)
-            {
-                Console.WriteLine("Title element not found: " + ex.Message);
-                return null;
+                var title = await page.TitleAsync();
+                return title.Split('·')[0].Trim();
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Title: An error occurred: " + ex.Message);
+                return null;
+            }
+        }
+
+        private static async Task<string> TryGetSoftwareVersionAsync(IPage page, int timeout)
+        {
+            var locator = page.Locator("[itemprop='softwareVersion']");
+            if (!await WaitForLocatorAsync(locator, timeout))
+            {
+                return null;
+            }
+
+            var element = locator.First;
+            var fromContent = (await element.GetAttributeAsync("content"))?.Trim();
+            if (!string.IsNullOrWhiteSpace(fromContent) && IsLikelyVersion(fromContent))
+            {
+                return fromContent;
+            }
+
+            var fromText = (await element.InnerTextAsync())?.Trim();
+            return IsLikelyVersion(fromText) ? fromText : null;
+        }
+
+        private static async Task<string> TryGetVersionFromLatestSectionAsync(IPage page, int timeout)
+        {
+            var labelLocator = page.Locator("text=/Latest version/i");
+            if (!await WaitForLocatorAsync(labelLocator, timeout))
+            {
+                labelLocator = page.Locator("text=/Latest/i");
+                if (!await WaitForLocatorAsync(labelLocator, timeout))
+                {
+                    labelLocator = page.Locator("text=/Pre-release/i");
+                    if (!await WaitForLocatorAsync(labelLocator, timeout))
+                    {
+                        return null;
+                    }
+                }
+            }
+
+            var versionCandidate = await GetFollowingVersionCandidateAsync(labelLocator.First);
+            if (IsLikelyVersion(versionCandidate))
+            {
+                return versionCandidate;
+            }
+
+            // If the direct sibling approach fails, inspect nearby release links
+            var sectionContainer = labelLocator.First.Locator("xpath=ancestor::*[self::article or self::section or self::div][contains(@class,'d-flex')][1]");
+            if (await sectionContainer.CountAsync() > 0)
+            {
+                var link = sectionContainer.Locator("a[href*='/releases/']").First;
+                if (await link.CountAsync() > 0)
+                {
+                    var text = (await link.InnerTextAsync())?.Trim();
+                    if (IsLikelyVersion(text))
+                    {
+                        return text;
+                    }
+
+                    var href = await link.GetAttributeAsync("href");
+                    var fromHref = ExtractVersionFromHref(href);
+                    if (IsLikelyVersion(fromHref))
+                    {
+                        return fromHref;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static async Task<string> TryGetVersionFromReleaseLinksAsync(IPage page)
+        {
+            var releaseLinks = page.Locator("a[href*='/releases/tag/'], a[href*='/releases/']");
+            var count = await releaseLinks.CountAsync();
+            for (var i = 0; i < count; i++)
+            {
+                var link = releaseLinks.Nth(i);
+                var text = (await link.InnerTextAsync())?.Trim();
+                if (IsLikelyVersion(text))
+                {
+                    return text;
+                }
+
+                var title = (await link.GetAttributeAsync("title"))?.Trim();
+                if (IsLikelyVersion(title))
+                {
+                    return title;
+                }
+
+                var href = await link.GetAttributeAsync("href");
+                var fromHref = ExtractVersionFromHref(href);
+                if (IsLikelyVersion(fromHref))
+                {
+                    return fromHref;
+                }
+            }
+
+            return null;
+        }
+
+        private static async Task<bool> WaitForLocatorAsync(ILocator locator, int timeout)
+        {
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeout);
+            while (DateTime.UtcNow < deadline)
+            {
+                if (await locator.CountAsync() > 0)
+                {
+                    return true;
+                }
+
+                await Task.Delay(200);
+            }
+
+            return await locator.CountAsync() > 0;
+        }
+
+        private static async Task<string> TryGetVersionFromLatestLabelStackAsync(IPage page, int timeout)
+        {
+            var latestLabels = page.Locator("span[data-variant='success']:text-is('Latest')");
+            if (!await WaitForLocatorAsync(latestLabels, timeout))
+            {
+                return null;
+            }
+
+            var count = await latestLabels.CountAsync();
+            for (var i = 0; i < count; i++)
+            {
+                var label = latestLabels.Nth(i);
+                // In the new layout the version is rendered in the sibling div with truncate styling
+                var preceding = label.Locator("xpath=preceding-sibling::*[1]");
+                if (await preceding.CountAsync() == 0)
+                {
+                    continue;
+                }
+
+                var titleAttr = (await preceding.GetAttributeAsync("title"))?.Trim();
+                if (IsLikelyVersion(titleAttr))
+                {
+                    return titleAttr;
+                }
+
+                var spanText = (await preceding.InnerTextAsync())?.Trim();
+                if (IsLikelyVersion(spanText))
+                {
+                    return spanText;
+                }
+
+                var innerSpan = preceding.Locator("span").First;
+                if (await innerSpan.CountAsync() > 0)
+                {
+                    var innerText = (await innerSpan.InnerTextAsync())?.Trim();
+                    if (IsLikelyVersion(innerText))
+                    {
+                        return innerText;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static async Task<string> GetFollowingVersionCandidateAsync(ILocator label)
+        {
+            try
+            {
+                var candidate = label.Locator("xpath=following-sibling::*[self::a or self::span or self::strong][1]");
+                if (await candidate.CountAsync() > 0)
+                {
+                    var text = (await candidate.InnerTextAsync())?.Trim();
+                    if (IsLikelyVersion(text))
+                    {
+                        return text;
+                    }
+
+                    var title = (await candidate.GetAttributeAsync("title"))?.Trim();
+                    if (IsLikelyVersion(title))
+                    {
+                        return title;
+                    }
+
+                    var href = await candidate.GetAttributeAsync("href");
+                    var fromHref = ExtractVersionFromHref(href);
+                    if (IsLikelyVersion(fromHref))
+                    {
+                        return fromHref;
+                    }
+                }
+            }
+            catch
+            {
+                // ignore and fall back to other strategies
+            }
+
+            return null;
+        }
+
+        private static bool IsLikelyVersion(string candidate)
+        {
+            if (string.IsNullOrWhiteSpace(candidate))
+            {
+                return false;
+            }
+
+            candidate = candidate.Trim();
+
+            if (candidate.Length > 40)
+            {
+                return false;
+            }
+
+            return candidate.Any(char.IsDigit);
+        }
+
+        private static string ExtractVersionFromHref(string href)
+        {
+            if (string.IsNullOrWhiteSpace(href))
+            {
+                return null;
+            }
+
+            try
+            {
+                var uri = new Uri(href, UriKind.RelativeOrAbsolute);
+                var path = uri.IsAbsoluteUri ? uri.AbsolutePath : href;
+                var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                return segments.Length == 0 ? null : segments[^1];
+            }
+            catch
+            {
                 return null;
             }
         }
