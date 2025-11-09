@@ -285,7 +285,7 @@ namespace GitHubActionsNews
             return GetAllActionsAsync(searchUrl).GetAwaiter().GetResult();
         }
 
-        private static async Task<List<GitHubAction>> GetAllActionsAsync(string searchUrl)
+        internal static async Task<List<GitHubAction>> GetAllActionsAsync(string searchUrl)
         {
             try
             {
