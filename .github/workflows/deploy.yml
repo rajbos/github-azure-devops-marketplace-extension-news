@@ -44,6 +44,12 @@ jobs:
 
     - name: Restore
       run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode
+    
+    - name: Install Playwright Browsers
+      shell: pwsh
+      run: |
+        dotnet tool install --global Microsoft.Playwright.CLI --version 1.2.3 2>&1 | Out-Null
+        playwright install chromium --with-deps
 
     - name: Build
       run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release
