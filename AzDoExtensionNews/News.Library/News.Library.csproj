@@ -6,14 +6,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.Storage.Blob"/>
-    <PackageReference Include="Microsoft.Extensions.Configuration"/>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions"/>
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables"/>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json"/>
+    <PackageReference Include="Microsoft.Azure.Storage.Blob" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     <!-- <PackageReference Include="Newtonsoft.Json"/> -->
-  <PackageReference Include="Newtonsoft.Json" VersionOverride="13.0.1" />
-    <PackageReference Include="TweetinviAPI"/>
+  <PackageReference Include="Newtonsoft.Json" VersionOverride="13.0.1">
+    <Version>13.0.4</Version>
+  </PackageReference>
+    <PackageReference Include="TweetinviAPI" />
   </ItemGroup>
 
 </Project>
