@@ -38,15 +38,10 @@ runs:
         TwitterAccessTokenSecret: ${{ inputs.TwitterAccessTokenSecret }}
         BlobStorageConnectionString: ${{ inputs.BlobStorageConnectionString }}
     
-    - name: Install Playwright Browsers
-      shell: pwsh
-      run: |
-        $artifactPath = Join-Path $env:GITHUB_WORKSPACE 'ArtifactFolder'
-        $script = Join-Path $artifactPath 'playwright.ps1'
-        if (-not (Test-Path $script)) {
-          throw "Playwright script not found at $script"
-        }
-        & $script install chromium --with-deps
+    - name: Install Playwright.NET with .NET
+      uses: phil-scott-78/setup-playwright-dotnet@v0.1.0-alpha
+      with:
+        dotnet-version: 8.0.x
 
     - name: Run the GitHubActionsNews application
       shell: pwsh
