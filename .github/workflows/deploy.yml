@@ -112,11 +112,32 @@ jobs:
           name: ${{ env.artifactName }}
           path: ./ArtifactFolder
 
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v3.5.3
+        with:
+          path: repo
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5.0.0
+        with:
+          dotnet-version: 8.x
+
+      - name: Restore
+        shell: pwsh
+        run: dotnet restore repo/AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build repo/AzDoExtensionNews/AzDoExtensionNews.sln -c Release
+
       - name: Install Playwright browsers
         shell: pwsh
-        working-directory: ArtifactFolder
         run: |
-          .\playwright.ps1 install chromium
+          $ErrorActionPreference = 'Stop'
+          $script = Join-Path $env:GITHUB_WORKSPACE 'repo/AzDoExtensionNews/GitHubActionsNews/bin/Release/net8.0/playwright.ps1'
+          if (-not (Test-Path $script)) {
+            throw "Playwright script not found at $script"
+          }
+          & $script install chromium --with-deps
 
       - name: App Settings Variable Substitution
         uses: rajbos-actions/variable-substitution@ae7b1f3676ae374dc70282e6b9650bc50b611222 # v1.2
