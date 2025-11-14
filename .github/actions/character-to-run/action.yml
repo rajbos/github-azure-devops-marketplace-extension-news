@@ -35,14 +35,16 @@ runs:
 
     # these are needed to be able to run playwright, as it will not work with just artifact from the build job
     - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v3.5.3
+      with:
+        path: repo
 
     - name: Restore
       shell: bash
-      run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode
+      run: dotnet restore repo/AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode
 
     - name: Build
       shell: bash
-      run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release
+      run: dotnet build repo/AzDoExtensionNews/AzDoExtensionNews.sln -c Release
     # / end of extra stuff
 
     - name: App Settings Variable Substitution
