@@ -22,7 +22,7 @@ The solution (`AzDoExtensionNews.sln`) contains five projects:
   - Microsoft.Azure.Storage.Blob for Azure blob storage (note: this is a legacy package; Azure.Storage.Blobs is recommended for new development)
   - Microsoft.Extensions.Configuration for configuration management
   - Newtonsoft.Json for JSON serialization
-  - Selenium WebDriver for web scraping
+  - Microsoft.Playwright for web scraping
   - NUnit/MSTest for testing
 
 ## Development Guidelines
@@ -38,6 +38,9 @@ dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --use-lock-file --force-e
 
 # Build the solution
 dotnet build AzDoExtensionNews/AzDoExtensionNews.sln
+
+# Install Playwright browsers (required for running tests)
+pwsh AzDoExtensionNews/GitHubActionsNews.Tests/bin/Debug/net8.0/playwright.ps1 install
 
 # Run tests
 dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
@@ -63,6 +66,8 @@ dotnet run --project AzDoExtensionNews/AzDoExtensionNews/AzDoExtensionNews.cspro
 
 ### Testing
 - Unit tests use NUnit and MSTest frameworks
+- Tests for GitHub Actions news use Playwright for browser automation
+- **Important**: Playwright browsers must be installed before running tests (see build instructions)
 - Run tests after any code changes to ensure nothing breaks
 - Test projects follow the naming convention `{ProjectName}.Tests` or `{ProjectName}.UnitTests`
 
@@ -108,5 +113,5 @@ dotnet run --project AzDoExtensionNews/AzDoExtensionNews/AzDoExtensionNews.cspro
 - **Social media posting** has been disabled for Twitter; RSS feeds are used instead
 - **GitHub Actions news** is published to https://devops-actions.github.io/github-actions-marketplace-news
 - Results are stored as JSON in Azure Blob storage
-- Web scraping uses Selenium with ChromeDriver
+- Web scraping uses Microsoft.Playwright with Chromium browser
 - The project uses DevContainers for consistent development environments
