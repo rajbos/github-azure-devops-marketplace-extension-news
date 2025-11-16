@@ -50,7 +50,7 @@ runs:
     - name: App Settings Variable Substitution
       uses: rajbos-actions/variable-substitution@ae7b1f3676ae374dc70282e6b9650bc50b611222 # v1.2
       with:
-        files: 'ArtifactFolder/appsettings.json'
+        files: 'repo/AzDoExtensionNews/GitHubActionsNews/bin/Release/net8.0/appsettings.json'
       env:
         TwitterConsumerAPIKey: ${{ inputs.TwitterConsumerAPIKey }}
         TwitterConsumerAPISecretKey: ${{ inputs.TwitterConsumerAPISecretKey }}
@@ -72,7 +72,7 @@ runs:
       shell: pwsh
       run: |
         Write-Host "::group::Run the GitHubActionsNews application"
-        cd .\ArtifactFolder
+        cd repo/AzDoExtensionNews/GitHubActionsNews/bin/Release/net8.0
         dotnet GitHubActionsNews.dll ${{ inputs.characters }}
         Write-Host "::endgroup::"
 
