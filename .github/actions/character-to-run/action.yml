@@ -35,18 +35,22 @@ runs:
 
     # these are needed to be able to run playwright, as it will not work with just artifact from the build job
     - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v3.5.3
+      with:
+        path: repo
 
     - name: Restore
-      run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode
+      shell: bash
+      run: dotnet restore repo/AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode
 
     - name: Build
-      run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release
+      shell: bash
+      run: dotnet build repo/AzDoExtensionNews/AzDoExtensionNews.sln -c Release
     # / end of extra stuff
 
     - name: App Settings Variable Substitution
       uses: rajbos-actions/variable-substitution@ae7b1f3676ae374dc70282e6b9650bc50b611222 # v1.2
       with:
-        files: 'ArtifactFolder/appsettings.json'
+        files: 'repo/AzDoExtensionNews/GitHubActionsNews/bin/Release/net8.0/appsettings.json'
       env:
         TwitterConsumerAPIKey: ${{ inputs.TwitterConsumerAPIKey }}
         TwitterConsumerAPISecretKey: ${{ inputs.TwitterConsumerAPISecretKey }}
@@ -58,41 +62,17 @@ runs:
       shell: pwsh
       run: |
         $ErrorActionPreference = 'Stop'
-        $artifactPath = Join-Path $env:GITHUB_WORKSPACE 'ArtifactFolder'
-        $depsPath = Join-Path $artifactPath 'GitHubActionsNews.deps.json'
-        if (-not (Test-Path $depsPath)) {
-          throw "Unable to locate deps file for GitHubActionsNews at $depsPath"
+        $script = Join-Path $env:GITHUB_WORKSPACE 'repo/AzDoExtensionNews/GitHubActionsNews/bin/Release/net8.0/playwright.ps1'
+        if (-not (Test-Path $script)) {
+          throw "Playwright script not found at $script"
         }
-
-        $deps = Get-Content $depsPath | ConvertFrom-Json
-        $playwrightEntry = $deps.libraries.PSObject.Properties | Where-Object { $_.Name -like 'microsoft.playwright/*' } | Select-Object -First 1
-        if (-not $playwrightEntry) {
-          throw 'Unable to resolve Microsoft.Playwright version from deps file.'
-        }
-        
-        $toolsRoot = if ([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)) {
-          Join-Path $env:USERPROFILE '.dotnet/tools'
-        } else {
-          Join-Path $HOME '.dotnet/tools'
-        }
-        $pathSeparator = [System.IO.Path]::PathSeparator
-        if (-not ($env:PATH -split [System.IO.Path]::PathSeparator | Where-Object { $_ -eq $toolsRoot })) {
-          $env:PATH = "$toolsRoot$pathSeparator$env:PATH"
-        }
-
-        dotnet tool install --global Microsoft.Playwright.CLI
-        if ($LASTEXITCODE -ne 0) {
-          dotnet tool update --global Microsoft.Playwright.CLI
-        }
-
-        cd .\ArtifactFolder
-        playwright install chromium --with-deps
+        & $script install chromium --with-deps
 
     - name: Run the GitHubActionsNews application
       shell: pwsh
       run: |
         Write-Host "::group::Run the GitHubActionsNews application"
-        cd .\ArtifactFolder
+        cd repo/AzDoExtensionNews/GitHubActionsNews/bin/Release/net8.0
         dotnet GitHubActionsNews.dll ${{ inputs.characters }}
         Write-Host "::endgroup::"
 
