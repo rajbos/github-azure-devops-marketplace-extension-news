@@ -67,7 +67,13 @@ jobs:
       run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release
 
     - name: Install Playwright Browsers
-      run: pwsh AzDoExtensionNews/GitHubActionsNews.Tests/bin/Release/net8.0/playwright.ps1 install
+      shell: pwsh
+      run: |
+        $script = Join-Path $env:GITHUB_WORKSPACE 'AzDoExtensionNews/GitHubActionsNews/bin/Release/net8.0/playwright.ps1'
+        if (-not (Test-Path $script)) {
+          throw "Playwright script not found at $script"
+        }
+        & $script install chromium --with-deps
 
     - name: Test
       run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln -c Release --no-build

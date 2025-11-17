@@ -296,6 +296,8 @@ namespace GitHubActionsNews
             catch (Exception e)
             {
                 Log.Message($"Error getting all actions from GitHub marketplace for searchUrl [{searchUrl}]: {e.Message}");
+                // Exit with error code to fail the job
+                Environment.Exit(1);
             }
             return [];
         }
