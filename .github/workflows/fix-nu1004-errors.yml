@@ -34,7 +34,7 @@ jobs:
         github.event.workflow_run.head_repository.full_name == github.repository))
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+      uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
       with:
         disable-sudo: true
         egress-policy: block
@@ -84,7 +84,7 @@ jobs:
 
     - name: Setup .NET
       if: steps.check_nu1004.outputs.has_nu1004 == 'true'
-      uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5.0.0
+      uses: actions/setup-dotnet@2016bd2012dba4e32de620c46fe006a3ac9f0602 # v5.0.1
       with:
         dotnet-version: 8.0.x
 
@@ -115,7 +115,7 @@ jobs:
 
     - name: Create Pull Request
       if: steps.check_nu1004.outputs.has_nu1004 == 'true' && steps.check_changes.outputs.changes == 'true'
-      uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
+      uses: peter-evans/create-pull-request@84ae59a2cdc2258d6fa0732dd66352dddae2a412 # v7.0.9
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         commit-message: |
