@@ -49,7 +49,7 @@ jobs:
           ci.dot.net:443
 
     - name: Checkout repository
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcb5dd907a8 # v3.5.3
+      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v3.5.3
       with:
         # For workflow_run, check out from the base repository (not from forks)
         # For pull_request, check out the PR branch
