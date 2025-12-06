@@ -238,10 +238,10 @@ if ($changes) {
     
     # Parse the commit output to extract created blog post files
     $blogPostLinks = @()
-    $commitOutputLines = $commitOutput -split "`n"
+    $commitOutputLines = $commitOutput -split '\r?\n'
     foreach ($line in $commitOutputLines) {
-        # Look for lines that start with "create mode" and contain "content/posts/"
-        if ($line -match "create mode \d+ (.+\.md)$") {
+        # Look for lines that start with "create mode" and contain blog post files
+        if ($line -match "create mode \d+ (content/posts/.+\.md)$") {
             $filePath = $matches[1].Trim()
             if ($filePath -match "content/posts/(.+)\.md$") {
                 # Extract the path after "content/posts/" and before ".md"
