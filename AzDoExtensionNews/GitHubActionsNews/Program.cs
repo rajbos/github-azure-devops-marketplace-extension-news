@@ -599,18 +599,18 @@ namespace GitHubActionsNews
                     // act
                     try
                     {
-                        // check if the verified class exists
+                        // check if the "Verified creator" label exists
                         try
                         {
-                            var verifiedLocator = newPage.Locator(".octicon-verified");
-                            if (await verifiedLocator.CountAsync() > 0)
+                            var verifiedCreatorLocator = newPage.Locator("text=Verified creator");
+                            if (await verifiedCreatorLocator.CountAsync() > 0)
                             {
                                 verified = true;
                             }
                         }
                         catch
                         {
-                            // verified class not found, use default value
+                            // verified creator label not found, use default value
                         }
 
                         version = await ActionPageInteraction.GetVersionFromAction(newPage);
