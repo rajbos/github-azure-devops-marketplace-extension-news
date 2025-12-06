@@ -219,11 +219,6 @@ foreach ($update in $updates) {
 
 # show what we did
 Write-Host "Created [$counter] blog posts"
-# also write to the step summary file
-$summaryFile = "$GITHUB_STEP_SUMMARY"
-if (Test-Path -Path $summaryFile) {
-    Add-Content -Path $summaryFile -Value "Created [$counter] blog posts"
-}
 
 # use git porcelain to check if there are any changes
 $changes = git status --porcelain
@@ -234,8 +229,49 @@ if ($changes) {
     git config --global user.name "github-actions"
     # add all changes
     git add .
-    # commit the changes
-    git commit -m "Update blog posts for $(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")"
+    # commit the changes and capture the output
+    $commitOutput = git commit -m "Update blog posts for $(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")" 2>&1
+    Write-Host $commitOutput
+    
     # push the changes
     git push
+    
+    # Parse the commit output to extract created blog post files
+    $blogPostLinks = @()
+    $commitOutputLines = $commitOutput -split "`n"
+    foreach ($line in $commitOutputLines) {
+        # Look for lines that start with "create mode" and contain "content/posts/"
+        if ($line -match "create mode \d+ (.+\.md)$") {
+            $filePath = $matches[1].Trim()
+            if ($filePath -match "content/posts/(.+)\.md$") {
+                # Extract the path after "content/posts/" and before ".md"
+                $postPath = $matches[1]
+                # Convert to URL format: lowercase and add trailing slash
+                $urlPath = $postPath.ToLower()
+                $blogUrl = "https://devops-actions.github.io/github-actions-marketplace-news/posts/$urlPath/"
+                $blogPostLinks += $blogUrl
+            }
+        }
+    }
+    
+    # Write to the step summary file
+    $summaryFile = $env:GITHUB_STEP_SUMMARY
+    if ($summaryFile -and (Test-Path -Path $summaryFile)) {
+        Add-Content -Path $summaryFile -Value "Created [$counter] blog posts"
+        Add-Content -Path $summaryFile -Value ""
+        if ($blogPostLinks.Count -gt 0) {
+            Add-Content -Path $summaryFile -Value "## Blog Post Links"
+            Add-Content -Path $summaryFile -Value ""
+            foreach ($link in $blogPostLinks) {
+                Add-Content -Path $summaryFile -Value "- $link"
+            }
+        }
+    }
+}
+else {
+    # Write to the step summary file even if no changes
+    $summaryFile = $env:GITHUB_STEP_SUMMARY
+    if ($summaryFile -and (Test-Path -Path $summaryFile)) {
+        Add-Content -Path $summaryFile -Value "Created [$counter] blog posts"
+    }
 }
