@@ -446,7 +446,8 @@ namespace GitHubActionsNews
             try
             {
                 // Check for runs.using to determine action type
-                var runsUsingMatch = Regex.Match(yamlContent, @"runs:\s*\n\s*using:\s*['""]?([^'""'\n]+)['""]?", RegexOptions.Multiline);
+                // Pattern matches: using: value, using: "value", using: 'value' (with optional quotes and whitespace)
+                var runsUsingMatch = Regex.Match(yamlContent, @"runs:\s*\n\s*using:\s*['""]?([^\s'""#\n]+)['""]?", RegexOptions.Multiline);
                 if (runsUsingMatch.Success)
                 {
                     var usingValue = runsUsingMatch.Groups[1].Value.Trim();
