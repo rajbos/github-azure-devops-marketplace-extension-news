@@ -5,19 +5,12 @@ using System.Diagnostics;
 using System.Text;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Net.Http;
 using System.Text.RegularExpressions;
 
 namespace GitHubActionsNews
 {
     public static class ActionPageInteraction
     {
-        // Shared HttpClient instance to avoid socket exhaustion
-        private static readonly HttpClient _httpClient = new HttpClient
-        {
-            Timeout = TimeSpan.FromSeconds(10)
-        };
-
         // Regex pattern for parsing YAML "using:" field
         // Matches: using: value, using: "value", using: 'value' (with optional quotes and whitespace)
         // Excludes: whitespace, quotes, comment characters (#), and newlines from the captured value
@@ -354,7 +347,7 @@ namespace GitHubActionsNews
             }
         }
 
-        public static async Task<(string ActionType, string NodeVersion)> GetActionTypeAndNodeVersionAsync(string repoUrl)
+        public static async Task<(string ActionType, string NodeVersion)> GetActionTypeAndNodeVersionAsync(IPage page, string repoUrl)
         {
             if (string.IsNullOrWhiteSpace(repoUrl))
             {
@@ -363,98 +356,69 @@ namespace GitHubActionsNews
 
             try
             {
-                // Convert GitHub repo URL to raw content URL for action.yml or action.yaml
-                var rawUrlMain = ConvertToRawUrl(repoUrl, "main");
-                var rawUrlMaster = ConvertToRawUrl(repoUrl, "master");
-                
-                if (string.IsNullOrWhiteSpace(rawUrlMain) && string.IsNullOrWhiteSpace(rawUrlMaster))
-                {
-                    return (null, null);
-                }
-
-                // Use static HttpClient with configured headers
-                var request = new HttpRequestMessage();
-                request.Headers.Add("User-Agent", "GitHubActionsNews");
+                // Navigate to the repository page
+                await page.GotoAsync(repoUrl);
+                await Task.Delay(1000); // Wait for page to load
 
                 string actionContent = null;
-                
-                // Try main branch first, then master
-                foreach (var rawUrl in new[] { rawUrlMain, rawUrlMaster })
-                {
-                    if (string.IsNullOrWhiteSpace(rawUrl))
-                        continue;
+                string fileType = null;
 
-                    // Try action.yml first
+                // Check for files in order: action.yml, action.yaml, Dockerfile
+                var filesToCheck = new[] { "action.yml", "action.yaml", "Dockerfile" };
+                
+                foreach (var fileName in filesToCheck)
+                {
                     try
                     {
-                        request.RequestUri = new Uri($"{rawUrl}/action.yml");
-                        var response = await _httpClient.SendAsync(request);
-                        if (response.IsSuccessStatusCode)
+                        // Look for a link to the file in the repository
+                        var fileLink = page.Locator($"a[href*='/{fileName}']").First;
+                        
+                        if (await fileLink.CountAsync() > 0)
                         {
-                            actionContent = await response.Content.ReadAsStringAsync();
-                            if (!string.IsNullOrWhiteSpace(actionContent))
-                                break;
-                        }
-                    }
-                    catch
-                    {
-                        // Try action.yaml
-                        try
-                        {
-                            request.RequestUri = new Uri($"{rawUrl}/action.yaml");
-                            var response = await _httpClient.SendAsync(request);
-                            if (response.IsSuccessStatusCode)
+                            Log.Message($"Found {fileName} in repository [{repoUrl}]");
+                            
+                            // Click on the file to open it
+                            await fileLink.ClickAsync();
+                            await Task.Delay(2000); // Wait for file content to load
+                            
+                            // Get the file content from the code block
+                            var codeBlock = page.Locator("table.js-file-line-container, div.blob-code, pre.highlight");
+                            if (await codeBlock.CountAsync() > 0)
                             {
-                                actionContent = await response.Content.ReadAsStringAsync();
-                                if (!string.IsNullOrWhiteSpace(actionContent))
-                                    break;
+                                actionContent = await codeBlock.First.InnerTextAsync();
+                                fileType = fileName;
+                                Log.Message($"Successfully loaded content from {fileName}");
+                                break;
                             }
                         }
-                        catch
-                        {
-                            // Continue to next branch
-                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Message($"Could not find or open {fileName} in [{repoUrl}]: {ex.Message}");
+                        // Try next file
                     }
                 }
 
                 if (string.IsNullOrWhiteSpace(actionContent))
                 {
+                    Log.Message($"No action definition file found in repository [{repoUrl}]");
                     return (null, null);
                 }
 
-                return ParseActionYaml(actionContent);
+                // Parse based on file type
+                if (fileType == "Dockerfile")
+                {
+                    return ("Docker", null);
+                }
+                else
+                {
+                    return ParseActionYaml(actionContent);
+                }
             }
             catch (Exception ex)
             {
                 Log.Message($"Error fetching action type and node version from [{repoUrl}]: {ex.Message}");
                 return (null, null);
-            }
-        }
-
-        private static string ConvertToRawUrl(string repoUrl, string branch)
-        {
-            if (string.IsNullOrWhiteSpace(repoUrl))
-            {
-                return null;
-            }
-
-            try
-            {
-                // Remove trailing slashes and whitespace
-                repoUrl = repoUrl.TrimEnd('/').Trim();
-
-                // Convert https://github.com/owner/repo to https://raw.githubusercontent.com/owner/repo/branch
-                if (repoUrl.StartsWith("https://github.com/", StringComparison.OrdinalIgnoreCase))
-                {
-                    var path = repoUrl.Substring("https://github.com/".Length);
-                    return $"https://raw.githubusercontent.com/{path}/{branch}";
-                }
-
-                return null;
-            }
-            catch
-            {
-                return null;
             }
         }
 
