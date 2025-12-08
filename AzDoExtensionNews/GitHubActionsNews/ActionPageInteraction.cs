@@ -12,6 +12,16 @@ namespace GitHubActionsNews
 {
     public static class ActionPageInteraction
     {
+        // Shared HttpClient instance to avoid socket exhaustion
+        private static readonly HttpClient _httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(10)
+        };
+
+        // Regex pattern for parsing YAML "using:" field
+        // Matches: using: value, using: "value", using: 'value' (with optional quotes and whitespace)
+        // Excludes: whitespace, quotes, comment characters (#), and newlines from the captured value
+        private const string YamlUsingPattern = @"runs:\s*\n\s*using:\s*['""]?([^\s'""#\n]+)['""]?";
         public static async Task<string> GetRepoFromAction(IPage page)
         {
             var links = await page.Locator("a").AllAsync();
@@ -362,9 +372,9 @@ namespace GitHubActionsNews
                     return (null, null);
                 }
 
-                using var httpClient = new HttpClient();
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "GitHubActionsNews");
-                httpClient.Timeout = TimeSpan.FromSeconds(10);
+                // Use static HttpClient with configured headers
+                var request = new HttpRequestMessage();
+                request.Headers.Add("User-Agent", "GitHubActionsNews");
 
                 string actionContent = null;
                 
@@ -377,18 +387,28 @@ namespace GitHubActionsNews
                     // Try action.yml first
                     try
                     {
-                        actionContent = await httpClient.GetStringAsync($"{rawUrl}/action.yml");
-                        if (!string.IsNullOrWhiteSpace(actionContent))
-                            break;
+                        request.RequestUri = new Uri($"{rawUrl}/action.yml");
+                        var response = await _httpClient.SendAsync(request);
+                        if (response.IsSuccessStatusCode)
+                        {
+                            actionContent = await response.Content.ReadAsStringAsync();
+                            if (!string.IsNullOrWhiteSpace(actionContent))
+                                break;
+                        }
                     }
                     catch
                     {
                         // Try action.yaml
                         try
                         {
-                            actionContent = await httpClient.GetStringAsync($"{rawUrl}/action.yaml");
-                            if (!string.IsNullOrWhiteSpace(actionContent))
-                                break;
+                            request.RequestUri = new Uri($"{rawUrl}/action.yaml");
+                            var response = await _httpClient.SendAsync(request);
+                            if (response.IsSuccessStatusCode)
+                            {
+                                actionContent = await response.Content.ReadAsStringAsync();
+                                if (!string.IsNullOrWhiteSpace(actionContent))
+                                    break;
+                            }
                         }
                         catch
                         {
@@ -446,8 +466,7 @@ namespace GitHubActionsNews
             try
             {
                 // Check for runs.using to determine action type
-                // Pattern matches: using: value, using: "value", using: 'value' (with optional quotes and whitespace)
-                var runsUsingMatch = Regex.Match(yamlContent, @"runs:\s*\n\s*using:\s*['""]?([^\s'""#\n]+)['""]?", RegexOptions.Multiline);
+                var runsUsingMatch = Regex.Match(yamlContent, YamlUsingPattern, RegexOptions.Multiline);
                 if (runsUsingMatch.Success)
                 {
                     var usingValue = runsUsingMatch.Groups[1].Value.Trim();
