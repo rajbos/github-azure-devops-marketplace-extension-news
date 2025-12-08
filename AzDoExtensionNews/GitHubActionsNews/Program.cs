@@ -651,6 +651,29 @@ namespace GitHubActionsNews
                 // closing the new page
                 await newPage.CloseAsync();
 
+                // Fetch action type and node version
+                string actionType = null;
+                string nodeVersion = null;
+                if (!string.IsNullOrEmpty(actionRepoUrl))
+                {
+                    try
+                    {
+                        (actionType, nodeVersion) = await ActionPageInteraction.GetActionTypeAndNodeVersionAsync(actionRepoUrl);
+                        if (!string.IsNullOrEmpty(actionType))
+                        {
+                            Log.Message($"Found action type [{actionType}] for url [{url}]");
+                        }
+                        if (!string.IsNullOrEmpty(nodeVersion))
+                        {
+                            Log.Message($"Found node version [{nodeVersion}] for url [{url}]");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Message($"Error loading action type for action with url [{url}]: {e.Message}");
+                    }
+                }
+
                 return new GitHubAction
                 {
                     Url = url,
@@ -659,7 +682,9 @@ namespace GitHubActionsNews
                     Version = version,
                     Updated = DateTime.UtcNow,
                     RepoUrl = actionRepoUrl,
-                    Verified = verified
+                    Verified = verified,
+                    ActionType = actionType,
+                    NodeVersion = nodeVersion
                 };
             }
             catch (Exception e)

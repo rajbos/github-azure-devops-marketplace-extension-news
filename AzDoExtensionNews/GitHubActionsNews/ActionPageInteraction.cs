@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.Text;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Net.Http;
+using System.Text.RegularExpressions;
 
 namespace GitHubActionsNews
 {
@@ -340,6 +342,129 @@ namespace GitHubActionsNews
             {
                 return null;
             }
+        }
+
+        public static async Task<(string ActionType, string NodeVersion)> GetActionTypeAndNodeVersionAsync(string repoUrl)
+        {
+            if (string.IsNullOrWhiteSpace(repoUrl))
+            {
+                return (null, null);
+            }
+
+            try
+            {
+                // Convert GitHub repo URL to raw content URL for action.yml or action.yaml
+                var rawUrl = ConvertToRawUrl(repoUrl);
+                if (string.IsNullOrWhiteSpace(rawUrl))
+                {
+                    return (null, null);
+                }
+
+                using var httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "GitHubActionsNews");
+                httpClient.Timeout = TimeSpan.FromSeconds(10);
+
+                string actionContent = null;
+                
+                // Try action.yml first
+                try
+                {
+                    actionContent = await httpClient.GetStringAsync($"{rawUrl}/action.yml");
+                }
+                catch
+                {
+                    // Try action.yaml
+                    try
+                    {
+                        actionContent = await httpClient.GetStringAsync($"{rawUrl}/action.yaml");
+                    }
+                    catch
+                    {
+                        return (null, null);
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(actionContent))
+                {
+                    return (null, null);
+                }
+
+                return ParseActionYaml(actionContent);
+            }
+            catch (Exception ex)
+            {
+                Log.Message($"Error fetching action type and node version from [{repoUrl}]: {ex.Message}");
+                return (null, null);
+            }
+        }
+
+        private static string ConvertToRawUrl(string repoUrl)
+        {
+            if (string.IsNullOrWhiteSpace(repoUrl))
+            {
+                return null;
+            }
+
+            try
+            {
+                // Remove trailing slashes and whitespace
+                repoUrl = repoUrl.TrimEnd('/').Trim();
+
+                // Convert https://github.com/owner/repo to https://raw.githubusercontent.com/owner/repo/main
+                if (repoUrl.StartsWith("https://github.com/", StringComparison.OrdinalIgnoreCase))
+                {
+                    var path = repoUrl.Substring("https://github.com/".Length);
+                    // Try main branch first, which is more common now
+                    return $"https://raw.githubusercontent.com/{path}/main";
+                }
+
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static (string ActionType, string NodeVersion) ParseActionYaml(string yamlContent)
+        {
+            string actionType = null;
+            string nodeVersion = null;
+
+            try
+            {
+                // Check for runs.using to determine action type
+                var runsUsingMatch = Regex.Match(yamlContent, @"runs:\s*\n\s*using:\s*['""]?([^'""'\n]+)['""]?", RegexOptions.Multiline);
+                if (runsUsingMatch.Success)
+                {
+                    var usingValue = runsUsingMatch.Groups[1].Value.Trim();
+                    
+                    if (usingValue.StartsWith("node", StringComparison.OrdinalIgnoreCase))
+                    {
+                        actionType = "Node";
+                        // Extract node version (e.g., "node20", "node16")
+                        var nodeVersionMatch = Regex.Match(usingValue, @"node(\d+)", RegexOptions.IgnoreCase);
+                        if (nodeVersionMatch.Success)
+                        {
+                            nodeVersion = nodeVersionMatch.Groups[1].Value;
+                        }
+                    }
+                    else if (usingValue.Equals("docker", StringComparison.OrdinalIgnoreCase))
+                    {
+                        actionType = "Docker";
+                    }
+                    else if (usingValue.Equals("composite", StringComparison.OrdinalIgnoreCase))
+                    {
+                        actionType = "Composite";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Message($"Error parsing action.yml content: {ex.Message}");
+            }
+
+            return (actionType, nodeVersion);
         }
     }
 }
