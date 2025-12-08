@@ -9,26 +9,21 @@ namespace GitHubActionsNews.Tests
     [TestClass]
     public class GetActionTypeAndNodeVersion_Tests
     {
-        private IPlaywright Playwright = null;
-        private IBrowser Browser = null;
-        private IPage Page = null;
+        private IPlaywright _playwright = null;
+        private IBrowser _browser = null;
+        private IPage _page = null;
 
         [TestInitialize] 
         public async Task TestInitialize()
         {
-            Playwright = await Microsoft.Playwright.Playwright.CreateAsync();
-            var launchOptions = new BrowserTypeLaunchOptions();
-            if (Debugger.IsAttached)
+            _playwright = await Microsoft.Playwright.Playwright.CreateAsync();
+            var launchOptions = new BrowserTypeLaunchOptions
             {
-                launchOptions.Headless = true;
-            }
-            else
-            {
-                launchOptions.Headless = true;
-            }
-            Browser = await Playwright.Chromium.LaunchAsync(launchOptions);
-            var context = await Browser.NewContextAsync();
-            Page = await context.NewPageAsync();
+                Headless = true
+            };
+            _browser = await _playwright.Chromium.LaunchAsync(launchOptions);
+            var context = await _browser.NewContextAsync();
+            _page = await context.NewPageAsync();
         }
 
         [TestMethod]
@@ -37,7 +32,7 @@ namespace GitHubActionsNews.Tests
             // Test with a known Node.js action
             var repoUrl = "https://github.com/actions/checkout";
             
-            var (actionType, nodeVersion) = await ActionPageInteraction.GetActionTypeAndNodeVersionAsync(Page, repoUrl);
+            var (actionType, nodeVersion) = await ActionPageInteraction.GetActionTypeAndNodeVersionAsync(_page, repoUrl);
             
             Assert.IsNotNull(actionType, "ActionType should not be null for actions/checkout");
             Assert.AreEqual("Node", actionType, "actions/checkout should be a Node action");
@@ -50,7 +45,7 @@ namespace GitHubActionsNews.Tests
             // Test with a known Docker action
             var repoUrl = "https://github.com/docker/login-action";
             
-            var (actionType, nodeVersion) = await ActionPageInteraction.GetActionTypeAndNodeVersionAsync(Page, repoUrl);
+            var (actionType, nodeVersion) = await ActionPageInteraction.GetActionTypeAndNodeVersionAsync(_page, repoUrl);
             
             // Note: This might be null if the action.yml is not accessible or in a different branch
             // We're just verifying that the method doesn't throw an exception
@@ -63,7 +58,7 @@ namespace GitHubActionsNews.Tests
             // Test with a known Composite action
             var repoUrl = "https://github.com/actions/cache";
             
-            var (actionType, nodeVersion) = await ActionPageInteraction.GetActionTypeAndNodeVersionAsync(Page, repoUrl);
+            var (actionType, nodeVersion) = await ActionPageInteraction.GetActionTypeAndNodeVersionAsync(_page, repoUrl);
             
             // Note: This might be null if the action.yml is not accessible or in a different branch
             // We're just verifying that the method doesn't throw an exception
@@ -76,7 +71,7 @@ namespace GitHubActionsNews.Tests
             // Test with invalid URL
             var repoUrl = "https://invalid-url.com";
             
-            var (actionType, nodeVersion) = await ActionPageInteraction.GetActionTypeAndNodeVersionAsync(Page, repoUrl);
+            var (actionType, nodeVersion) = await ActionPageInteraction.GetActionTypeAndNodeVersionAsync(_page, repoUrl);
             
             Assert.IsNull(actionType, "ActionType should be null for invalid URL");
             Assert.IsNull(nodeVersion, "NodeVersion should be null for invalid URL");
@@ -88,7 +83,7 @@ namespace GitHubActionsNews.Tests
             // Test with empty URL
             var repoUrl = "";
             
-            var (actionType, nodeVersion) = await ActionPageInteraction.GetActionTypeAndNodeVersionAsync(Page, repoUrl);
+            var (actionType, nodeVersion) = await ActionPageInteraction.GetActionTypeAndNodeVersionAsync(_page, repoUrl);
             
             Assert.IsNull(actionType, "ActionType should be null for empty URL");
             Assert.IsNull(nodeVersion, "NodeVersion should be null for empty URL");
@@ -100,7 +95,7 @@ namespace GitHubActionsNews.Tests
             // Test with null URL
             string repoUrl = null;
             
-            var (actionType, nodeVersion) = await ActionPageInteraction.GetActionTypeAndNodeVersionAsync(Page, repoUrl);
+            var (actionType, nodeVersion) = await ActionPageInteraction.GetActionTypeAndNodeVersionAsync(_page, repoUrl);
             
             Assert.IsNull(actionType, "ActionType should be null for null URL");
             Assert.IsNull(nodeVersion, "NodeVersion should be null for null URL");
@@ -109,11 +104,11 @@ namespace GitHubActionsNews.Tests
         [TestCleanup]
         public async Task TestCleanup()
         {
-            if (Page != null)
-                await Page.CloseAsync();
-            if (Browser != null)
-                await Browser.CloseAsync();
-            Playwright?.Dispose();
+            if (_page != null)
+                await _page.CloseAsync();
+            if (_browser != null)
+                await _browser.CloseAsync();
+            _playwright?.Dispose();
         }
     }
 }

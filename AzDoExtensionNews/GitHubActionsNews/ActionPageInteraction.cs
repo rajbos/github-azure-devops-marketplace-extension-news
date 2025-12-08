@@ -358,7 +358,7 @@ namespace GitHubActionsNews
             {
                 // Navigate to the repository page
                 await page.GotoAsync(repoUrl);
-                await Task.Delay(1000); // Wait for page to load
+                await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
                 string actionContent = null;
                 string fileType = null;
@@ -370,8 +370,8 @@ namespace GitHubActionsNews
                 {
                     try
                     {
-                        // Look for a link to the file in the repository
-                        var fileLink = page.Locator($"a[href*='/{fileName}']").First;
+                        // Look for a link to the file in the repository - use more specific selector
+                        var fileLink = page.Locator($"a[href$='/{fileName}']").First;
                         
                         if (await fileLink.CountAsync() > 0)
                         {
@@ -379,10 +379,12 @@ namespace GitHubActionsNews
                             
                             // Click on the file to open it
                             await fileLink.ClickAsync();
-                            await Task.Delay(2000); // Wait for file content to load
+                            await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
                             
                             // Get the file content from the code block
                             var codeBlock = page.Locator("table.js-file-line-container, div.blob-code, pre.highlight");
+                            await codeBlock.First.WaitForAsync(new LocatorWaitForOptions { Timeout = 5000, State = WaitForSelectorState.Visible });
+                            
                             if (await codeBlock.CountAsync() > 0)
                             {
                                 actionContent = await codeBlock.First.InnerTextAsync();
