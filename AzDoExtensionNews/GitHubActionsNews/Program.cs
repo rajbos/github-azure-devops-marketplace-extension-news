@@ -151,6 +151,55 @@ namespace GitHubActionsNews
             return allActions;
         }
 
+        private static async Task EnrichActionsWithTypeInfo(List<GitHubAction> actions)
+        {
+            if (actions == null || actions.Count == 0)
+            {
+                return;
+            }
+
+            Log.Message($"Enriching {actions.Count} new or updated actions with action type information");
+
+            using var playwright = await Playwright.CreateAsync();
+            var browser = await GetBrowser(playwright);
+            var context = await browser.NewContextAsync();
+            var page = await context.NewPageAsync();
+
+            try
+            {
+                foreach (var action in actions)
+                {
+                    if (!string.IsNullOrEmpty(action.RepoUrl))
+                    {
+                        try
+                        {
+                            Log.Message($"Fetching action type for [{action.Title}] from [{action.RepoUrl}]");
+                            (action.ActionType, action.NodeVersion) = await ActionPageInteraction.GetActionTypeAndNodeVersionAsync(page, action.RepoUrl);
+                            
+                            if (!string.IsNullOrEmpty(action.ActionType))
+                            {
+                                Log.Message($"Found action type [{action.ActionType}] for [{action.Title}]");
+                            }
+                            if (!string.IsNullOrEmpty(action.NodeVersion))
+                            {
+                                Log.Message($"Found node version [{action.NodeVersion}] for [{action.Title}]");
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Message($"Error loading action type for [{action.Title}]: {e.Message}");
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                await page.CloseAsync();
+                await context.CloseAsync();
+                await browser.CloseAsync();
+            }
+        }
+
         private static List<GitHubAction> GetActionsForSearchQuery(string query)
         {
             return GetActionsForSearchQueryAsync(query).GetAwaiter().GetResult();
@@ -200,6 +249,7 @@ namespace GitHubActionsNews
 
             // tweet about updates and new actions:
             var repoUrlUpdates = 0;
+            var newOrUpdatedActions = new List<GitHubAction>();
 
             foreach (var action in actions)
             {
@@ -214,6 +264,7 @@ namespace GitHubActionsNews
                 {
                     Log.Message($"Found a new action: {action.Title}");
                     existingActions.Add(action);
+                    newOrUpdatedActions.Add(action);
                 }
                 else
                 {
@@ -254,6 +305,7 @@ namespace GitHubActionsNews
                         }
                         existingAction.RepoUrl = action.RepoUrl;
                         existingAction.Verified = action.Verified;
+                        newOrUpdatedActions.Add(existingAction);
                     }
                     else
                     {
@@ -269,6 +321,9 @@ namespace GitHubActionsNews
                     }
                 }
             }
+
+            // Enrich new or updated actions with action type and node version
+            await EnrichActionsWithTypeInfo(newOrUpdatedActions);
 
             var count = existingActions.Where(item => !String.IsNullOrEmpty(item.RepoUrl)).Count();
             Log.Message($"Found [{existingActions.Count}] unique actions with [{count}] repo urls for query [{query}] in {(DateTime.Now - started).TotalMinutes:N2} minutes", logsummary: true);
@@ -659,7 +714,9 @@ namespace GitHubActionsNews
                     Version = version,
                     Updated = DateTime.UtcNow,
                     RepoUrl = actionRepoUrl,
-                    Verified = verified
+                    Verified = verified,
+                    ActionType = null,  // Will be populated later for new/updated actions only
+                    NodeVersion = null  // Will be populated later for new/updated actions only
                 };
             }
             catch (Exception e)

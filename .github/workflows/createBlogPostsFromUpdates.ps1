@@ -160,9 +160,15 @@ function GetContent {
         "marketplace: $($update.Url)"
         "version: $(SanitizeContent $update.Version)"
         "dependentsNumber: ""$dependentsNumberString"""
-        "---"
-        ""
     )
+    if ($update.ActionType) {
+        $content += "actionType: $(SanitizeContent $update.ActionType)"
+    }
+    if ($update.NodeVersion) {
+        $content += "nodeVersion: $(SanitizeContent $update.NodeVersion)"
+    }
+    $content += "---"
+    $content += ""
     # add an empty line
     $content += ""
     # add the content of the update
@@ -175,6 +181,16 @@ function GetContent {
     }
     if ("" -ne $dependentsNumber) {
         $content += "- This action is used across all versions by **$dependentsNumber** repositories."
+    }
+    if ($update.ActionType) {
+        $content += ""
+        $content += "## Action Type"
+        $actionTypeInfo = "This is a **$($update.ActionType)** action"
+        if ($update.ActionType -eq "Node" -and $update.NodeVersion) {
+            $actionTypeInfo += " using Node version **$($update.NodeVersion)**"
+        }
+        $actionTypeInfo += "."
+        $content += $actionTypeInfo
     }
     $content += ""
     $content += "Go to the [GitHub Marketplace]($($update.Url)) to find the latest changes."

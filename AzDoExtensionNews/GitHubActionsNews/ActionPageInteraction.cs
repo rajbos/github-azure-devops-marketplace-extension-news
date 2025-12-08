@@ -5,11 +5,16 @@ using System.Diagnostics;
 using System.Text;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace GitHubActionsNews
 {
     public static class ActionPageInteraction
     {
+        // Regex pattern for parsing YAML "using:" field
+        // Matches: using: value, using: "value", using: 'value' (with optional quotes and whitespace)
+        // Excludes: whitespace, quotes, comment characters (#), and newlines from the captured value
+        private const string YamlUsingPattern = @"runs:\s*\n\s*using:\s*['""]?([^\s'""#\n]+)['""]?";
         public static async Task<string> GetRepoFromAction(IPage page)
         {
             var links = await page.Locator("a").AllAsync();
@@ -340,6 +345,124 @@ namespace GitHubActionsNews
             {
                 return null;
             }
+        }
+
+        public static async Task<(string ActionType, string NodeVersion)> GetActionTypeAndNodeVersionAsync(IPage page, string repoUrl)
+        {
+            if (string.IsNullOrWhiteSpace(repoUrl))
+            {
+                return (null, null);
+            }
+
+            try
+            {
+                // Navigate to the repository page
+                await page.GotoAsync(repoUrl);
+                await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+                string actionContent = null;
+                string fileType = null;
+
+                // Check for files in order: action.yml, action.yaml, Dockerfile
+                var filesToCheck = new[] { "action.yml", "action.yaml", "Dockerfile" };
+                
+                foreach (var fileName in filesToCheck)
+                {
+                    try
+                    {
+                        // Look for a link to the file in the repository - use more specific selector
+                        var fileLink = page.Locator($"a[href$='/{fileName}']").First;
+                        
+                        if (await fileLink.CountAsync() > 0)
+                        {
+                            Log.Message($"Found {fileName} in repository [{repoUrl}]");
+                            
+                            // Click on the file to open it
+                            await fileLink.ClickAsync();
+                            await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                            
+                            // Get the file content from the code block
+                            var codeBlock = page.Locator("table.js-file-line-container, div.blob-code, pre.highlight");
+                            await codeBlock.First.WaitForAsync(new LocatorWaitForOptions { Timeout = 5000, State = WaitForSelectorState.Visible });
+                            
+                            if (await codeBlock.CountAsync() > 0)
+                            {
+                                actionContent = await codeBlock.First.InnerTextAsync();
+                                fileType = fileName;
+                                Log.Message($"Successfully loaded content from {fileName}");
+                                break;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Message($"Could not find or open {fileName} in [{repoUrl}]: {ex.Message}");
+                        // Try next file
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(actionContent))
+                {
+                    Log.Message($"No action definition file found in repository [{repoUrl}]");
+                    return (null, null);
+                }
+
+                // Parse based on file type
+                if (fileType == "Dockerfile")
+                {
+                    return ("Docker", null);
+                }
+                else
+                {
+                    return ParseActionYaml(actionContent);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Message($"Error fetching action type and node version from [{repoUrl}]: {ex.Message}");
+                return (null, null);
+            }
+        }
+
+        private static (string ActionType, string NodeVersion) ParseActionYaml(string yamlContent)
+        {
+            string actionType = null;
+            string nodeVersion = null;
+
+            try
+            {
+                // Check for runs.using to determine action type
+                var runsUsingMatch = Regex.Match(yamlContent, YamlUsingPattern, RegexOptions.Multiline);
+                if (runsUsingMatch.Success)
+                {
+                    var usingValue = runsUsingMatch.Groups[1].Value.Trim();
+                    
+                    if (usingValue.StartsWith("node", StringComparison.OrdinalIgnoreCase))
+                    {
+                        actionType = "Node";
+                        // Extract node version (e.g., "node20", "node16")
+                        var nodeVersionMatch = Regex.Match(usingValue, @"node(\d+)", RegexOptions.IgnoreCase);
+                        if (nodeVersionMatch.Success)
+                        {
+                            nodeVersion = nodeVersionMatch.Groups[1].Value;
+                        }
+                    }
+                    else if (usingValue.Equals("docker", StringComparison.OrdinalIgnoreCase))
+                    {
+                        actionType = "Docker";
+                    }
+                    else if (usingValue.Equals("composite", StringComparison.OrdinalIgnoreCase))
+                    {
+                        actionType = "Composite";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Message($"Error parsing action.yml content: {ex.Message}");
+            }
+
+            return (actionType, nodeVersion);
         }
     }
 }
