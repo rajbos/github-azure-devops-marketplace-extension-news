@@ -354,8 +354,10 @@ namespace GitHubActionsNews
             try
             {
                 // Convert GitHub repo URL to raw content URL for action.yml or action.yaml
-                var rawUrl = ConvertToRawUrl(repoUrl);
-                if (string.IsNullOrWhiteSpace(rawUrl))
+                var rawUrlMain = ConvertToRawUrl(repoUrl, "main");
+                var rawUrlMaster = ConvertToRawUrl(repoUrl, "master");
+                
+                if (string.IsNullOrWhiteSpace(rawUrlMain) && string.IsNullOrWhiteSpace(rawUrlMaster))
                 {
                     return (null, null);
                 }
@@ -366,21 +368,32 @@ namespace GitHubActionsNews
 
                 string actionContent = null;
                 
-                // Try action.yml first
-                try
+                // Try main branch first, then master
+                foreach (var rawUrl in new[] { rawUrlMain, rawUrlMaster })
                 {
-                    actionContent = await httpClient.GetStringAsync($"{rawUrl}/action.yml");
-                }
-                catch
-                {
-                    // Try action.yaml
+                    if (string.IsNullOrWhiteSpace(rawUrl))
+                        continue;
+
+                    // Try action.yml first
                     try
                     {
-                        actionContent = await httpClient.GetStringAsync($"{rawUrl}/action.yaml");
+                        actionContent = await httpClient.GetStringAsync($"{rawUrl}/action.yml");
+                        if (!string.IsNullOrWhiteSpace(actionContent))
+                            break;
                     }
                     catch
                     {
-                        return (null, null);
+                        // Try action.yaml
+                        try
+                        {
+                            actionContent = await httpClient.GetStringAsync($"{rawUrl}/action.yaml");
+                            if (!string.IsNullOrWhiteSpace(actionContent))
+                                break;
+                        }
+                        catch
+                        {
+                            // Continue to next branch
+                        }
                     }
                 }
 
@@ -398,7 +411,7 @@ namespace GitHubActionsNews
             }
         }
 
-        private static string ConvertToRawUrl(string repoUrl)
+        private static string ConvertToRawUrl(string repoUrl, string branch)
         {
             if (string.IsNullOrWhiteSpace(repoUrl))
             {
@@ -410,12 +423,11 @@ namespace GitHubActionsNews
                 // Remove trailing slashes and whitespace
                 repoUrl = repoUrl.TrimEnd('/').Trim();
 
-                // Convert https://github.com/owner/repo to https://raw.githubusercontent.com/owner/repo/main
+                // Convert https://github.com/owner/repo to https://raw.githubusercontent.com/owner/repo/branch
                 if (repoUrl.StartsWith("https://github.com/", StringComparison.OrdinalIgnoreCase))
                 {
                     var path = repoUrl.Substring("https://github.com/".Length);
-                    // Try main branch first, which is more common now
-                    return $"https://raw.githubusercontent.com/{path}/main";
+                    return $"https://raw.githubusercontent.com/{path}/{branch}";
                 }
 
                 return null;
