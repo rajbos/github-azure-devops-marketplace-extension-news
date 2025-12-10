@@ -261,6 +261,7 @@ if ($changes) {
             $filePath = $matches[1].Trim()
             # Pattern: content/posts/yyyy/MM/dd-HH-owner-repo.md
             # Need to convert to: blog/yyyy/MM/dd/owner-repo/
+            # Note: The hour component (HH) is ignored in the URL - only yyyy/MM/dd is used
             if ($filePath -match "content/posts/(\d{4})/(\d{2})/(\d{2})-\d{2}-(.+)\.md$") {
                 $year = $matches[1]
                 $month = $matches[2]
