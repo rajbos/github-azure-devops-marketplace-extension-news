@@ -259,12 +259,14 @@ if ($changes) {
         # Look for lines that start with "create mode" and contain blog post files
         if ($line -match "create mode \d+ (content/posts/.+\.md)$") {
             $filePath = $matches[1].Trim()
-            if ($filePath -match "content/posts/(.+)\.md$") {
-                # Extract the path after "content/posts/" and before ".md"
-                $postPath = $matches[1]
-                # Convert to URL format: lowercase and add trailing slash
-                $urlPath = $postPath.ToLower()
-                $blogUrl = "https://devops-actions.github.io/github-actions-marketplace-news/posts/$urlPath/"
+            # Pattern: content/posts/yyyy/MM/dd-HH-owner-repo.md
+            # Need to convert to: blog/yyyy/MM/dd/owner-repo/
+            if ($filePath -match "content/posts/(\d{4})/(\d{2})/(\d{2})-\d{2}-(.+)\.md$") {
+                $year = $matches[1]
+                $month = $matches[2]
+                $day = $matches[3]
+                $slug = $matches[4].ToLower()
+                $blogUrl = "https://devops-actions.github.io/github-actions-marketplace-news/blog/$year/$month/$day/$slug/"
                 $blogPostLinks += $blogUrl
             }
         }
