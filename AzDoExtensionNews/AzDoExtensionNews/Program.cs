@@ -94,9 +94,11 @@ namespace AzDoExtensionNews
             }
             else if (TestingTweet)
             {
+#pragma warning disable CS0162 // Unreachable code detected
                 // send out a test tweet for 1 extension
                 updateExtension.Add(extensions.First());
                 PostUpdates(newExtensions, updateExtension, publisherHandles);
+#pragma warning restore CS0162 // Unreachable code detected
             }
 
             if (!previousExtensions.Any() && extensions.Any())
