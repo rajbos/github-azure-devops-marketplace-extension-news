@@ -45,7 +45,7 @@ namespace GitHubActionsNews.Tests
             else
             {
                 // Test passes if method returns null gracefully (e.g., due to network/certificate issues)
-                Assert.IsTrue(true, "Method handled errors gracefully and returned null");
+                Assert.Inconclusive("Method handled errors gracefully and returned null");
             }
         }
 
@@ -59,7 +59,7 @@ namespace GitHubActionsNews.Tests
             
             // Note: This might be null if the action.yml is not accessible or in a different branch
             // We're just verifying that the method doesn't throw an exception
-            Assert.IsTrue(true, "Method should not throw exception");
+            // If we reach here, the test passes (no exception was thrown)
         }
 
         [TestMethod]
@@ -72,7 +72,7 @@ namespace GitHubActionsNews.Tests
             
             // Note: This might be null if the action.yml is not accessible or in a different branch
             // We're just verifying that the method doesn't throw an exception
-            Assert.IsTrue(true, "Method should not throw exception");
+            // If we reach here, the test passes (no exception was thrown)
         }
 
         [TestMethod]
