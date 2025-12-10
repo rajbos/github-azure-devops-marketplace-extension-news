@@ -137,7 +137,7 @@ function GetContent {
         [PSCustomObject]$update,
         [Parameter(Mandatory = $true)]
         [string]$dependentsNumber,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $false)]
         [string]$releaseBody
     )
 
