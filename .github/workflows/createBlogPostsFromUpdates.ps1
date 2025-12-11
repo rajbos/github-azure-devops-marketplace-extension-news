@@ -289,6 +289,8 @@ if ($changes) {
                 $year = $matches[1]
                 $month = $matches[2]
                 $day = $matches[3]
+                $fileNameSlug = $matches[4].ToLower()
+                $slug = $null
                 
                 # Read the file to extract the title from front matter
                 if (Test-Path $filePath) {
@@ -301,29 +303,30 @@ if ($changes) {
                             $title = $title.Trim('"', "'")
                             # Convert title to slug (same way Hugo does it)
                             $slug = ConvertToSlug -text $title
-                            $blogUrl = "https://devops-actions.github.io/github-actions-marketplace-news/blog/$year/$month/$day/$slug/"
-                            $blogPostLinks += $blogUrl
                         }
                         else {
-                            # Fallback: If title not found, use filename pattern (owner-repo)
+                            # Title not found, will use fallback
                             Write-Warning "Could not extract title from $filePath, using filename for URL"
-                            $slug = $matches[4].ToLower()
-                            $blogUrl = "https://devops-actions.github.io/github-actions-marketplace-news/blog/$year/$month/$day/$slug/"
-                            $blogPostLinks += $blogUrl
                         }
                     }
                     catch {
+                        # Error reading file, will use fallback
                         Write-Warning "Error reading file $filePath : $_"
-                        # Fallback: Use filename pattern
-                        $slug = $matches[4].ToLower()
-                        $blogUrl = "https://devops-actions.github.io/github-actions-marketplace-news/blog/$year/$month/$day/$slug/"
-                        $blogPostLinks += $blogUrl
                     }
                 }
                 else {
                     # File doesn't exist (shouldn't happen but handle it)
-                    Write-Warning "File not found: $filePath"
+                    Write-Warning "File not found: $filePath, using filename for URL"
                 }
+                
+                # Use filename-based slug as fallback if title extraction failed
+                if (-not $slug) {
+                    $slug = $fileNameSlug
+                }
+                
+                # Generate the blog URL
+                $blogUrl = "https://devops-actions.github.io/github-actions-marketplace-news/blog/$year/$month/$day/$slug/"
+                $blogPostLinks += $blogUrl
             }
         }
     }
