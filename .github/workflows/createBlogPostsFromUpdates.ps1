@@ -292,15 +292,37 @@ if ($changes) {
                 
                 # Read the file to extract the title from front matter
                 if (Test-Path $filePath) {
-                    $fileContent = Get-Content -Path $filePath -Raw
-                    # Extract title from front matter (format: "title: Title Text")
-                    if ($fileContent -match '(?m)^title:\s*(.+)$') {
-                        $title = $matches[1].Trim()
-                        # Convert title to slug (same way Hugo does it)
-                        $slug = ConvertToSlug -text $title
+                    try {
+                        $fileContent = Get-Content -Path $filePath -Raw
+                        # Extract title from front matter (format: "title: Title Text")
+                        if ($fileContent -match '(?m)^title:\s*(.+)$') {
+                            $title = $matches[1].Trim()
+                            # Remove any surrounding quotes that might be in the title
+                            $title = $title.Trim('"', "'")
+                            # Convert title to slug (same way Hugo does it)
+                            $slug = ConvertToSlug -text $title
+                            $blogUrl = "https://devops-actions.github.io/github-actions-marketplace-news/blog/$year/$month/$day/$slug/"
+                            $blogPostLinks += $blogUrl
+                        }
+                        else {
+                            # Fallback: If title not found, use filename pattern (owner-repo)
+                            Write-Warning "Could not extract title from $filePath, using filename for URL"
+                            $slug = $matches[4].ToLower()
+                            $blogUrl = "https://devops-actions.github.io/github-actions-marketplace-news/blog/$year/$month/$day/$slug/"
+                            $blogPostLinks += $blogUrl
+                        }
+                    }
+                    catch {
+                        Write-Warning "Error reading file $filePath : $_"
+                        # Fallback: Use filename pattern
+                        $slug = $matches[4].ToLower()
                         $blogUrl = "https://devops-actions.github.io/github-actions-marketplace-news/blog/$year/$month/$day/$slug/"
                         $blogPostLinks += $blogUrl
                     }
+                }
+                else {
+                    # File doesn't exist (shouldn't happen but handle it)
+                    Write-Warning "File not found: $filePath"
                 }
             }
         }
