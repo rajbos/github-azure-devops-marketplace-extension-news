@@ -131,6 +131,30 @@ function SanitizeContent {
     return $content.Replace(":", "").Replace("@", "").Replace("""", "").Replace("'", "")
 }
 
+function ConvertToSlug {
+    Param (
+        [Parameter(Mandatory = $true)]
+        [string]$text
+    )
+    
+    # Convert to lowercase
+    $slug = $text.ToLower()
+    
+    # Replace spaces and common separators with hyphens
+    $slug = $slug -replace '[\s_]+', '-'
+    
+    # Remove special characters, keeping only alphanumeric and hyphens
+    $slug = $slug -replace '[^a-z0-9\-]', ''
+    
+    # Remove multiple consecutive hyphens
+    $slug = $slug -replace '\-{2,}', '-'
+    
+    # Remove leading and trailing hyphens
+    $slug = $slug.Trim('-')
+    
+    return $slug
+}
+
 function GetContent {
     Param (
         [Parameter(Mandatory = $true)]
@@ -260,15 +284,24 @@ if ($changes) {
         if ($line -match "create mode \d+ (content/posts/.+\.md)$") {
             $filePath = $matches[1].Trim()
             # Pattern: content/posts/yyyy/MM/dd-HH-owner-repo.md
-            # Need to convert to: blog/yyyy/MM/dd/owner-repo/
-            # Note: The hour component (HH) is ignored in the URL - only yyyy/MM/dd is used
+            # Hugo generates URLs based on the title field in front matter, not the filename
             if ($filePath -match "content/posts/(\d{4})/(\d{2})/(\d{2})-\d{2}-(.+)\.md$") {
                 $year = $matches[1]
                 $month = $matches[2]
                 $day = $matches[3]
-                $slug = $matches[4].ToLower()
-                $blogUrl = "https://devops-actions.github.io/github-actions-marketplace-news/blog/$year/$month/$day/$slug/"
-                $blogPostLinks += $blogUrl
+                
+                # Read the file to extract the title from front matter
+                if (Test-Path $filePath) {
+                    $fileContent = Get-Content -Path $filePath -Raw
+                    # Extract title from front matter (format: "title: Title Text")
+                    if ($fileContent -match '(?m)^title:\s*(.+)$') {
+                        $title = $matches[1].Trim()
+                        # Convert title to slug (same way Hugo does it)
+                        $slug = ConvertToSlug -text $title
+                        $blogUrl = "https://devops-actions.github.io/github-actions-marketplace-news/blog/$year/$month/$day/$slug/"
+                        $blogPostLinks += $blogUrl
+                    }
+                }
             }
         }
     }
