@@ -85,6 +85,158 @@ function GetReleaseBody {
 
 }
 
+function GetReadmeContent {
+    Param (
+        [Parameter(Mandatory = $true)]
+        [string] $repo,
+        [Parameter(Mandatory = $true)]
+        [string] $owner
+    )
+
+    $url = "https://api.github.com/repos/$owner/$repo/readme"
+    try {
+        $readme = ApiCall -url $url -access_token $token
+        if ($readme.content) {
+            # The content is base64 encoded, decode it
+            $decodedContent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($readme.content))
+            return $decodedContent
+        }
+        return ""
+    }
+    catch {
+        Write-Warning "Error getting README for repo [$repo] and owner [$owner]"
+        Write-Warning "$_"
+        return ""
+    }
+}
+
+function LoadPromptTemplate {
+    $promptPath = Join-Path $PSScriptRoot "action-summary-prompt.txt"
+    try {
+        if (Test-Path $promptPath) {
+            return Get-Content -Path $promptPath -Raw
+        }
+        else {
+            Write-Warning "Prompt template not found at [$promptPath]"
+            return $null
+        }
+    }
+    catch {
+        Write-Warning "Error loading prompt template: $_"
+        return $null
+    }
+}
+
+function CallGitHubModels {
+    Param (
+        [Parameter(Mandatory = $true)]
+        [string] $prompt,
+        [Parameter(Mandatory = $true)]
+        [string] $readmeContent,
+        [int] $attempt = 1
+    )
+
+    $maxAttempts = 2
+    $backoffSeconds = 30
+
+    try {
+        # Replace the README content placeholder in the prompt
+        $fullPrompt = $prompt -replace '\{README_CONTENT\}', $readmeContent
+
+        # Prepare the request body for GitHub Models API
+        $body = @{
+            messages = @(
+                @{
+                    role = "user"
+                    content = $fullPrompt
+                }
+            )
+            model = "gpt-4o"
+            temperature = 0.7
+            max_tokens = 500
+        } | ConvertTo-Json -Depth 10
+
+        $headers = @{
+            Authorization = "Bearer $token"
+            'Content-Type' = 'application/json'
+            'User-Agent' = 'github-actions-marketplace-news'
+        }
+
+        # Call GitHub Models API
+        $url = "https://models.inference.ai.azure.com/chat/completions"
+        $response = Invoke-RestMethod -Uri $url -Method Post -Headers $headers -Body $body -ErrorAction Stop
+
+        if ($response.choices -and $response.choices.Count -gt 0) {
+            return $response.choices[0].message.content.Trim()
+        }
+        else {
+            throw "No response from GitHub Models API"
+        }
+    }
+    catch {
+        $errorMessage = $_.Exception.Message
+        Write-Warning "Attempt $attempt failed to call GitHub Models API: $errorMessage"
+        
+        # Check if this is a rate limiting error
+        if ($errorMessage -match "rate limit" -or $errorMessage -match "429" -or $errorMessage -match "Too Many Requests") {
+            Write-Warning "Rate limiting detected, implementing backoff..."
+        }
+
+        # Retry logic
+        if ($attempt -lt $maxAttempts) {
+            Write-Host "Waiting $backoffSeconds seconds before retry $($attempt + 1)/$maxAttempts..."
+            Start-Sleep -Seconds $backoffSeconds
+            # Exponential backoff for second attempt
+            $nextBackoff = $backoffSeconds * 2
+            return CallGitHubModels -prompt $prompt -readmeContent $readmeContent -attempt ($attempt + 1)
+        }
+        else {
+            Write-Warning "Failed to generate action summary after $maxAttempts attempts"
+            Write-Warning "Error: $errorMessage"
+            return $null
+        }
+    }
+}
+
+function GetActionSummary {
+    Param (
+        [Parameter(Mandatory = $true)]
+        [string] $repo,
+        [Parameter(Mandatory = $true)]
+        [string] $owner
+    )
+
+    try {
+        # Load the prompt template
+        $promptTemplate = LoadPromptTemplate
+        if (-not $promptTemplate) {
+            Write-Warning "Cannot generate action summary without prompt template"
+            return $null
+        }
+
+        # Get README content
+        $readmeContent = GetReadmeContent -repo $repo -owner $owner
+        if (-not $readmeContent -or $readmeContent -eq "") {
+            Write-Warning "Cannot generate action summary without README content"
+            return $null
+        }
+
+        # Truncate README if too long (keep first 4000 characters to stay within token limits)
+        if ($readmeContent.Length -gt 4000) {
+            $readmeContent = $readmeContent.Substring(0, 4000) + "`n`n[README truncated for summary generation]"
+        }
+
+        # Call GitHub Models API
+        $summary = CallGitHubModels -prompt $promptTemplate -readmeContent $readmeContent -attempt 1
+        
+        return $summary
+    }
+    catch {
+        Write-Warning "Error generating action summary for repo [$repo] and owner [$owner]: $_"
+        return $null
+    }
+}
+
 function CreateBlogPost {
     Param (
         [Parameter(Mandatory = $true)]
@@ -103,6 +255,16 @@ function CreateBlogPost {
     $dependentsNumber = GetDependentsForRepo -repo $repo -owner $owner
 
     $releaseBody = GetReleaseBody -repo $repo -owner $owner -tag $update.Version
+    
+    # Get action summary using GitHub Models
+    Write-Host "Attempting to generate action summary for [$owner/$repo]..."
+    $actionSummary = GetActionSummary -repo $repo -owner $owner
+    if ($actionSummary) {
+        Write-Host "Successfully generated action summary for [$owner/$repo]"
+    }
+    else {
+        Write-Warning "Could not generate action summary for [$owner/$repo], blog post will be created without it"
+    }
 
     # create the file name based on the repo
     $fileName = "$((Get-Date).ToString("dd-HH"))-$owner-$repo"
@@ -117,7 +279,7 @@ function CreateBlogPost {
     # create the file
     New-Item -Path $filePath -ItemType File -Force | Out-Null
     # get the content to write into the file
-    $content = GetContent -update $update -dependentsNumber "$dependentsNumber" -releaseBody $releaseBody
+    $content = GetContent -update $update -dependentsNumber "$dependentsNumber" -releaseBody $releaseBody -actionSummary $actionSummary
     # write the content into the file
     Set-Content -Path $filePath -Value $content
 }
@@ -162,7 +324,9 @@ function GetContent {
         [Parameter(Mandatory = $true)]
         [string]$dependentsNumber,
         [Parameter(Mandatory = $false)]
-        [string]$releaseBody
+        [string]$releaseBody,
+        [Parameter(Mandatory = $false)]
+        [string]$actionSummary
     )
 
     # write the content as a multiline array
@@ -219,6 +383,15 @@ function GetContent {
     $content += ""
     $content += "Go to the [GitHub Marketplace]($($update.Url)) to find the latest changes."
     $content += ""
+    
+    # Add action summary section if available (before release notes)
+    if ($actionSummary -and $actionSummary -ne "") {
+        $content += "## Action Summary"
+        $content += ""
+        $content += $actionSummary
+        $content += ""
+    }
+    
     if ($releaseBody -ne "") {
         $content += "## Release notes"
         $content += ""
