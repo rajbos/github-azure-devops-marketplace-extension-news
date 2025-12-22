@@ -20,11 +20,10 @@
       },
       "NUnit3TestAdapter": {
         "type": "Direct",
-        "requested": "[6.0.0, )",
-        "resolved": "6.0.0",
-        "contentHash": "b04OV4wps6C5nDq1JZBGJjN8XimfN8P/06EqhssG+YuPAsH8TwIpAc8tnJtovdgsm7Wppt7aRzCUYOpuYSYzzg==",
+        "requested": "[6.0.1, )",
+        "resolved": "6.0.1",
+        "contentHash": "Fo++epLBWvuk7sOXbfglSGGI5+asxMr5v+cBxlEqd64YISeZiQO6W+QEkN3Ld6r0pGGuXWozzauLFqE4jPimUA==",
         "dependencies": {
-          "Microsoft.Extensions.DependencyModel": "10.0.0",
           "Microsoft.Testing.Extensions.VSTestBridge": "2.0.2",
           "Microsoft.Testing.Platform.MSBuild": "2.0.2"
         }
@@ -76,15 +75,6 @@
           "Microsoft.Extensions.FileProviders.Abstractions": "10.0.1",
           "Microsoft.Extensions.FileProviders.Physical": "10.0.1",
           "Microsoft.Extensions.Primitives": "10.0.1"
-        }
-      },
-      "Microsoft.Extensions.DependencyModel": {
-        "type": "Transitive",
-        "resolved": "10.0.0",
-        "contentHash": "RFYJR7APio/BiqdQunRq6DB+nDB6nc2qhHr77mlvZ0q0BT8PubMXN7XicmfzCbrDE/dzhBnUKBRXLTcqUiZDGg==",
-        "dependencies": {
-          "System.Text.Encodings.Web": "10.0.0",
-          "System.Text.Json": "10.0.0"
         }
       },
       "Microsoft.Extensions.FileProviders.Abstractions": {
