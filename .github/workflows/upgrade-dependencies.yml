@@ -17,6 +17,9 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
+      # Use PAT instead of GITHUB_TOKEN to allow this workflow to trigger other workflows
+      # PAT should have permissions: contents:write, pull-requests:write
+      # Scoped to this repository only
       - uses: actions/checkout@v6
         with:
           token: ${{ secrets.PAT }}
