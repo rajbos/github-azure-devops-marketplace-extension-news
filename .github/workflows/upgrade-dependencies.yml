@@ -17,7 +17,12 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
+      # Use PAT instead of GITHUB_TOKEN to allow this workflow to trigger other workflows
+      # PAT should have permissions: contents:write, pull-requests:write
+      # Scoped to this repository only
       - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.PAT }}
 
       - uses: actions/setup-dotnet@2016bd2012dba4e32de620c46fe006a3ac9f0602 # v5.0.1
         with:
@@ -28,7 +33,7 @@ jobs:
 
       - name: Upgrade packages
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT }}
         run: |
           # get the tool
           dotnet tool install --global dotnet-outdated-tool
