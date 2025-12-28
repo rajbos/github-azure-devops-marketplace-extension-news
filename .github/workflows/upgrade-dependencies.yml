@@ -28,7 +28,7 @@ jobs:
 
       - name: Upgrade packages
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT }}
         run: |
           # get the tool
           dotnet tool install --global dotnet-outdated-tool
@@ -50,6 +50,9 @@ jobs:
 
             git config --global user.email "bot@github-actions.com"
             git config --global user.name "GitHub Actions Bot"
+
+            # Configure git to use PAT for authentication to trigger workflows
+            git config --global url."https://oauth2:${{ secrets.PAT }}@github.com/".insteadOf "https://github.com/"
 
             git add "Directory.Packages.props"
 
