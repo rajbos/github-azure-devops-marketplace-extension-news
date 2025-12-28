@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.PAT }}
 
       - uses: actions/setup-dotnet@2016bd2012dba4e32de620c46fe006a3ac9f0602 # v5.0.1
         with:
@@ -50,9 +52,6 @@ jobs:
 
             git config --global user.email "bot@github-actions.com"
             git config --global user.name "GitHub Actions Bot"
-
-            # Configure git to use PAT for authentication to trigger workflows
-            git config --global url."https://oauth2:${{ secrets.PAT }}@github.com/".insteadOf "https://github.com/"
 
             git add "Directory.Packages.props"
 
