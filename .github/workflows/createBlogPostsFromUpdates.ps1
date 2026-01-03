@@ -2,12 +2,15 @@ Param(
     [Parameter(Mandatory = $true)]
     [string]$token,
     [Parameter(Mandatory = $true)]
+    [string]$tokenModels,
+    [Parameter(Mandatory = $true)]
     [string]$filePath
 )
 
 # load the dependents functions
 . $PSScriptRoot/dependents.ps1
 Write-Host "Got a token with length $($token.Length)"
+Write-Host "Got a tokenModels with length $($tokenModels.Length)"
 Write-Host "Got this file path $($filePath)"
 Write-Host "We are running from this location: $PSScriptRoot"
 Get-Location
@@ -157,7 +160,7 @@ function CallGitHubModels {
         } | ConvertTo-Json -Depth 10
 
         $headers = @{
-            Authorization = "Bearer $token"
+            Authorization = "Bearer $tokenModels"
             'Content-Type' = 'application/json'
             'User-Agent' = 'github-actions-marketplace-news'
         }

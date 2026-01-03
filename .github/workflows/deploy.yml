@@ -198,4 +198,4 @@ jobs:
           ls
 
           $filePath = Resolve-Path "..\..\ArtifactFolder\Actions-Updated-Overview.json"
-          .\createBlogPostsFromUpdates.ps1 -token ${{ secrets.PAT }} -filePath $filePath
+          .\createBlogPostsFromUpdates.ps1 -token ${{ secrets.PAT }} -tokenModels ${{ secrets.PAT_MODELS }} -filePath $filePath
