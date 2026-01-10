@@ -14,12 +14,22 @@ More information can be found in this [blogpost](https://rajbos.github.io/blog/2
 The basic setup is as follows:
 - Run through the Azure DevOps API
 - Scrape through the pages on the GitHub Marketplace
+- Scan organization repositories for actions not published to the marketplace
 - Store all the results as json in Azure Blob storage
 - On finding new items, post about it.
 
 The posting to social media part has been disabled, as Twitter is no longer a safe place to post things and I will not promote it anymore. Haven't had time or inclination to set this up on Mastodon yet. 
 
 Posting for the GitHub Actions news goes to https://devops-actions.github.io/github-actions-marketplace-news, which can be followed through an RSS feed. The source repository for that blog is here: https://github.com/devops-actions/github-actions-marketplace-news
+
+### Organization Actions Scanning
+In addition to marketplace actions, the tool also scans specific GitHub organizations for actions that may not be published to the marketplace. This includes:
+- github
+- actions
+- mona-actions
+- dependabot
+
+The workflow uses [devops-actions/load-available-actions](https://github.com/devops-actions/load-available-actions) to discover actions in these organizations, fetches the latest semver tags for version information, deduplicates against marketplace actions, and stores the results in blob storage for tracking updates.
 
 ## Building the solution
 ``` shell
