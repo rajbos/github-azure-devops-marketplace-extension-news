@@ -75,6 +75,11 @@ jobs:
         organization: [github, actions, mona-actions, dependabot]
       fail-fast: false
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v3.5.3
 
       - name: Load available actions for ${{ matrix.organization }}
@@ -84,9 +89,11 @@ jobs:
           PAT: ${{ secrets.GITHUB_TOKEN }}
           organization: ${{ matrix.organization }}
           outputFilename: ${{ matrix.organization }}-actions.json
+        continue-on-error: true
 
       - name: Upload organization actions
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        if: steps.load-actions.outcome == 'success'
         with:
           name: org-actions-${{ matrix.organization }}
           path: ${{ matrix.organization }}-actions.json
@@ -96,6 +103,11 @@ jobs:
     needs: ScanOrganization
     if: ${{ always() && needs.ScanOrganization.result != 'failure' }}
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
       - name: Download artifact from build job
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:

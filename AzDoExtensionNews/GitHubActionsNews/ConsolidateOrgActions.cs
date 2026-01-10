@@ -30,6 +30,7 @@ namespace GitHubActionsNews
 
             // Read all organization action files
             var orgActionsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "OrgActionsArtifacts");
+            orgActionsPath = Path.GetFullPath(orgActionsPath);
             Log.Message($"Looking for organization actions in: {orgActionsPath}");
 
             if (!Directory.Exists(orgActionsPath))
@@ -53,6 +54,12 @@ namespace GitHubActionsNews
             // Process each organization's actions file
             var orgActionFiles = Directory.GetFiles(orgActionsPath, "*-actions.json", SearchOption.AllDirectories);
             Log.Message($"Found {orgActionFiles.Length} organization action files");
+
+            if (orgActionFiles.Length == 0)
+            {
+                Log.Message("No organization action files to process");
+                return;
+            }
 
             foreach (var file in orgActionFiles)
             {
