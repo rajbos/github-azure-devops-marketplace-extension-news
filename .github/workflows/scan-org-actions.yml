@@ -62,7 +62,7 @@ jobs:
         run: dotnet publish AzDoExtensionNews/GitHubActionsNews/GitHubActionsNews.csproj -c Release --self-contained false --property:PublishDir=${{ github.workspace }}/publish/AzDo/
 
       - name: Test
-        run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
+        run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln --filter "TestCategory!=MarketplaceScraping"
 
       - name: Publish AzDo Artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0

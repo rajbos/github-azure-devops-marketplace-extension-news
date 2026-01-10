@@ -10,6 +10,7 @@ namespace GitHubActionsNews.Tests
     public class SearchPagination_Tests
     {
         [TestMethod]
+        [TestCategory("MarketplaceScraping")]
         public async Task SearchForMy_TraversesPaginationAndReturnsManyActions()
         {
             const string query = "devops+actions";
