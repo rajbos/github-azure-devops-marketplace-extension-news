@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -62,11 +63,18 @@ namespace GitHubActionsNews
                 return;
             }
 
+            // Track repos found per org for summary
+            var reposPerOrg = new Dictionary<string, int>();
+
             foreach (var file in orgActionFiles)
             {
                 Log.Message($"Processing file: {file}");
                 try
                 {
+                    // Extract organization name from filename (e.g., "actions-actions.json" -> "actions")
+                    var fileName = Path.GetFileNameWithoutExtension(file);
+                    var orgName = fileName.Replace("-actions", "");
+                    
                     var content = await File.ReadAllTextAsync(file);
                     var orgData = JsonSerializer.Deserialize<OrgActionsData>(content, new JsonSerializerOptions
                     {
@@ -81,10 +89,12 @@ namespace GitHubActionsNews
 
                     Log.Message($"Found {orgData.Actions.Count} actions in {file}");
 
+                    var orgRepoCount = 0;
                     foreach (var action in orgData.Actions)
                     {
-                        // Build repo URL
-                        var repoUrl = $"https://github.com/{action.Repo}";
+                        // Build full repo path: owner/repo
+                        var fullRepoPath = $"{orgName}/{action.Repo}";
+                        var repoUrl = $"https://github.com/{fullRepoPath}";
                         var normalizedRepoUrl = NormalizeRepoUrl(repoUrl);
 
                         // Check for deduplication
@@ -94,22 +104,22 @@ namespace GitHubActionsNews
                             continue;
                         }
 
-                        // Get version from tags
-                        var version = await GetLatestSemVerTag(action.Repo);
+                        // Get version from tags using full owner/repo path
+                        var version = await GetLatestSemVerTag(fullRepoPath);
                         if (string.IsNullOrEmpty(version))
                         {
                             Log.Message($"No semver tag found for {repoUrl}, skipping");
                             continue;
                         }
 
-                        var marketplaceUrl = $"https://github.com/{action.Repo}";
+                        var marketplaceUrl = $"https://github.com/{fullRepoPath}";
                         var actionPath = !string.IsNullOrEmpty(action.Path) ? $"/{action.Path}" : "";
                         
                         var ghAction = new GitHubAction
                         {
                             Url = marketplaceUrl,
                             Title = action.Name ?? action.Repo,
-                            Publisher = GetPublisher(action.Repo),
+                            Publisher = GetPublisher(fullRepoPath),
                             Version = version,
                             Updated = DateTime.UtcNow,
                             RepoUrl = repoUrl,
@@ -119,7 +129,14 @@ namespace GitHubActionsNews
                         };
 
                         allOrgActions.Add(ghAction);
+                        orgRepoCount++;
                         Log.Message($"Added action: {ghAction.Title} at {ghAction.RepoUrl} with version {ghAction.Version}");
+                    }
+                    
+                    // Track repos found for this org
+                    if (orgRepoCount > 0)
+                    {
+                        reposPerOrg[orgName] = orgRepoCount;
                     }
                 }
                 catch (Exception ex)
@@ -127,6 +144,9 @@ namespace GitHubActionsNews
                     Log.Message($"Error processing file {file}: {ex.Message}");
                 }
             }
+
+            // Write summary to GitHub step summary
+            WriteSummaryTable(reposPerOrg);
 
             Log.Message($"Total organization actions discovered: {allOrgActions.Count}");
 
@@ -270,6 +290,43 @@ namespace GitHubActionsNews
 
             var parts = repo.Split('/', StringSplitOptions.RemoveEmptyEntries);
             return parts.Length > 0 ? parts[0] : string.Empty;
+        }
+
+        private static void WriteSummaryTable(Dictionary<string, int> reposPerOrg)
+        {
+            // Get GITHUB_STEP_SUMMARY environment variable
+            var summaryFile = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
+            if (string.IsNullOrEmpty(summaryFile))
+            {
+                Log.Message("GITHUB_STEP_SUMMARY not set, skipping summary table");
+                return;
+            }
+
+            try
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine("## Organization Actions Summary");
+                sb.AppendLine();
+                sb.AppendLine("| Organization | Actions Found |");
+                sb.AppendLine("|--------------|---------------|");
+                
+                var totalActions = 0;
+                foreach (var org in reposPerOrg.OrderBy(kvp => kvp.Key))
+                {
+                    sb.AppendLine($"| {org.Key} | {org.Value} |");
+                    totalActions += org.Value;
+                }
+                
+                sb.AppendLine($"| **Total** | **{totalActions}** |");
+                sb.AppendLine();
+                
+                File.AppendAllText(summaryFile, sb.ToString());
+                Log.Message($"Summary table written with {totalActions} total actions from {reposPerOrg.Count} organizations");
+            }
+            catch (Exception ex)
+            {
+                Log.Message($"Error writing summary table: {ex.Message}");
+            }
         }
 
         private class OrgActionsData
