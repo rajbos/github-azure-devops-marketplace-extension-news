@@ -1,0 +1,145 @@
+name: Scan Organization Actions
+
+env:
+  ArtifactName: 'AzDoNews'
+
+on:
+  schedule:
+    # Run daily at 2:00 AM UTC
+    - cron: "0 2 * * *"
+
+  workflow_dispatch:
+
+  push:
+    paths:
+      - .github/workflows/scan-org-actions.yml
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v3.5.3
+
+      - uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-${{ hashFiles('**/**.csproj') }}-1
+
+      - uses: actions/setup-dotnet@2016bd2012dba4e32de620c46fe006a3ac9f0602 # v5.0.1
+        with:
+          dotnet-version: 8.x
+          cache: true
+          cache-dependency-path: |
+            AzDoExtensionNews/AzDoExtensionsNews/packages.lock.json
+            AzDoExtensionNews/AzDoExtensionsNews.UnitTests/packages.lock.json
+            AzDoExtensionNews/GitHubActionsNews/packages.lock.json
+            AzDoExtensionNews/GitHubActionsNews.Tests/packages.lock.json
+
+      - name: Restore
+        run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode
+
+      - name: Build
+        run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release
+
+      - name: Install Playwright Browsers
+        shell: pwsh
+        run: |
+          $script = Join-Path $env:GITHUB_WORKSPACE 'AzDoExtensionNews/GitHubActionsNews/bin/Release/net8.0/playwright.ps1'
+          if (-not (Test-Path $script)) {
+            throw "Playwright script not found at $script"
+          }
+          & $script install chromium --with-deps
+
+      - name: Publish
+        run: dotnet publish AzDoExtensionNews/GitHubActionsNews/GitHubActionsNews.csproj -c Release --self-contained false --property:PublishDir=${{ github.workspace }}/publish/AzDo/
+
+      - name: Test
+        run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
+
+      - name: Publish AzDo Artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          path: publish/AzDo
+          name: ${{ env.ArtifactName }}
+      
+  ScanOrganization:
+    runs-on: ubuntu-latest
+    needs: Build
+    strategy:
+      matrix:
+        organization: [github, actions, mona-actions, dependabot]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v3.5.3
+
+      - name: Load available actions for ${{ matrix.organization }}
+        uses: devops-actions/load-available-actions@f14542b61b8a7b98fb67d738ad0f5fb27e2eecca # v2.2.0
+        id: load-actions
+        with:
+          PAT: ${{ secrets.GITHUB_TOKEN }}
+          organization: ${{ matrix.organization }}
+          outputFilename: ${{ matrix.organization }}-actions.json
+
+      - name: Upload organization actions
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: org-actions-${{ matrix.organization }}
+          path: ${{ matrix.organization }}-actions.json
+
+  ConsolidateOrgActions:
+    runs-on: ubuntu-latest
+    needs: ScanOrganization
+    if: ${{ always() && needs.ScanOrganization.result != 'failure' }}
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: ${{ env.ArtifactName }}
+          path: ./ArtifactFolder
+
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v3.5.3
+        with:
+          path: repo
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@2016bd2012dba4e32de620c46fe006a3ac9f0602 # v5.0.1
+        with:
+          dotnet-version: 8.x
+
+      - name: Restore
+        shell: pwsh
+        run: dotnet restore repo/AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build repo/AzDoExtensionNews/AzDoExtensionNews.sln -c Release
+
+      - name: App Settings Variable Substitution
+        uses: rajbos-actions/variable-substitution@ae7b1f3676ae374dc70282e6b9650bc50b611222 # v1.2
+        with:
+          files: 'ArtifactFolder/appsettings.json'
+        env:
+          TwitterConsumerAPIKey: 'TwitterConsumerAPIKey'
+          TwitterConsumerAPISecretKey: 'TwitterConsumerAPISecretKey'
+          TwitterAccessToken: 'TwitterAccessToken'
+          TwitterAccessTokenSecret: 'TwitterAccessTokenSecret'
+          BlobStorageConnectionString: ${{ secrets.BLOB_CONNECTION_STRING }}
+
+      - name: Download all organization action artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: org-actions-*
+          path: ./OrgActionsArtifacts
+
+      - name: Consolidate organization actions and enrich with version data
+        shell: pwsh
+        run: |
+          cd .\ArtifactFolder
+          dotnet GitHubActionsNews.dll "consolidate-org-actions"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

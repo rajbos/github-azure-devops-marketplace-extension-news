@@ -24,6 +24,7 @@ namespace GitHubActionsNews
                 Log.Message(" all = run through each action result in the list");
                 Log.Message(" one or more comma separated letters = run through each action result that matches the search string");
                 Log.Message(" consolidate = download all previous result files and consolidate to 1 file");
+                Log.Message(" consolidate-org-actions = consolidate organization actions and enrich with version data");
                 Log.Message(" verify = verify all actions in the storage account for overlap");
                 Log.Message(" test = run for a single test action to debug");
             }
@@ -42,6 +43,9 @@ namespace GitHubActionsNews
                     break;
                 case "consolidate":
                     await RunConsolidate();
+                    break;
+                case "consolidate-org-actions":
+                    await RunConsolidateOrgActions();
                     break;
                 case "verify":
                     await RunVerify();
@@ -99,6 +103,11 @@ namespace GitHubActionsNews
         private static async Task RunConsolidate()
         {
             await Consolidate.Run(twitter);
+        }
+
+        private static async Task RunConsolidateOrgActions()
+        {
+            await ConsolidateOrgActions.Run();
         }
 
         private static async Task RunVerify()
