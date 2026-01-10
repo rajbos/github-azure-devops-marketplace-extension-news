@@ -74,12 +74,8 @@ namespace GitHubActionsNews
                     // Extract organization name from filename (e.g., "actions-actions.json" -> "actions")
                     // The filename pattern is "{org}-actions.json"
                     var fileName = Path.GetFileNameWithoutExtension(file);
-                    // Split on "-actions" suffix and take the first part
-                    var orgName = fileName;
-                    if (fileName.EndsWith("-actions"))
-                    {
-                        orgName = fileName.Substring(0, fileName.Length - "-actions".Length);
-                    }
+                    // Extract org name by removing "-actions" suffix if present
+                    var orgName = fileName.EndsWith("-actions") ? fileName[..^8] : fileName;
                     
                     var content = await File.ReadAllTextAsync(file);
                     var orgData = JsonSerializer.Deserialize<OrgActionsData>(content, new JsonSerializerOptions
@@ -305,22 +301,6 @@ namespace GitHubActionsNews
             if (string.IsNullOrEmpty(summaryFile))
             {
                 Log.Message("GITHUB_STEP_SUMMARY not set, skipping summary table");
-                return;
-            }
-
-            // Validate the summary file path to prevent path traversal
-            try
-            {
-                var fullPath = Path.GetFullPath(summaryFile);
-                if (!fullPath.Equals(summaryFile, StringComparison.OrdinalIgnoreCase))
-                {
-                    Log.Message($"Invalid summary file path: {summaryFile}");
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Message($"Error validating summary file path: {ex.Message}");
                 return;
             }
 
