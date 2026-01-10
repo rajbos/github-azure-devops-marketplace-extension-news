@@ -44,7 +44,8 @@ namespace GitHubActionsNews
             var marketplaceRepos = new HashSet<string>(
                 marketplaceActions
                     .Where(a => !string.IsNullOrEmpty(a.RepoUrl))
-                    .Select(a => NormalizeRepoUrl(a.RepoUrl)),
+                    .Select(a => NormalizeRepoUrl(a.RepoUrl))
+                    .Where(url => !string.IsNullOrEmpty(url)),
                 StringComparer.OrdinalIgnoreCase
             );
             Log.Message($"Loaded {marketplaceRepos.Count} unique marketplace action repositories for deduplication");
@@ -220,19 +221,44 @@ namespace GitHubActionsNews
                 return string.Empty;
             }
 
-            // Remove trailing slashes and convert to lowercase
-            url = url.TrimEnd('/').ToLowerInvariant();
-
-            // Extract owner/repo from URL
-            var uri = new Uri(url);
-            var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            
-            if (segments.Length >= 2)
+            try
             {
-                return $"https://github.com/{segments[0]}/{segments[1]}";
-            }
+                // Remove trailing slashes and convert to lowercase
+                url = url.TrimEnd('/').ToLowerInvariant();
 
-            return url;
+                // Try to parse as URI
+                if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                {
+                    // If not an absolute URI, try to parse as relative path
+                    // Handle cases like "owner/repo" or "/owner/repo"
+                    var cleanPath = url.TrimStart('/');
+                    var parts = cleanPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                    
+                    if (parts.Length >= 2)
+                    {
+                        return $"https://github.com/{parts[0]}/{parts[1]}";
+                    }
+                    
+                    // Unable to parse, return empty to skip
+                    Log.Message($"Unable to normalize URL: {url}");
+                    return string.Empty;
+                }
+
+                // Extract owner/repo from URL
+                var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                
+                if (segments.Length >= 2)
+                {
+                    return $"https://github.com/{segments[0]}/{segments[1]}";
+                }
+
+                return url;
+            }
+            catch (Exception ex)
+            {
+                Log.Message($"Error normalizing URL '{url}': {ex.Message}");
+                return string.Empty;
+            }
         }
 
         private static string GetPublisher(string repo)
