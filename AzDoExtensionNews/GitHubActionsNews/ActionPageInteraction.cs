@@ -370,6 +370,7 @@ namespace GitHubActionsNews
                 var repo = pathSegments[1];
                 
                 // Try different branches and files to find the action definition
+                // Most repos use "main" or "master" as their default branch
                 var branches = new[] { "main", "master" };
                 var filesToCheck = new[] { "action.yml", "action.yaml", "Dockerfile" };
                 
