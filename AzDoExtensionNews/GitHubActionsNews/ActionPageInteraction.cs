@@ -356,48 +356,56 @@ namespace GitHubActionsNews
 
             try
             {
-                // Navigate to the repository page
-                await page.GotoAsync(repoUrl);
-                await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-                string actionContent = null;
-                string fileType = null;
-
-                // Check for files in order: action.yml, action.yaml, Dockerfile
+                // Extract owner and repo from the URL (e.g., https://github.com/owner/repo)
+                var uri = new Uri(repoUrl);
+                var pathSegments = uri.AbsolutePath.Trim('/').Split('/');
+                
+                if (pathSegments.Length < 2)
+                {
+                    Log.Message($"Invalid repository URL format: [{repoUrl}]");
+                    return (null, null);
+                }
+                
+                var owner = pathSegments[0];
+                var repo = pathSegments[1];
+                
+                // Try different branches and files to find the action definition
+                // Most repos use "main" or "master" as their default branch
+                var branches = new[] { "main", "master" };
                 var filesToCheck = new[] { "action.yml", "action.yaml", "Dockerfile" };
                 
-                foreach (var fileName in filesToCheck)
+                string actionContent = null;
+                string fileType = null;
+                
+                foreach (var branch in branches)
                 {
-                    try
+                    foreach (var fileName in filesToCheck)
                     {
-                        // Look for a link to the file in the repository - use more specific selector
-                        var fileLink = page.Locator($"a[href$='/{fileName}']").First;
+                        var rawUrl = $"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{fileName}";
                         
-                        if (await fileLink.CountAsync() > 0)
+                        try
                         {
-                            Log.Message($"Found {fileName} in repository [{repoUrl}]");
+                            // Use Playwright's APIRequestContext to fetch the raw file content
+                            var response = await page.Context.APIRequest.GetAsync(rawUrl);
                             
-                            // Click on the file to open it
-                            await fileLink.ClickAsync();
-                            await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-                            
-                            // Get the file content from the code block
-                            var codeBlock = page.Locator("table.js-file-line-container, div.blob-code, pre.highlight");
-                            await codeBlock.First.WaitForAsync(new LocatorWaitForOptions { Timeout = 5000, State = WaitForSelectorState.Visible });
-                            
-                            if (await codeBlock.CountAsync() > 0)
+                            if (response.Ok)
                             {
-                                actionContent = await codeBlock.First.InnerTextAsync();
+                                actionContent = await response.TextAsync();
                                 fileType = fileName;
-                                Log.Message($"Successfully loaded content from {fileName}");
+                                Log.Message($"Successfully fetched {fileName} from branch '{branch}' in repository [{repoUrl}]");
                                 break;
                             }
                         }
+                        catch (Exception ex)
+                        {
+                            Log.Message($"Could not fetch {fileName} from branch '{branch}' in [{repoUrl}]: {ex.Message}");
+                            // Try next file/branch combination
+                        }
                     }
-                    catch (Exception ex)
+                    
+                    if (!string.IsNullOrWhiteSpace(actionContent))
                     {
-                        Log.Message($"Could not find or open {fileName} in [{repoUrl}]: {ex.Message}");
-                        // Try next file
+                        break;
                     }
                 }
 
