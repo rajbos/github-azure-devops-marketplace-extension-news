@@ -440,6 +440,11 @@ Write-Host "Created [$counter] blog posts"
 $changes = git status --porcelain
 # if there are changes
 if ($changes) {
+    # Validate that token exists
+    if ([string]::IsNullOrEmpty($token)) {
+        throw 'Token is required for authentication'
+    }
+    
     # configure git user
     git config --local user.email "bot@github-actions.com"
     git config --local user.name "github-actions"
@@ -458,6 +463,9 @@ if ($changes) {
     
     # push the changes
     git push
+    
+    # Clean up authentication header after push
+    git config --local --unset http.https://github.com/.extraheader
     
     # Parse the commit output to extract created blog post files
     $blogPostLinks = @()
