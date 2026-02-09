@@ -441,13 +441,14 @@ $changes = git status --porcelain
 # if there are changes
 if ($changes) {
     # configure git user
-    git config --global user.email "bot@github-actions.com"
-    git config --global user.name "github-actions"
+    git config --local user.email "bot@github-actions.com"
+    git config --local user.name "github-actions"
     
     # Configure git to use the PAT token for authentication via extraheader
     # This is more secure than embedding in URL and doesn't persist to disk
+    # Using --local to limit scope to current repository only
     $base64Token = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x:$token"))
-    git config --global http.https://github.com/.extraheader "AUTHORIZATION: basic $base64Token"
+    git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic $base64Token"
     
     # add all changes
     git add .
