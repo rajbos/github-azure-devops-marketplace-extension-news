@@ -443,6 +443,12 @@ if ($changes) {
     # configure git user
     git config --global user.email "bot@github-actions.com"
     git config --global user.name "github-actions"
+    
+    # Configure git to use the PAT token for authentication
+    git config --global credential.helper store
+    # Set the remote URL with the token embedded for authentication
+    git remote set-url origin "https://x:$token@github.com/devops-actions/github-actions-marketplace-news.git"
+    
     # add all changes
     git add .
     # commit the changes and capture the output
