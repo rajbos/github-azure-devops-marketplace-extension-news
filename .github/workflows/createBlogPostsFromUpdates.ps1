@@ -455,17 +455,22 @@ if ($changes) {
     $base64Token = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x:$token"))
     git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic $base64Token"
     
-    # add all changes
-    git add .
-    # commit the changes and capture the output
-    $commitOutput = git commit -m "Update blog posts for $(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")" 2>&1
-    Write-Host $commitOutput
-    
-    # push the changes
-    git push
-    
-    # Clean up authentication header after push
-    git config --local --unset http.https://github.com/.extraheader
+    try {
+        # add all changes
+        git add .
+        # commit the changes and capture the output
+        $commitOutput = git commit -m "Update blog posts for $(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")" 2>&1
+        Write-Host $commitOutput
+        
+        # push the changes
+        git push
+    }
+    finally {
+        # Clean up authentication header after push (always executed)
+        git config --local --unset http.https://github.com/.extraheader
+        # Clear the base64 token from memory
+        Remove-Variable -Name base64Token -ErrorAction SilentlyContinue
+    }
     
     # Parse the commit output to extract created blog post files
     $blogPostLinks = @()
