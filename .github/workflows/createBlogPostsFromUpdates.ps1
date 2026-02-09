@@ -444,10 +444,10 @@ if ($changes) {
     git config --global user.email "bot@github-actions.com"
     git config --global user.name "github-actions"
     
-    # Configure git to use the PAT token for authentication
-    git config --global credential.helper store
-    # Set the remote URL with the token embedded for authentication
-    git remote set-url origin "https://x:$token@github.com/devops-actions/github-actions-marketplace-news.git"
+    # Configure git to use the PAT token for authentication via extraheader
+    # This is more secure than embedding in URL and doesn't persist to disk
+    $base64Token = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x:$token"))
+    git config --global http.https://github.com/.extraheader "AUTHORIZATION: basic $base64Token"
     
     # add all changes
     git add .
