@@ -440,17 +440,37 @@ Write-Host "Created [$counter] blog posts"
 $changes = git status --porcelain
 # if there are changes
 if ($changes) {
-    # configure git user
-    git config --global user.email "bot@github-actions.com"
-    git config --global user.name "github-actions"
-    # add all changes
-    git add .
-    # commit the changes and capture the output
-    $commitOutput = git commit -m "Update blog posts for $(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")" 2>&1
-    Write-Host $commitOutput
+    # Validate that token exists
+    if ([string]::IsNullOrEmpty($token)) {
+        throw 'Token is required for authentication'
+    }
     
-    # push the changes
-    git push
+    # configure git user
+    git config --local user.email "bot@github-actions.com"
+    git config --local user.name "github-actions"
+    
+    # Configure git to use the PAT token for authentication via extraheader
+    # This is more secure than embedding in URL and doesn't persist to disk
+    # Using --local to limit scope to current repository only
+    $base64Token = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x:$token"))
+    git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic $base64Token"
+    
+    try {
+        # add all changes
+        git add .
+        # commit the changes and capture the output
+        $commitOutput = git commit -m "Update blog posts for $(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")" 2>&1
+        Write-Host $commitOutput
+        
+        # push the changes
+        git push
+    }
+    finally {
+        # Clean up authentication header after push (always executed)
+        git config --local --unset http.https://github.com/.extraheader
+        # Clear the base64 token from memory
+        Remove-Variable -Name base64Token -ErrorAction SilentlyContinue
+    }
     
     # Parse the commit output to extract created blog post files
     $blogPostLinks = @()
