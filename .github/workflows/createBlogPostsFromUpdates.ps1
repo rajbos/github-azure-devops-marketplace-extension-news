@@ -31,7 +31,12 @@ if (Test-Path -Path $folderName) {
 }
 
 # clone the git repository
-git clone $repositoryUrl
+$cloneOutput = git clone $repositoryUrl 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Failed to clone repository. Exit code: $LASTEXITCODE"
+    Write-Error "Clone output: $cloneOutput"
+    throw "Failed to clone repository. This may be due to authentication failure or network issues."
+}
 # change into the repository
 Set-Location $folderName
 
@@ -460,10 +465,21 @@ if ($changes) {
         git add .
         # commit the changes and capture the output
         $commitOutput = git commit -m "Update blog posts for $(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")" 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to commit blog posts. Exit code: $LASTEXITCODE"
+            Write-Error "Commit output: $commitOutput"
+            throw "Failed to commit blog posts to local repository."
+        }
         Write-Host $commitOutput
         
         # push the changes
-        git push
+        $pushOutput = git push 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to push blog posts to repository. Exit code: $LASTEXITCODE"
+            Write-Error "Push output: $pushOutput"
+            throw "Failed to push blog posts to repository. This may be due to authentication failure or network issues."
+        }
+        Write-Host "Successfully pushed blog posts to repository"
     }
     finally {
         # Clean up authentication header after push (always executed)
