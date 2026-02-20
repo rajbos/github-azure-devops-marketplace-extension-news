@@ -466,18 +466,18 @@ if ($changes) {
         # commit the changes and capture the output
         $commitOutput = git commit -m "Update blog posts for $(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")" 2>&1
         if ($LASTEXITCODE -ne 0) {
-            Write-Error "Failed to commit blog posts. Exit code: $LASTEXITCODE"
-            Write-Error "Commit output: $commitOutput"
-            throw "Failed to commit blog posts to local repository."
+            $errorMessage = "Failed to commit blog posts. Exit code: $LASTEXITCODE`nCommit output: $commitOutput"
+            Write-Error $errorMessage
+            throw $errorMessage
         }
         Write-Host $commitOutput
         
         # push the changes
         $pushOutput = git push 2>&1
         if ($LASTEXITCODE -ne 0) {
-            Write-Error "Failed to push blog posts to repository. Exit code: $LASTEXITCODE"
-            Write-Error "Push output: $pushOutput"
-            throw "Failed to push blog posts to repository. This may be due to authentication failure or network issues."
+            $errorMessage = "Failed to push blog posts to repository. Exit code: $LASTEXITCODE`nPush output: $pushOutput`nThis may be due to authentication failure or network issues."
+            Write-Error $errorMessage
+            throw $errorMessage
         }
         Write-Host "Successfully pushed blog posts to repository"
     }
