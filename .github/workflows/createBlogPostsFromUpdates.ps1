@@ -93,6 +93,42 @@ function GetReleaseBody {
 
 }
 
+function GetCommitsForTag {
+    Param (
+        [Parameter(Mandatory = $true)]
+        [string] $repo,
+        [Parameter(Mandatory = $true)]
+        [string] $owner,
+        [Parameter(Mandatory = $true)]
+        [string] $tag
+    )
+
+    try {
+        $url = "https://api.github.com/repos/$owner/$repo/commits?sha=$tag&per_page=10"
+        $commits = ApiCall -url $url -access_token $token
+
+        if ($null -eq $commits -or $commits.Count -eq 0) {
+            Write-Warning "No commits found for repo [$repo] and tag [$tag]"
+            return ""
+        }
+
+        $commitLines = @()
+        foreach ($commit in $commits) {
+            $message = [System.Text.RegularExpressions.Regex]::Split($commit.commit.message, "`r`n|`n|`r")[0].Trim()
+            if ($message -ne "") {
+                $shortSha = $commit.sha.Substring(0, 7)
+                $commitLines += "- $message ($shortSha)"
+            }
+        }
+
+        return $commitLines -join "`r`n"
+    }
+    catch {
+        Write-Warning "Error getting commits for repo [$repo] and tag [$tag]: $_"
+        return ""
+    }
+}
+
 function GetReadmeContent {
     Param (
         [Parameter(Mandatory = $true)]
@@ -263,7 +299,11 @@ function CreateBlogPost {
     $dependentsNumber = GetDependentsForRepo -repo $repo -owner $owner
 
     $releaseBody = GetReleaseBody -repo $repo -owner $owner -tag $update.Version
-    
+    if ([string]::IsNullOrEmpty($releaseBody)) {
+        Write-Host "No release notes found for [$owner/$repo] tag [$($update.Version)], falling back to commit list..."
+        $releaseBody = GetCommitsForTag -repo $repo -owner $owner -tag $update.Version
+    }
+
     # Get action summary using GitHub Models
     Write-Host "Attempting to generate action summary for [$owner/$repo]..."
     $actionSummary = GetActionSummary -repo $repo -owner $owner
@@ -376,6 +416,7 @@ function GetContent {
         $content += "- This publisher is shown as 'verified' by GitHub."
     }
     if ("" -ne $dependentsNumber) {
+        $content += ""
         $content += "- This action is used across all versions by **$dependentsNumber** repositories."
     }
     if ($update.ActionType) {
@@ -401,10 +442,10 @@ function GetContent {
     }
     
     if ($releaseBody -ne "") {
-        $content += "## Release notes"
+        $content += "## What's Changed"
         $content += ""
-        # convert the \r\n in the text to lines in the array
-        foreach ($line in $releaseBody.Split("\r\n")) {
+        # convert newlines in the text to lines in the array
+        foreach ($line in [System.Text.RegularExpressions.Regex]::Split($releaseBody, "`r`n|`n|`r")) {
             $content += $line
         }
     }
