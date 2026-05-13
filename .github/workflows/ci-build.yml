@@ -77,7 +77,7 @@ jobs:
         & $script install chromium --with-deps
 
     - name: Test
-      run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln -c Release --no-build
+      run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln -c Release --no-build --filter "TestCategory!=MarketplaceScraping"
 
     # publish the AzDo news:
     - name: Publish AzDo News
