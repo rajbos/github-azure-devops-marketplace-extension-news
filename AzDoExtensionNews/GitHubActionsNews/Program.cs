@@ -666,7 +666,7 @@ namespace GitHubActionsNews
                         // check if the "Verified creator" label exists
                         try
                         {
-                            var verifiedCreatorLocator = newPage.Locator("text=Verified creator");
+                            var verifiedCreatorLocator = newPage.Locator("[aria-label='Manually verified']");
                             if (await verifiedCreatorLocator.CountAsync() > 0)
                             {
                                 verified = true;

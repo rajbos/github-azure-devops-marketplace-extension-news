@@ -37,7 +37,7 @@ namespace GitHubActionsNews.Tests
             await Page.GotoAsync(url);
             await Task.Delay(2000);
 
-            var verifiedCreatorLocator = Page.Locator("text=Verified creator");
+            var verifiedCreatorLocator = Page.Locator("[aria-label='Manually verified']");
             var isVerified = await verifiedCreatorLocator.CountAsync() > 0;
 
             Assert.IsTrue(isVerified, "actions/checkout should be a verified creator");
@@ -51,7 +51,7 @@ namespace GitHubActionsNews.Tests
             await Page.GotoAsync(url);
             await Task.Delay(2000);
 
-            var verifiedCreatorLocator = Page.Locator("text=Verified creator");
+            var verifiedCreatorLocator = Page.Locator("[aria-label='Manually verified']");
             var isVerified = await verifiedCreatorLocator.CountAsync() > 0;
 
             Assert.IsFalse(isVerified, "setup-go-task should NOT be a verified creator");
@@ -65,7 +65,7 @@ namespace GitHubActionsNews.Tests
             await Page.GotoAsync(url);
             await Task.Delay(2000);
 
-            var verifiedCreatorLocator = Page.Locator("text=Verified creator");
+            var verifiedCreatorLocator = Page.Locator("[aria-label='Manually verified']");
             var isVerified = await verifiedCreatorLocator.CountAsync() > 0;
 
             Assert.IsTrue(isVerified, "super-linter should be a verified creator");
