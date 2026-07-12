@@ -20,7 +20,7 @@ jobs:
       # Use PAT instead of GITHUB_TOKEN to allow this workflow to trigger other workflows
       # PAT should have permissions: contents:write, pull-requests:write
       # Scoped to this repository only
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           token: ${{ secrets.PAT }}
 
