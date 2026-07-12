@@ -25,14 +25,14 @@ jobs:
       with:
         egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
 
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v3.5.3
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v3.5.3
 
     - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-${{ hashFiles('**/**.csproj') }}-1
 
-    - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
+    - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
       with:
         dotnet-version: 8.x
         cache: true
@@ -79,7 +79,7 @@ jobs:
         character: [ba,bb,bd,bf,bm,bn,bq,bs,bt,bu,bv,c,e,g,h,j,k,l,m,n,u,w,x,y,z,o,p,r,sa,sb,sc,sd,se,sf,sg,sh,sj,sk,sl,sm,sn,sp,sr,su,sv,sw,t,v,ai,ae,ia,ea,0,1,2,3,4,5,6,7,8,9]
         #character: [c] # temp for faster testing of consolidate updates
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v3.5.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v3.5.3
 
       - name: Run Character Command
         uses: ./.github/actions/character-to-run/
@@ -112,12 +112,12 @@ jobs:
           name: ${{ env.artifactName }}
           path: ./ArtifactFolder
 
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v3.5.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v3.5.3
         with:
           path: repo
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
         with:
           dotnet-version: 8.x
 
@@ -178,7 +178,7 @@ jobs:
       name: BlogSite
       url: https://github.com/devops-actions/github-actions-marketplace-news
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
