@@ -177,6 +177,13 @@ jobs:
     environment:
       name: BlogSite
       url: https://github.com/devops-actions/github-actions-marketplace-news
+    services:
+      ollama:
+        image: ollama/ollama:0.23.4
+        ports:
+          - 11434:11434
+        volumes:
+          - /home/runner/.ollama:/root/.ollama
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
@@ -190,12 +197,19 @@ jobs:
           ls -la
           cat ArtifactFolder/Actions-Updated-Overview.json
 
+      - name: Set up Ollama
+        uses: ./.github/actions/setup-ollama
+        with:
+          model: qwen2.5-coder:3b
+
       - name: Create blogposts updates for updates
         shell: pwsh
+        env:
+          OLLAMA_MODEL: qwen2.5-coder:3b
         run: |
           ls
           cd .github/workflows/
           ls
 
           $filePath = Resolve-Path "..\..\ArtifactFolder\Actions-Updated-Overview.json"
-          .\createBlogPostsFromUpdates.ps1 -token ${{ secrets.PAT }} -tokenModels ${{ secrets.PAT_MODELS }} -filePath $filePath
+          .\createBlogPostsFromUpdates.ps1 -token ${{ secrets.PAT }} -filePath $filePath
