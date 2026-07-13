@@ -12,6 +12,7 @@ Do NOT include:
 - Version history or changelog information
 
 Keep the summary clear, professional, and user-focused.
+Summary must be in English
 
 README Content:
 {README_CONTENT}
