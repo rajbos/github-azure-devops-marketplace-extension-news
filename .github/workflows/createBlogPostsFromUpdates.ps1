@@ -2,15 +2,12 @@ Param(
     [Parameter(Mandatory = $true)]
     [string]$token,
     [Parameter(Mandatory = $true)]
-    [string]$tokenModels,
-    [Parameter(Mandatory = $true)]
     [string]$filePath
 )
 
 # load the dependents functions
 . $PSScriptRoot/dependents.ps1
 Write-Host "Got a token with length $($token.Length)"
-Write-Host "Got a tokenModels with length $($tokenModels.Length)"
 Write-Host "Got this file path $($filePath)"
 Write-Host "We are running from this location: $PSScriptRoot"
 Get-Location
@@ -171,7 +168,7 @@ function LoadPromptTemplate {
     }
 }
 
-function CallGitHubModels {
+function CallOllama {
     Param (
         [Parameter(Mandatory = $true)]
         [string] $prompt,
@@ -182,57 +179,45 @@ function CallGitHubModels {
 
     $maxAttempts = 2
     $backoffSeconds = 30
+    $ollamaUrl = $env:OLLAMA_URL ?? "http://localhost:11434"
+    $model = $env:OLLAMA_MODEL ?? "qwen2.5-coder:3b"
 
     try {
-        # Replace the README content placeholder in the prompt
         $fullPrompt = $prompt -replace '\{README_CONTENT\}', $readmeContent
 
-        # Prepare the request body for GitHub Models API
         $body = @{
+            model = $model
+            stream = $false
             messages = @(
                 @{
                     role = "user"
                     content = $fullPrompt
                 }
             )
-            model = "gpt-4o"
-            temperature = 0.7
-            max_tokens = 500
+            options = @{
+                temperature = 0.7
+                num_predict = 500
+            }
         } | ConvertTo-Json -Depth 10
 
-        $headers = @{
-            Authorization = "Bearer $tokenModels"
-            'Content-Type' = 'application/json'
-            'User-Agent' = 'github-actions-marketplace-news'
-        }
+        $url = "$($ollamaUrl.TrimEnd('/'))/api/chat"
+        $response = Invoke-RestMethod -Uri $url -Method Post -Body $body -ContentType "application/json" -ErrorAction Stop
 
-        # Call GitHub Models API
-        $url = "https://models.inference.ai.azure.com/chat/completions"
-        $response = Invoke-RestMethod -Uri $url -Method Post -Headers $headers -Body $body -ErrorAction Stop
-
-        if ($response.choices -and $response.choices.Count -gt 0) {
-            return $response.choices[0].message.content.Trim()
+        if ($response.message -and $response.message.content) {
+            return $response.message.content.Trim()
         }
         else {
-            throw "No response from GitHub Models API"
+            throw "No response from Ollama"
         }
     }
     catch {
         $errorMessage = $_.Exception.Message
-        Write-Warning "Attempt $attempt failed to call GitHub Models API: $errorMessage"
-        
-        # Check if this is a rate limiting error
-        if ($errorMessage -match "rate limit" -or $errorMessage -match "429" -or $errorMessage -match "Too Many Requests") {
-            Write-Warning "Rate limiting detected, implementing backoff..."
-        }
+        Write-Warning "Attempt $attempt failed to call Ollama: $errorMessage"
 
-        # Retry logic
         if ($attempt -lt $maxAttempts) {
             Write-Host "Waiting $backoffSeconds seconds before retry $($attempt + 1)/$maxAttempts..."
             Start-Sleep -Seconds $backoffSeconds
-            # Exponential backoff for second attempt
-            $nextBackoff = $backoffSeconds * 2
-            return CallGitHubModels -prompt $prompt -readmeContent $readmeContent -attempt ($attempt + 1)
+            return CallOllama -prompt $prompt -readmeContent $readmeContent -attempt ($attempt + 1)
         }
         else {
             Write-Warning "Failed to generate action summary after $maxAttempts attempts"
@@ -270,8 +255,7 @@ function GetActionSummary {
             $readmeContent = $readmeContent.Substring(0, 4000) + "`n`n[README truncated for summary generation]"
         }
 
-        # Call GitHub Models API
-        $summary = CallGitHubModels -prompt $promptTemplate -readmeContent $readmeContent -attempt 1
+        $summary = CallOllama -prompt $promptTemplate -readmeContent $readmeContent -attempt 1
         
         return $summary
     }
@@ -402,6 +386,10 @@ function GetContent {
     }
     if ($update.NodeVersion) {
         $content += "nodeVersion: $(SanitizeContent $update.NodeVersion)"
+    }
+    if ($actionSummary -and $actionSummary -ne "") {
+        $content += "actionSummary: |"
+        $content += "  $($actionSummary.Replace("`n", "`n  "))"
     }
     $content += "---"
     $content += ""
