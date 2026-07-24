@@ -21,6 +21,18 @@ jobs:
   ci-build:
     runs-on: ubuntu-latest
     steps:
+    # Install Playwright's OS-level dependencies before Harden Runner disables sudo below.
+    # `playwright.ps1 install chromium --with-deps` needs sudo to apt-get install missing
+    # system libraries, and that isn't always a no-op: the ubuntu-latest image doesn't
+    # consistently ship every required package, so this occasionally failed once sudo was
+    # blocked. Installing deps here (before sudo is disabled) and only downloading the
+    # browser binary later (which needs no elevated privileges) keeps the rest of the job
+    # hardened while making the Playwright setup reliable.
+    - name: Install Playwright OS dependencies
+      run: |
+        sudo apt-get update
+        sudo npx --yes playwright@1.61.0 install-deps chromium
+
     # setup the environment:
     - name: Harden Runner
       uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
@@ -74,7 +86,7 @@ jobs:
         if (-not (Test-Path $script)) {
           throw "Playwright script not found at $script"
         }
-        & $script install chromium --with-deps
+        & $script install chromium
 
     - name: Test
       run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln -c Release --no-build --filter "TestCategory!=MarketplaceScraping"
