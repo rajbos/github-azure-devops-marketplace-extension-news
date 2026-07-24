@@ -3,6 +3,7 @@ using Microsoft.Playwright;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -692,9 +693,8 @@ namespace GitHubActionsNews
                         }
                         catch (Exception e)
                         {
-                            Log.Message($"Error loading action repo url for action with url [{url}]: {e.Message}, Page title:{pageTitle}, the version we got is: [{version}]");
-                            var source = await newPage.ContentAsync();
-                            Console.WriteLine(source);
+                            var debugFilePath = await SavePageContentForDebugging(newPage, url);
+                            Log.Message($"Error loading action repo url for action with url [{url}]: {e.Message}, Page title:{pageTitle}, the version we got is: [{version}]. Page HTML saved to [{debugFilePath}] for troubleshooting (uploaded as a CI artifact on failure).");
                         }
 
                         publisher = GetPublisher(actionRepoUrl);
@@ -853,6 +853,36 @@ namespace GitHubActionsNews
             catch (Exception ex)
             {
                 Log.Message($"Error saving screenshot: {ex.Message}");
+            }
+        }
+
+        // saves the full page HTML to a file instead of dumping it into the console/CI logs,
+        // so CI can pick the folder up and upload it as an artifact for troubleshooting.
+        private static async Task<string> SavePageContentForDebugging(IPage page, string url)
+        {
+            try
+            {
+                var debugHtmlDirectory = Path.Combine("TestResults", "DebugHtml");
+                Directory.CreateDirectory(debugHtmlDirectory);
+
+                var safeName = string.Join("_", url.Split(Path.GetInvalidFileNameChars()));
+                if (safeName.Length > 100)
+                {
+                    safeName = safeName.Substring(0, 100);
+                }
+
+                var fileName = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}_{safeName}.html";
+                var filePath = Path.Combine(debugHtmlDirectory, fileName);
+
+                var source = await page.ContentAsync();
+                await File.WriteAllTextAsync(filePath, source);
+
+                return filePath;
+            }
+            catch (Exception ex)
+            {
+                Log.Message($"Error saving page content for debugging: {ex.Message}");
+                return "<failed to save>";
             }
         }
     }
