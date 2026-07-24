@@ -63,6 +63,14 @@ jobs:
     - name: Test
       run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
 
+    - name: Publish Debug HTML Artifact
+      if: failure()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        path: AzDoExtensionNews/GitHubActionsNews.Tests/bin/**/TestResults/DebugHtml/**
+        name: DebugHtml
+        if-no-files-found: ignore
+
     - name: Publish AzDo Artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:

@@ -3,6 +3,7 @@ using Microsoft.Playwright;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -679,22 +680,34 @@ namespace GitHubActionsNews
 
                         version = await ActionPageInteraction.GetVersionFromAction(newPage);
                         Log.Message($"Found version [{version}] for url [{url}]");
-                        try
+                        const int maxRepoUrlAttempts = 3;
+                        for (var attempt = 1; attempt <= maxRepoUrlAttempts; attempt++)
                         {
-                            actionRepoUrl = await ActionPageInteraction.GetRepoFromAction(newPage);
-                            if (string.IsNullOrEmpty(actionRepoUrl))
-                                throw new Exception("Did not find action repo url");
-                            else
+                            try
                             {
+                                actionRepoUrl = await ActionPageInteraction.GetRepoFromAction(newPage);
+                                if (string.IsNullOrEmpty(actionRepoUrl))
+                                    throw new Exception("Did not find action repo url");
+
                                 actionRepoUrl = NormalizeGithubUrl(actionRepoUrl);
                                 Log.Message($"Found repoUrl [{actionRepoUrl}] for url [{url}]");
+                                break;
                             }
-                        }
-                        catch (Exception e)
-                        {
-                            Log.Message($"Error loading action repo url for action with url [{url}]: {e.Message}, Page title:{pageTitle}, the version we got is: [{version}]");
-                            var source = await newPage.ContentAsync();
-                            Console.WriteLine(source);
+                            catch (Exception e)
+                            {
+                                if (attempt >= maxRepoUrlAttempts)
+                                {
+                                    var debugFilePath = await SavePageContentForDebugging(newPage, url);
+                                    Log.Message($"Error loading action repo url for action with url [{url}] after {attempt} attempt(s): {e.Message}, Page title:{pageTitle}, the version we got is: [{version}]. Page HTML saved to [{debugFilePath}] for troubleshooting (uploaded as a CI artifact on failure).");
+                                }
+                                else
+                                {
+                                    Log.Message($"Attempt {attempt}/{maxRepoUrlAttempts} failed to load action repo url for [{url}]: {e.Message}. Retrying...");
+                                    await Task.Delay(1000 * attempt);
+                                    await newPage.ReloadAsync();
+                                    await Task.Delay(2000);
+                                }
+                            }
                         }
 
                         publisher = GetPublisher(actionRepoUrl);
@@ -853,6 +866,36 @@ namespace GitHubActionsNews
             catch (Exception ex)
             {
                 Log.Message($"Error saving screenshot: {ex.Message}");
+            }
+        }
+
+        // saves the full page HTML to a file instead of dumping it into the console/CI logs,
+        // so CI can pick the folder up and upload it as an artifact for troubleshooting.
+        private static async Task<string> SavePageContentForDebugging(IPage page, string url)
+        {
+            try
+            {
+                var debugHtmlDirectory = Path.Combine("TestResults", "DebugHtml");
+                Directory.CreateDirectory(debugHtmlDirectory);
+
+                var safeName = string.Join("_", url.Split(Path.GetInvalidFileNameChars()));
+                if (safeName.Length > 100)
+                {
+                    safeName = safeName.Substring(0, 100);
+                }
+
+                var fileName = $"{DateTime.UtcNow:yyyyMMdd_HHmmss}_{safeName}.html";
+                var filePath = Path.Combine(debugHtmlDirectory, fileName);
+
+                var source = await page.ContentAsync();
+                await File.WriteAllTextAsync(filePath, source);
+
+                return filePath;
+            }
+            catch (Exception ex)
+            {
+                Log.Message($"Error saving page content for debugging: {ex.Message}");
+                return "<failed to save>";
             }
         }
     }
