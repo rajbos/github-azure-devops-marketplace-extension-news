@@ -59,7 +59,41 @@ jobs:
             git add "Directory.Packages.props"
 
             git commit -am "chore: upgrade c# dependencies"
-            git push --set-upstream origin upgrade-dependencies
+
+            # Push with a rebase-and-retry loop: concurrent runs of this workflow can race to
+            # push the same 'upgrade-dependencies' branch, which git rejects with a
+            # "fetch first" / "[rejected]" error. When we detect that specific error, fetch the
+            # remote branch, rebase our commit on top of it, and try the push again.
+            max_attempts=3
+            attempt=1
+            while true; do
+              push_output=$(git push --set-upstream origin upgrade-dependencies 2>&1) && push_status=0 || push_status=$?
+              echo "$push_output"
+
+              if [ "$push_status" -eq 0 ]; then
+                break
+              fi
+
+              if echo "$push_output" | grep -q "\[rejected\]" && echo "$push_output" | grep -qi "fetch first"; then
+                if [ "$attempt" -ge "$max_attempts" ]; then
+                  echo "::error::Push rejected due to concurrent changes after $max_attempts attempts, giving up."
+                  exit 1
+                fi
+
+                echo "Push rejected because of concurrent changes to 'upgrade-dependencies' (attempt $attempt/$max_attempts). Rebasing on top of the remote branch and retrying..."
+                git fetch origin upgrade-dependencies
+                if ! git rebase origin/upgrade-dependencies; then
+                  echo "::error::Rebase onto origin/upgrade-dependencies failed with conflicts, giving up."
+                  git rebase --abort
+                  exit 1
+                fi
+
+                attempt=$((attempt + 1))
+              else
+                echo "::error::git push failed for a reason other than concurrent updates."
+                exit 1
+              fi
+            done
 
             gh pr create --title "chore: upgrade dependencies" --body "This PR upgrades C# dependencies"
           else
