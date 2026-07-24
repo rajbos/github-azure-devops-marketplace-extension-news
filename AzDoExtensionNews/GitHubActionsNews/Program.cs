@@ -680,21 +680,34 @@ namespace GitHubActionsNews
 
                         version = await ActionPageInteraction.GetVersionFromAction(newPage);
                         Log.Message($"Found version [{version}] for url [{url}]");
-                        try
+                        const int maxRepoUrlAttempts = 3;
+                        for (var attempt = 1; attempt <= maxRepoUrlAttempts; attempt++)
                         {
-                            actionRepoUrl = await ActionPageInteraction.GetRepoFromAction(newPage);
-                            if (string.IsNullOrEmpty(actionRepoUrl))
-                                throw new Exception("Did not find action repo url");
-                            else
+                            try
                             {
+                                actionRepoUrl = await ActionPageInteraction.GetRepoFromAction(newPage);
+                                if (string.IsNullOrEmpty(actionRepoUrl))
+                                    throw new Exception("Did not find action repo url");
+
                                 actionRepoUrl = NormalizeGithubUrl(actionRepoUrl);
                                 Log.Message($"Found repoUrl [{actionRepoUrl}] for url [{url}]");
+                                break;
                             }
-                        }
-                        catch (Exception e)
-                        {
-                            var debugFilePath = await SavePageContentForDebugging(newPage, url);
-                            Log.Message($"Error loading action repo url for action with url [{url}]: {e.Message}, Page title:{pageTitle}, the version we got is: [{version}]. Page HTML saved to [{debugFilePath}] for troubleshooting (uploaded as a CI artifact on failure).");
+                            catch (Exception e)
+                            {
+                                if (attempt >= maxRepoUrlAttempts)
+                                {
+                                    var debugFilePath = await SavePageContentForDebugging(newPage, url);
+                                    Log.Message($"Error loading action repo url for action with url [{url}] after {attempt} attempt(s): {e.Message}, Page title:{pageTitle}, the version we got is: [{version}]. Page HTML saved to [{debugFilePath}] for troubleshooting (uploaded as a CI artifact on failure).");
+                                }
+                                else
+                                {
+                                    Log.Message($"Attempt {attempt}/{maxRepoUrlAttempts} failed to load action repo url for [{url}]: {e.Message}. Retrying...");
+                                    await Task.Delay(1000 * attempt);
+                                    await newPage.ReloadAsync();
+                                    await Task.Delay(2000);
+                                }
+                            }
                         }
 
                         publisher = GetPublisher(actionRepoUrl);
