@@ -20,19 +20,15 @@ permissions:
 jobs:
   ci-build:
     runs-on: ubuntu-latest
+    # Run inside Microsoft's official Playwright .NET image, which already ships the exact
+    # OS-level dependencies + browsers Playwright needs (matching Directory.Packages.props'
+    # Microsoft.Playwright version) and a .NET 8 SDK. This avoids ever needing `sudo apt-get`
+    # to install browser dependencies, so Harden Runner's disable-sudo can stay fully in
+    # effect for the whole job instead of being loosened just to work around a flaky
+    # `playwright install --with-deps` on the bare ubuntu-latest image.
+    container:
+      image: mcr.microsoft.com/playwright/dotnet:v1.61.0-noble
     steps:
-    # Install Playwright's OS-level dependencies before Harden Runner disables sudo below.
-    # `playwright.ps1 install chromium --with-deps` needs sudo to apt-get install missing
-    # system libraries, and that isn't always a no-op: the ubuntu-latest image doesn't
-    # consistently ship every required package, so this occasionally failed once sudo was
-    # blocked. Installing deps here (before sudo is disabled) and only downloading the
-    # browser binary later (which needs no elevated privileges) keeps the rest of the job
-    # hardened while making the Playwright setup reliable.
-    - name: Install Playwright OS dependencies
-      run: |
-        sudo apt-get update
-        sudo npx --yes playwright@1.61.0 install-deps chromium
-
     # setup the environment:
     - name: Harden Runner
       uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
@@ -50,16 +46,15 @@ jobs:
           playwright.azureedge.net:443
           ms-playwright.azureedge.net:443
           github.githubassets.com:443
+          mcr.microsoft.com:443
+          *.data.mcr.microsoft.com:443
+          *.cdn.mscr.io:443
 
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v3.5.3
     - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-${{ hashFiles('**/**.csproj') }}-1
-
-    - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
-      with:
-        dotnet-version: 8.0.x
 
     # build it:
     - name: Restore
@@ -78,15 +73,6 @@ jobs:
 
     - name: Build
       run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release
-
-    - name: Install Playwright Browsers
-      shell: pwsh
-      run: |
-        $script = Join-Path $env:GITHUB_WORKSPACE 'AzDoExtensionNews/GitHubActionsNews/bin/Release/net8.0/playwright.ps1'
-        if (-not (Test-Path $script)) {
-          throw "Playwright script not found at $script"
-        }
-        & $script install chromium
 
     - name: Test
       run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln -c Release --no-build --filter "TestCategory!=MarketplaceScraping"
