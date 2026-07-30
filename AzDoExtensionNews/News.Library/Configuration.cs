@@ -65,6 +65,30 @@ namespace News.Library
             }
         }
 
+        private static string _GitHubApiToken;
+
+        /// <summary>
+        /// Optional token used to authenticate GitHub REST API calls (releases/tags lookups).
+        /// Falls back to unauthenticated calls (60 requests/hour) when not set, so it is not required.
+        /// </summary>
+        public static string GitHubApiToken
+        {
+            get
+            {
+                if (!_settingsLoaded)
+                {
+                    LoadSettings();
+                }
+
+                return _GitHubApiToken;
+            }
+
+            set
+            {
+                _GitHubApiToken = value;
+            }
+        }
+
         public static void LoadSettings()
         {
             IConfiguration config = new ConfigurationBuilder()
@@ -79,6 +103,12 @@ namespace News.Library
             var twitterAccessTokenSecret = config["TwitterAccessTokenSecret"];
             var rawConnectionString = config["BlobStorageConnectionString"];
             var normalizedBlobConnectionString = NormalizeBlobStorageConnectionString(rawConnectionString);
+            var gitHubApiToken = NormalizeOptionalSetting(config["GitHubApiToken"], nameof(GitHubApiToken));
+            if (string.IsNullOrWhiteSpace(gitHubApiToken))
+            {
+                // GITHUB_TOKEN is provided automatically in GitHub Actions workflows
+                gitHubApiToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
+            }
 
             // check them all
             if (String.IsNullOrEmpty(twitterConsumerApiKey)) throw new ConfigurationException($"Error loading value for {nameof(TwitterConsumerAPIKey)}");
@@ -92,6 +122,12 @@ namespace News.Library
             TwitterAccessToken = twitterAccessToken;
             TwitterAccessTokenSecret = twitterAccessTokenSecret;
             _BlobStorageConnectionString = normalizedBlobConnectionString;
+            _GitHubApiToken = gitHubApiToken;
+
+            if (string.IsNullOrWhiteSpace(_GitHubApiToken))
+            {
+                Log.Message($"{nameof(GitHubApiToken)} not configured. GitHub API version lookups will be unauthenticated (60 requests/hour) or skipped once that limit is reached.");
+            }
 
             var hasBlobStorageConfiguration = !string.IsNullOrWhiteSpace(_BlobStorageConnectionString);
 
@@ -112,6 +148,18 @@ namespace News.Library
         private static string NormalizeBlobStorageConnectionString(string value)
         {
             if (string.IsNullOrWhiteSpace(value) || value == nameof(BlobStorageConnectionString))
+            {
+                return null;
+            }
+
+            return value;
+        }
+
+        // Guards against the appsettings.json placeholder value (e.g. "GitHubApiToken") being
+        // treated as a real, configured value when variable substitution did not run.
+        private static string NormalizeOptionalSetting(string value, string settingName)
+        {
+            if (string.IsNullOrWhiteSpace(value) || value == settingName)
             {
                 return null;
             }
