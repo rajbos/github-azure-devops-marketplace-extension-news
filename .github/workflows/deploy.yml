@@ -86,6 +86,8 @@ jobs:
       matrix:
         character: [ba,bb,bd,bf,bm,bn,bq,bs,bt,bu,bv,c,e,g,h,j,k,l,m,n,u,w,x,y,z,o,p,r,sa,sb,sc,sd,se,sf,sg,sh,sj,sk,sl,sm,sn,sp,sr,su,sv,sw,t,v,ai,ae,ia,ea,0,1,2,3,4,5,6,7,8,9]
         #character: [c] # temp for faster testing of consolidate updates
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v3.5.3
 
@@ -100,6 +102,10 @@ jobs:
           TwitterAccessToken: 'TwitterAccessToken'
           TwitterAccessTokenSecret: 'TwitterAccessTokenSecret'
           BlobStorageConnectionString: ${{ secrets.BLOB_CONNECTION_STRING }}
+          # authenticates GitHub REST API version lookups (releases/tags) so known actions can be
+          # refreshed without loading their marketplace detail page; raises the rate limit from
+          # 60/hour (unauthenticated) to 1000/hour per repository.
+          GitHubApiToken: ${{ secrets.GITHUB_TOKEN }}
 
   ConsolidateUpdates:
     runs-on: windows-latest

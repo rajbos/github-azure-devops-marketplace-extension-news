@@ -17,6 +17,9 @@ inputs:
     required: true
   BlobStorageConnectionString:
     required: true
+  GitHubApiToken:
+    required: false
+    default: ''
 
 runs:
   using: "composite"
@@ -57,7 +60,8 @@ runs:
         TwitterAccessToken: ${{ inputs.TwitterAccessToken }}
         TwitterAccessTokenSecret: ${{ inputs.TwitterAccessTokenSecret }}
         BlobStorageConnectionString: ${{ inputs.BlobStorageConnectionString }}
-    
+        GitHubApiToken: ${{ inputs.GitHubApiToken }}
+
     - name: Install Playwright Browsers
       shell: pwsh
       run: |

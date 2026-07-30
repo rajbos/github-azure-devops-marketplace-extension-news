@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +17,13 @@ namespace GitHubActionsNews
         private const string GitHubMarketplaceUrl = "https://github.com/marketplace?type=actions";
         private static readonly string StorageFileName = "Actions";
         private static Twitter twitter;
+
+        // Created lazily (after Configuration.LoadSettings runs) rather than as an eager static
+        // field, so unit tests that touch the Program class without loading configuration keep working.
+        private static readonly Lazy<GitHubReleaseApiClient> LazyGitHubApiClient =
+            new Lazy<GitHubReleaseApiClient>(() => new GitHubReleaseApiClient(new HttpClient(), Configuration.GitHubApiToken));
+
+        private static GitHubReleaseApiClient GitHubApiClient => LazyGitHubApiClient.Value;
 
         static async Task Main(string[] args)
         {
@@ -219,6 +227,14 @@ namespace GitHubActionsNews
         {
             var actions = new List<GitHubAction>();
             var started = DateTime.Now;
+
+            var storeFileName = $"{StorageFileName}-{query}";
+            // get existing actions for this query up front, so the scrape below can look up
+            // actions we already know the RepoUrl for and check their version via the GitHub API
+            // instead of loading their marketplace detail page with Playwright.
+            var existingActions = Storage.ReadFromJson<GitHubAction>(storeFileName, storeFileName);
+            var existingActionsByUrl = BuildExistingActionsByUrlLookup(existingActions);
+
             // check if query is a single letter, but is not a number
             if (query.Length == 1 && !int.TryParse(query, out var a))
             {
@@ -234,7 +250,7 @@ namespace GitHubActionsNews
                     {
                         Log.Message($"Loading latest states for all actions starting with [{twoLetterQuery}]");
                         var queriedGitHubMarketplaceUrl = $"{GitHubMarketplaceUrl}&query={twoLetterQuery}";
-                        actions.AddRange(await GetAllActionsAsync(queriedGitHubMarketplaceUrl));
+                        actions.AddRange(await GetAllActionsAsync(queriedGitHubMarketplaceUrl, existingActionsByUrl, GitHubApiClient));
                     }
                 }
             }
@@ -243,7 +259,7 @@ namespace GitHubActionsNews
                 Log.Message($"Loading latest states for all actions starting with [{query}]");
 
                 var queriedGitHubMarketplaceUrl = $"{GitHubMarketplaceUrl}&query={query}";
-                actions.AddRange(await GetAllActionsAsync(queriedGitHubMarketplaceUrl));
+                actions.AddRange(await GetAllActionsAsync(queriedGitHubMarketplaceUrl, existingActionsByUrl, GitHubApiClient));
             }
 
             if (actions.Count == 0 && 1 == 3) // this is a temporary fix to avoid an exception when running with the new UI refresh
@@ -252,10 +268,6 @@ namespace GitHubActionsNews
                 // throw so that a run will fail and e.g. a workflow indicates failure
                 throw new Exception($"No actions found for query [{query}]");
             }
-
-            var storeFileName = $"{StorageFileName}-{query}";
-            // get existing actions for this query:
-            var existingActions = Storage.ReadFromJson<GitHubAction>(storeFileName, storeFileName);
 
             // tweet about updates and new actions:
             var repoUrlUpdates = 0;
@@ -350,11 +362,40 @@ namespace GitHubActionsNews
             return GetAllActionsAsync(searchUrl).GetAwaiter().GetResult();
         }
 
-        internal static async Task<List<GitHubAction>> GetAllActionsAsync(string searchUrl)
+        // Builds a lookup of the actions we already know about, keyed by their (normalized)
+        // marketplace detail-page url, so ParseActionAsync can find a known RepoUrl to check via
+        // the GitHub API instead of opening the detail page with Playwright.
+        internal static Dictionary<string, GitHubAction> BuildExistingActionsByUrlLookup(List<GitHubAction> existingActions)
+        {
+            var lookup = new Dictionary<string, GitHubAction>(StringComparer.OrdinalIgnoreCase);
+            foreach (var action in existingActions)
+            {
+                if (string.IsNullOrWhiteSpace(action.Url))
+                {
+                    continue;
+                }
+
+                // if duplicate urls exist, prefer the most recently updated entry
+                if (!lookup.TryGetValue(action.Url, out var current) ||
+                    (action.Updated ?? DateTime.MinValue) > (current.Updated ?? DateTime.MinValue))
+                {
+                    lookup[action.Url] = action;
+                }
+            }
+
+            return lookup;
+        }
+
+        internal static Task<List<GitHubAction>> GetAllActionsAsync(string searchUrl)
+        {
+            return GetAllActionsAsync(searchUrl, null, null);
+        }
+
+        internal static async Task<List<GitHubAction>> GetAllActionsAsync(string searchUrl, IReadOnlyDictionary<string, GitHubAction> existingActionsByUrl, GitHubReleaseApiClient apiClient)
         {
             try
             {
-                var actions = await ScrapeGitHubMarketPlaceAsync(searchUrl);
+                var actions = await ScrapeGitHubMarketPlaceAsync(searchUrl, existingActionsByUrl, apiClient);
 
                 return actions;
             }
@@ -367,7 +408,7 @@ namespace GitHubActionsNews
             return [];
         }
 
-        private static async Task<List<GitHubAction>> ScrapeGitHubMarketPlaceAsync(string searchUrl)
+        private static async Task<List<GitHubAction>> ScrapeGitHubMarketPlaceAsync(string searchUrl, IReadOnlyDictionary<string, GitHubAction> existingActionsByUrl, GitHubReleaseApiClient apiClient)
         {
             var started = DateTime.Now;
             Console.WriteLine("Running");
@@ -381,7 +422,7 @@ namespace GitHubActionsNews
             {
                 await page.GotoAsync(searchUrl);
                 var sb = new StringBuilder();
-                var actionList = await ScrapePageAsync(page, 1, sb);
+                var actionList = await ScrapePageAsync(page, 1, sb, existingActionsByUrl, apiClient);
                 var emptyRepoUrl = actionList.Where(x => String.IsNullOrEmpty(x.RepoUrl)).Count();
 
                 Log.Message($"Found {actionList.Count} actions for search url [{searchUrl}] in {(DateTime.Now - started).TotalMinutes:N2} minutes, with [{emptyRepoUrl}] not filled repo urls", logsummary: true);
@@ -449,10 +490,10 @@ namespace GitHubActionsNews
 
         private static List<GitHubAction> ScrapePage(IPage page, int pageNumber, StringBuilder logger)
         {
-            return ScrapePageAsync(page, pageNumber, logger).GetAwaiter().GetResult();
+            return ScrapePageAsync(page, pageNumber, logger, null, null).GetAwaiter().GetResult();
         }
 
-        private static async Task<List<GitHubAction>> ScrapePageAsync(IPage page, int pageNumber, StringBuilder logger)
+        private static async Task<List<GitHubAction>> ScrapePageAsync(IPage page, int pageNumber, StringBuilder logger, IReadOnlyDictionary<string, GitHubAction> existingActionsByUrl, GitHubReleaseApiClient apiClient)
         {
             var actionList = new List<GitHubAction>();
             try
@@ -482,8 +523,11 @@ namespace GitHubActionsNews
 
                 foreach (var action in actionTags)
                 {
-                    var ghAction = await ParseActionAsync(action, page);
-                    Thread.Sleep(2000); // try to cut down on ratelimit messages
+                    var (ghAction, usedMarketplacePage) = await ParseActionAsync(action, page, existingActionsByUrl, apiClient);
+                    if (usedMarketplacePage)
+                    {
+                        Thread.Sleep(2000); // try to cut down on ratelimit messages - only needed when we actually loaded a marketplace page
+                    }
                     if (ghAction != null)
                     {
                         actionList.Add(ghAction);
@@ -558,7 +602,7 @@ namespace GitHubActionsNews
                     }
 
                     // scrape the new page again
-                    actionList.AddRange(await ScrapePageAsync(page, pageNumber + 1, logger));
+                    actionList.AddRange(await ScrapePageAsync(page, pageNumber + 1, logger, existingActionsByUrl, apiClient));
                 }
                 else
                 {
@@ -624,20 +668,55 @@ namespace GitHubActionsNews
 
         private static GitHubAction ParseAction(ILocator action, IPage page)
         {
-            return ParseActionAsync(action, page).GetAwaiter().GetResult();
+            return ParseActionAsync(action, page, null, null).GetAwaiter().GetResult().Action;
         }
 
-        private static async Task<GitHubAction> ParseActionAsync(ILocator action, IPage page)
+        private static async Task<(GitHubAction Action, bool UsedMarketplacePage)> ParseActionAsync(ILocator action, IPage page, IReadOnlyDictionary<string, GitHubAction> existingActionsByUrl, GitHubReleaseApiClient apiClient)
         {
             try
             {
                 var href = await action.GetAttributeAsync("href");
                 if (string.IsNullOrWhiteSpace(href))
                 {
-                    return null;
+                    return (null, false);
                 }
 
                 var url = NormalizeMarketplaceUrl(href);
+
+                // Fast path: for actions we already know about with a repo url, check for a
+                // version change via the GitHub REST API instead of opening a Playwright detail
+                // page. Falls through to the full page scrape below when the action is new, has
+                // no known repo url, or the API lookup could not be completed (rate limited, no
+                // releases/tags found, network error, etc).
+                if (existingActionsByUrl != null && apiClient != null &&
+                    existingActionsByUrl.TryGetValue(url, out var existingAction) &&
+                    !string.IsNullOrWhiteSpace(existingAction.RepoUrl))
+                {
+                    var lookup = await apiClient.GetLatestVersionAsync(existingAction.RepoUrl);
+                    if (lookup.Success)
+                    {
+                        Log.Message($"Found version [{lookup.Version}] for url [{url}] via GitHub API (RepoUrl [{existingAction.RepoUrl}]), skipped marketplace page load");
+                        return (new GitHubAction
+                        {
+                            Url = url,
+                            Title = existingAction.Title,
+                            Publisher = existingAction.Publisher,
+                            Version = lookup.Version,
+                            Updated = DateTime.UtcNow,
+                            RepoUrl = existingAction.RepoUrl,
+                            Verified = existingAction.Verified,
+                            ActionType = existingAction.ActionType,
+                            NodeVersion = existingAction.NodeVersion
+                        }, false);
+                    }
+
+                    if (lookup.RateLimited)
+                    {
+                        Log.Message($"GitHub API rate limit reached; falling back to marketplace page for [{url}]");
+                    }
+                    // otherwise: no releases/tags found or a transient API error - fall back below
+                }
+
                 var title = "content";
                 var publisher = "";
 
@@ -728,7 +807,7 @@ namespace GitHubActionsNews
                 // closing the new page
                 await newPage.CloseAsync();
 
-                return new GitHubAction
+                return (new GitHubAction
                 {
                     Url = url,
                     Title = title,
@@ -739,12 +818,12 @@ namespace GitHubActionsNews
                     Verified = verified,
                     ActionType = null,  // Will be populated later for new/updated actions only
                     NodeVersion = null  // Will be populated later for new/updated actions only
-                };
+                }, true);
             }
             catch (Exception e)
             {
                 Log.Message($"Error parsing action: {e.Message}");
-                return null;
+                return (null, false);
             }
         }
 
