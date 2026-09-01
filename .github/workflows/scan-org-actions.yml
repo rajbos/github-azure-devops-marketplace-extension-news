@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
         with:
           egress-policy: audit
 
@@ -79,14 +79,14 @@ jobs:
       fail-fast: false
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
         with:
           egress-policy: audit
 
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v3.5.3
 
       - name: Load available actions for ${{ matrix.organization }}
-        uses: devops-actions/load-available-actions@105b53a3acb7f56a281c037966e90d146dd3f6e2 # v3.0.0
+        uses: devops-actions/load-available-actions@d52c1eddcfbb3a1971dcdbf9eb7dff7dde22cab2 # v3.1.1
         id: load-actions
         with:
           PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -107,7 +107,7 @@ jobs:
     if: ${{ always() && needs.ScanOrganization.result != 'failure' }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
         with:
           egress-policy: audit
 
