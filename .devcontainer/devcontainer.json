@@ -1,49 +1,41 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the
-// README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
+// For format details, see https://aka.ms/devcontainer.json.
 {
-	"name": "devcontainer",
-	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	//"dockerFile": "Dockerfile",
-	"build": {
-		// Path is relative to the devcontainer.json file.
-		"dockerfile": "Dockerfile"
-	},
+	"name": "marketplace-extension-news",
+	// Same image the CI build runs in (.github/workflows/ci-build.yml). It ships a .NET SDK + .NET 8 runtime,
+	// PowerShell, and the Playwright browsers + OS dependencies matching the Microsoft.Playwright
+	// version in Directory.Packages.props. Bump this tag together with that package version.
+	"image": "mcr.microsoft.com/playwright/dotnet:v1.61.0-noble",
+
 	"features": {
-		"ghcr.io/devcontainers/features/github-cli:1": {},
-        "ghcr.io/devcontainers/features/azure-cli:1": {},
-		"ghcr.io/devcontainers-contrib/features/powershell:1": {},
-		"ghcr.io/devcontainers/features/node:1": {
-			"version": "lts"
-		}
+		"ghcr.io/devcontainers/features/github-cli:1": {}
 	},
+
+	"containerEnv": {
+		// No display in the container: always launch Playwright headless.
+		"PLAYWRIGHT_HEADLESS": "true",
+		"DOTNET_CLI_TELEMETRY_OPTOUT": "1",
+		"DOTNET_NOLOGO": "1"
+	},
+
 	"customizations": {
 		"vscode": {
 			"extensions": [
+				"ms-dotnettools.csdevkit",
+				"ms-vscode.PowerShell",
 				"GitHub.copilot",
-				"ms-vscode.azurecli",
-				"ms-vscode.PowerShell"
+				"GitHub.vscode-github-actions"
 			],
 			"settings": {
-                "terminal.integrated.shell.linux": "/usr/local/lib/pwsh",
-				"powershell.powerShellAdditionalExePaths": {
-					"pwsh": "/usr/local/lib/pwsh/pwsh"
-				},
+				"terminal.integrated.defaultProfile.linux": "pwsh",
 				"editor.trimAutoWhitespace": true,
-            	"files.trimTrailingWhitespace": true
-            }
+				"files.trimTrailingWhitespace": true
+			}
 		}
 	},
 
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
+	// Restore the same way CI does: locked mode against the committed packages.lock.json files.
+	"postCreateCommand": "dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode",
 
-	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "pwsh -Command { ./.devcontainer/postCreateCommand.ps1; }",
-
-	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
-
-	// Run the dev container as privileged to be able to run docker commands
-	"runArgs": ["--init", "--privileged"],
-	"overrideCommand": false
+	// Non-root user that the Playwright image provides.
+	"remoteUser": "pwuser"
 }
