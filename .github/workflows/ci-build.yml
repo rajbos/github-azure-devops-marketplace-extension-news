@@ -6,8 +6,12 @@ on:
     - Directory.Packages.props
     - AzDoExtensionNews/**
     - .github/workflows/ci-build.yml
+
   # required workflow for the PR builds as well
   pull_request:
+    branches:
+      - main
+
   workflow_dispatch:
 
 permissions:
@@ -16,10 +20,18 @@ permissions:
 jobs:
   ci-build:
     runs-on: ubuntu-latest
+    # Run inside Microsoft's official Playwright .NET image, which already ships the exact
+    # OS-level dependencies + browsers Playwright needs (matching Directory.Packages.props'
+    # Microsoft.Playwright version) and a .NET 8 SDK. This avoids ever needing `sudo apt-get`
+    # to install browser dependencies, so Harden Runner's disable-sudo can stay fully in
+    # effect for the whole job instead of being loosened just to work around a flaky
+    # `playwright install --with-deps` on the bare ubuntu-latest image.
+    container:
+      image: mcr.microsoft.com/playwright/dotnet:v1.61.0-noble
     steps:
     # setup the environment:
     - name: Harden Runner
-      uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
+      uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
       with:
         disable-sudo: true
         egress-policy: block
@@ -27,29 +39,50 @@ jobs:
           api.nuget.org:443
           dc.services.visualstudio.com:443
           github.com:443
+          dotnetcli.azureedge.net:443
+          aka.ms:443
+          builds.dotnet.microsoft.com:443
+          ci.dot.net:443
+          playwright.azureedge.net:443
+          ms-playwright.azureedge.net:443
+          github.githubassets.com:443
+          mcr.microsoft.com:443
+          *.data.mcr.microsoft.com:443
+          *.cdn.mscr.io:443
 
-    - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v3.5.3
-    - uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v3.5.3
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-${{ hashFiles('**/**.csproj') }}-1
 
     # build it:
     - name: Restore
-      run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln
+      run: |
+        # Try locked mode first for security
+        if ! dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode; then
+          # If locked mode fails and this is a Dependabot PR, try updating lock files
+          if [[ "${{ github.actor }}" == "dependabot[bot]" ]]; then
+            echo "Locked mode failed on Dependabot PR, updating lock files"
+            dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --use-lock-file --force-evaluate
+          else
+            echo "Locked mode failed on non-Dependabot PR, failing build"
+            exit 1
+          fi
+        fi
 
     - name: Build
       run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release
 
     - name: Test
-      run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
+      run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln -c Release --no-build --filter "TestCategory!=MarketplaceScraping"
 
     # publish the AzDo news:
     - name: Publish AzDo News
       run: dotnet publish AzDoExtensionNews/AzDoExtensionNews/AzDoExtensionNews.csproj -c Release -o publish/AzDo/
 
     - name: Publish AzDo Artifact
-      uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         path: publish/AzDo
         name: AzDoNews
@@ -59,7 +92,7 @@ jobs:
       run: dotnet publish AzDoExtensionNews/GitHubActionsNews/GitHubActionsNews.csproj -c Release -o publish/GitHub/
 
     - name: Publish GitHub Artifact
-      uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         path: publish/GitHub
         name: GitHubNews

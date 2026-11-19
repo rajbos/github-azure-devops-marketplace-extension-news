@@ -36,6 +36,7 @@ namespace News.Library
             // twitter api is becoming paid, stop using it
             return false;
             
+#pragma warning disable CS0162 // Unreachable code detected
             var lastTweetedDuration = DateTime.UtcNow - LastTweeted;
             if (lastTweetedDuration.TotalSeconds < RateLimitDurationInSeconds)
             {
@@ -49,6 +50,7 @@ namespace News.Library
             LastTweeted = DateTime.UtcNow;
             return TweetWithNuget(tweetText, imageUrl);
             // return TweetWithHttp(tweetText);
+#pragma warning restore CS0162 // Unreachable code detected
         }
 
         private bool TweetWithHttp(string tweetText)

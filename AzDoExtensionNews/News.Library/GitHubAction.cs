@@ -13,5 +13,7 @@ namespace News.Library
         public DateTime? Updated { get; set; }
         public string RepoUrl { get; set; }
         public bool Verified { get; set; }
+        public string ActionType { get; set; }
+        public string NodeVersion { get; set; }
     }
 }

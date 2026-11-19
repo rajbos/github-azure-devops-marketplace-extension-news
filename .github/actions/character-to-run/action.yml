@@ -3,7 +3,7 @@ description: 'a description'
 
 # Were we can define the inputs that our action will accept
 inputs:
-  characters: 
+  characters:
     required: true
   artifactName:
     required: true
@@ -17,32 +17,72 @@ inputs:
     required: true
   BlobStorageConnectionString:
     required: true
+  GitHubApiToken:
+    required: false
+    default: ''
 
 runs:
   using: "composite"
-  # Defining the action steps(Just one step to be simple)
   steps:
+    
     - name: Download artifact from build job
       uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
       with:
         name: ${{ inputs.artifactName }}
         path: ./ArtifactFolder
 
-      # https://github.com/microsoft/variable-substitution
-      #Deprecated action, but it still works :-). Does need an update to node16 though!
-    - name: App Settings Variable Substitution
-      uses: rajbos-actions/variable-substitution@v1.1
+    - name: Setup .NET
+      uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5.0.0
       with:
-        files: 'ArtifactFolder/appsettings.json'
+        dotnet-version: 8.x
+
+    # these are needed to be able to run playwright, as it will not work with just artifact from the build job
+    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v3.5.3
+      with:
+        path: repo
+
+    - name: Restore
+      shell: bash
+      run: dotnet restore repo/AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode
+
+    - name: Build
+      shell: bash
+      run: dotnet build repo/AzDoExtensionNews/AzDoExtensionNews.sln -c Release
+    # / end of extra stuff
+
+    - name: App Settings Variable Substitution
+      uses: rajbos-actions/variable-substitution@ae7b1f3676ae374dc70282e6b9650bc50b611222 # v1.2
+      with:
+        files: 'repo/AzDoExtensionNews/GitHubActionsNews/bin/Release/net8.0/appsettings.json'
       env:
         TwitterConsumerAPIKey: ${{ inputs.TwitterConsumerAPIKey }}
         TwitterConsumerAPISecretKey: ${{ inputs.TwitterConsumerAPISecretKey }}
         TwitterAccessToken: ${{ inputs.TwitterAccessToken }}
         TwitterAccessTokenSecret: ${{ inputs.TwitterAccessTokenSecret }}
         BlobStorageConnectionString: ${{ inputs.BlobStorageConnectionString }}
+        GitHubApiToken: ${{ inputs.GitHubApiToken }}
 
-    - name: Perform a Pester test from the command-line
+    - name: Install Playwright Browsers
       shell: pwsh
       run: |
-        cd .\ArtifactFolder        
+        $ErrorActionPreference = 'Stop'
+        $script = Join-Path $env:GITHUB_WORKSPACE 'repo/AzDoExtensionNews/GitHubActionsNews/bin/Release/net8.0/playwright.ps1'
+        if (-not (Test-Path $script)) {
+          throw "Playwright script not found at $script"
+        }
+        & $script install chromium --with-deps
+
+    - name: Run the GitHubActionsNews application
+      shell: pwsh
+      run: |
+        Write-Host "::group::Run the GitHubActionsNews application"
+        cd repo/AzDoExtensionNews/GitHubActionsNews/bin/Release/net8.0
         dotnet GitHubActionsNews.dll ${{ inputs.characters }}
+        Write-Host "::endgroup::"
+
+    - name: Upload any error files
+      uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+      with:
+        name: error-pages-${{ inputs.characters }}
+        path: Error_Page_*
+        if-no-files-found: ignore

@@ -8,57 +8,88 @@ on:
     - cron: "15 */8 * * *"
 
   workflow_dispatch:
-  
+
   push:
    paths:
    - .github/workflows/deploy.yml
    - .github/actions/character-to-run/*
    - .github/workflows/createBlogPostsFromUpdates.ps1 # temp!
+   - AzDoExtensionsNews/**
 
 jobs:
-  build:
+  Build:
     runs-on: ubuntu-latest
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
+      uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
       with:
         egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
 
-    - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v3.5.3
-    - uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v3.5.3
+
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-${{ hashFiles('**/**.csproj') }}-1
 
+    - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+      with:
+        dotnet-version: 8.x
+        cache: true
+        cache-dependency-path: |
+          AzDoExtensionNews/AzDoExtensionsNews/packages.lock.json
+          AzDoExtensionNews/AzDoExtensionsNews.UnitTests/packages.lock.json
+          AzDoExtensionNews/GitHubActionsNews/packages.lock.json
+          AzDoExtensionNews/GitHubActionsNews.Tests/packages.lock.json
+
     - name: Restore
-      run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln
+      run: dotnet restore AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode
 
     - name: Build
       run: dotnet build AzDoExtensionNews/AzDoExtensionNews.sln -c Release
-      
+
+    - name: Install Playwright Browsers
+      shell: pwsh
+      run: |
+        $script = Join-Path $env:GITHUB_WORKSPACE 'AzDoExtensionNews/GitHubActionsNews/bin/Release/net8.0/playwright.ps1'
+        if (-not (Test-Path $script)) {
+          throw "Playwright script not found at $script"
+        }
+        & $script install chromium --with-deps
+
     - name: Publish
-      run: dotnet publish AzDoExtensionNews/AzDoExtensionNews.sln -c Release --property:PublishDir=${{ github.workspace }}/publish/AzDo/
-      
+      run: dotnet publish AzDoExtensionNews/GitHubActionsNews/GitHubActionsNews.csproj -c Release --self-contained false --property:PublishDir=${{ github.workspace }}/publish/AzDo/
+
     - name: Test
       run: dotnet test AzDoExtensionNews/AzDoExtensionNews.sln
 
+    - name: Publish Debug HTML Artifact
+      if: failure()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        path: AzDoExtensionNews/GitHubActionsNews.Tests/bin/**/TestResults/DebugHtml/**
+        name: DebugHtml
+        if-no-files-found: ignore
+
     - name: Publish AzDo Artifact
-      uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         path: publish/AzDo
         name: ${{ env.ArtifactName }}
-
+      
   GatherCharacter:
-    runs-on: windows-latest
-    needs: build
+    runs-on: ubuntu-latest
+    needs: Build
     continue-on-error: true
     concurrency: GatherCharacterJsons-${{ matrix.character }}
     strategy:
       matrix:
-        character: [c,b,e,g,h,j,k,l,m,n,u,w,x,y,z,o,p,r,sa,sb,sc,sd,se,sf,sg,sh,sj,sk,sl,sm,sn,sp,sr,su,sv,sw,t,v,ai,ae,ia,ea,0,1,2,3,4,5,6,7,8,9]
-        #character: [9] # temp for faster testing of consolidate updates
+        character: [ba,bb,bd,bf,bm,bn,bq,bs,bt,bu,bv,c,e,g,h,j,k,l,m,n,u,w,x,y,z,o,p,r,sa,sb,sc,sd,se,sf,sg,sh,sj,sk,sl,sm,sn,sp,sr,su,sv,sw,t,v,ai,ae,ia,ea,0,1,2,3,4,5,6,7,8,9]
+        #character: [c] # temp for faster testing of consolidate updates
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v3.5.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v3.5.3
 
       - name: Run Character Command
         uses: ./.github/actions/character-to-run/
@@ -71,6 +102,10 @@ jobs:
           TwitterAccessToken: 'TwitterAccessToken'
           TwitterAccessTokenSecret: 'TwitterAccessTokenSecret'
           BlobStorageConnectionString: ${{ secrets.BLOB_CONNECTION_STRING }}
+          # authenticates GitHub REST API version lookups (releases/tags) so known actions can be
+          # refreshed without loading their marketplace detail page; raises the rate limit from
+          # 60/hour (unauthenticated) to 1000/hour per repository.
+          GitHubApiToken: ${{ secrets.GITHUB_TOKEN }}
 
   ConsolidateUpdates:
     runs-on: windows-latest
@@ -86,10 +121,37 @@ jobs:
           }
 
       - name: Download artifact from build job
-        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: ${{ env.artifactName }}
           path: ./ArtifactFolder
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v3.5.3
+        with:
+          path: repo
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 8.x
+
+      - name: Restore
+        shell: pwsh
+        run: dotnet restore repo/AzDoExtensionNews/AzDoExtensionNews.sln --locked-mode
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build repo/AzDoExtensionNews/AzDoExtensionNews.sln -c Release
+
+      - name: Install Playwright browsers
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $script = Join-Path $env:GITHUB_WORKSPACE 'repo/AzDoExtensionNews/GitHubActionsNews/bin/Release/net8.0/playwright.ps1'
+          if (-not (Test-Path $script)) {
+            throw "Playwright script not found at $script"
+          }
+          & $script install chromium --with-deps
 
       - name: App Settings Variable Substitution
         uses: rajbos-actions/variable-substitution@ae7b1f3676ae374dc70282e6b9650bc50b611222 # v1.2
@@ -114,9 +176,9 @@ jobs:
           cd .\ArtifactFolder
           cat Actions-Updated-Overview.json
           Get-Content Actions-Updated-Overview.json
-                
+
       - name: Upload Updated Json
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           path: ArtifactFolder/Actions-Updated-Overview.json
           name: UpdatedActions
@@ -126,10 +188,20 @@ jobs:
     needs: ConsolidateUpdates
     permissions:
       contents: write
+    environment:
+      name: BlogSite
+      url: https://github.com/devops-actions/github-actions-marketplace-news
+    services:
+      ollama:
+        image: ollama/ollama:0.23.4
+        ports:
+          - 11434:11434
+        volumes:
+          - /home/runner/.ollama:/root/.ollama
     steps:
-      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: UpdatedActions
           path: ./ArtifactFolder
@@ -139,13 +211,19 @@ jobs:
           ls -la
           cat ArtifactFolder/Actions-Updated-Overview.json
 
+      - name: Set up Ollama
+        uses: ./.github/actions/setup-ollama
+        with:
+          model: qwen2.5-coder:3b
+
       - name: Create blogposts updates for updates
         shell: pwsh
+        env:
+          OLLAMA_MODEL: qwen2.5-coder:3b
         run: |
           ls
           cd .github/workflows/
           ls
-          
+
           $filePath = Resolve-Path "..\..\ArtifactFolder\Actions-Updated-Overview.json"
           .\createBlogPostsFromUpdates.ps1 -token ${{ secrets.PAT }} -filePath $filePath
-          

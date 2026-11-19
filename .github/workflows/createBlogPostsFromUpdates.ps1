@@ -1,7 +1,7 @@
 Param(
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$token,
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$filePath
 )
 
@@ -28,11 +28,16 @@ if (Test-Path -Path $folderName) {
 }
 
 # clone the git repository
-git clone $repositoryUrl
+$cloneOutput = git clone $repositoryUrl 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Failed to clone repository. Exit code: $LASTEXITCODE"
+    Write-Error "Clone output: $cloneOutput"
+    throw "Failed to clone repository. This may be due to authentication failure or network issues."
+}
 # change into the repository
 Set-Location $folderName
 
-function GetBasicAuthenticationHeader(){
+function GetBasicAuthenticationHeader() {
     Param (
         $access_token = $env:GITHUB_TOKEN
     )
@@ -64,11 +69,11 @@ function ApiCall {
 
 function GetReleaseBody {
     Param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string] $repo,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string] $owner,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string] $tag
     )
 
@@ -85,9 +90,184 @@ function GetReleaseBody {
 
 }
 
-function CreateBlogPost{
+function GetCommitsForTag {
     Param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
+        [string] $repo,
+        [Parameter(Mandatory = $true)]
+        [string] $owner,
+        [Parameter(Mandatory = $true)]
+        [string] $tag
+    )
+
+    try {
+        $url = "https://api.github.com/repos/$owner/$repo/commits?sha=$tag&per_page=10"
+        $commits = ApiCall -url $url -access_token $token
+
+        if ($null -eq $commits -or $commits.Count -eq 0) {
+            Write-Warning "No commits found for repo [$repo] and tag [$tag]"
+            return ""
+        }
+
+        $commitLines = @()
+        foreach ($commit in $commits) {
+            $message = [System.Text.RegularExpressions.Regex]::Split($commit.commit.message, "`r`n|`n|`r")[0].Trim()
+            if ($message -ne "") {
+                $shortSha = $commit.sha.Substring(0, 7)
+                $commitLines += "- $message ($shortSha)"
+            }
+        }
+
+        return $commitLines -join "`r`n"
+    }
+    catch {
+        Write-Warning "Error getting commits for repo [$repo] and tag [$tag]: $_"
+        return ""
+    }
+}
+
+function GetReadmeContent {
+    Param (
+        [Parameter(Mandatory = $true)]
+        [string] $repo,
+        [Parameter(Mandatory = $true)]
+        [string] $owner
+    )
+
+    $url = "https://api.github.com/repos/$owner/$repo/readme"
+    try {
+        $readme = ApiCall -url $url -access_token $token
+        if ($readme.content) {
+            # The content is base64 encoded, decode it
+            $decodedContent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($readme.content))
+            return $decodedContent
+        }
+        return ""
+    }
+    catch {
+        Write-Warning "Error getting README for repo [$repo] and owner [$owner]"
+        Write-Warning "$_"
+        return ""
+    }
+}
+
+function LoadPromptTemplate {
+    $promptPath = Join-Path $PSScriptRoot "action-summary-prompt.txt"
+    try {
+        if (Test-Path $promptPath) {
+            return Get-Content -Path $promptPath -Raw
+        }
+        else {
+            Write-Warning "Prompt template not found at [$promptPath]"
+            return $null
+        }
+    }
+    catch {
+        Write-Warning "Error loading prompt template: $_"
+        return $null
+    }
+}
+
+function CallOllama {
+    Param (
+        [Parameter(Mandatory = $true)]
+        [string] $prompt,
+        [Parameter(Mandatory = $true)]
+        [string] $readmeContent,
+        [int] $attempt = 1
+    )
+
+    $maxAttempts = 2
+    $backoffSeconds = 30
+    $ollamaUrl = $env:OLLAMA_URL ?? "http://localhost:11434"
+    $model = $env:OLLAMA_MODEL ?? "qwen2.5-coder:3b"
+
+    try {
+        $fullPrompt = $prompt -replace '\{README_CONTENT\}', $readmeContent
+
+        $body = @{
+            model = $model
+            stream = $false
+            messages = @(
+                @{
+                    role = "user"
+                    content = $fullPrompt
+                }
+            )
+            options = @{
+                temperature = 0.7
+                num_predict = 500
+            }
+        } | ConvertTo-Json -Depth 10
+
+        $url = "$($ollamaUrl.TrimEnd('/'))/api/chat"
+        $response = Invoke-RestMethod -Uri $url -Method Post -Body $body -ContentType "application/json" -ErrorAction Stop
+
+        if ($response.message -and $response.message.content) {
+            return $response.message.content.Trim()
+        }
+        else {
+            throw "No response from Ollama"
+        }
+    }
+    catch {
+        $errorMessage = $_.Exception.Message
+        Write-Warning "Attempt $attempt failed to call Ollama: $errorMessage"
+
+        if ($attempt -lt $maxAttempts) {
+            Write-Host "Waiting $backoffSeconds seconds before retry $($attempt + 1)/$maxAttempts..."
+            Start-Sleep -Seconds $backoffSeconds
+            return CallOllama -prompt $prompt -readmeContent $readmeContent -attempt ($attempt + 1)
+        }
+        else {
+            Write-Warning "Failed to generate action summary after $maxAttempts attempts"
+            Write-Warning "Error: $errorMessage"
+            return $null
+        }
+    }
+}
+
+function GetActionSummary {
+    Param (
+        [Parameter(Mandatory = $true)]
+        [string] $repo,
+        [Parameter(Mandatory = $true)]
+        [string] $owner
+    )
+
+    try {
+        # Load the prompt template
+        $promptTemplate = LoadPromptTemplate
+        if (-not $promptTemplate) {
+            Write-Warning "Cannot generate action summary without prompt template"
+            return $null
+        }
+
+        # Get README content
+        $readmeContent = GetReadmeContent -repo $repo -owner $owner
+        if (-not $readmeContent -or $readmeContent -eq "") {
+            Write-Warning "Cannot generate action summary without README content"
+            return $null
+        }
+
+        # Truncate README if too long (keep first 4000 characters to stay within token limits)
+        if ($readmeContent.Length -gt 4000) {
+            $readmeContent = $readmeContent.Substring(0, 4000) + "`n`n[README truncated for summary generation]"
+        }
+
+        $summary = CallOllama -prompt $promptTemplate -readmeContent $readmeContent -attempt 1
+        
+        return $summary
+    }
+    catch {
+        Write-Warning "Error generating action summary for repo [$repo] and owner [$owner]: $_"
+        return $null
+    }
+}
+
+function CreateBlogPost {
+    Param (
+        [Parameter(Mandatory = $true)]
         [PSCustomObject]$update
     )
 
@@ -96,12 +276,27 @@ function CreateBlogPost{
         return
     }
 
-    $splitted = $update.RepoUrl.Split("/")
+    $splitted = $update.RepoUrl.Replace(";", "").Replace("https://github.com/", "").Split("/")
     $owner = $splitted[0]
     $repo = $splitted[1]
+    Write-Host "Found repo [$repo] and owner [$owner] for update [$update]"
     $dependentsNumber = GetDependentsForRepo -repo $repo -owner $owner
 
     $releaseBody = GetReleaseBody -repo $repo -owner $owner -tag $update.Version
+    if ([string]::IsNullOrEmpty($releaseBody)) {
+        Write-Host "No release notes found for [$owner/$repo] tag [$($update.Version)], falling back to commit list..."
+        $releaseBody = GetCommitsForTag -repo $repo -owner $owner -tag $update.Version
+    }
+
+    # Get action summary using GitHub Models
+    Write-Host "Attempting to generate action summary for [$owner/$repo]..."
+    $actionSummary = GetActionSummary -repo $repo -owner $owner
+    if ($actionSummary) {
+        Write-Host "Successfully generated action summary for [$owner/$repo]"
+    }
+    else {
+        Write-Warning "Could not generate action summary for [$owner/$repo], blog post will be created without it"
+    }
 
     # create the file name based on the repo
     $fileName = "$((Get-Date).ToString("dd-HH"))-$owner-$repo"
@@ -116,35 +311,61 @@ function CreateBlogPost{
     # create the file
     New-Item -Path $filePath -ItemType File -Force | Out-Null
     # get the content to write into the file
-    $content = GetContent -update $update -dependentsNumber "$dependentsNumber" -releaseBody $releaseBody
+    $content = GetContent -update $update -dependentsNumber "$dependentsNumber" -releaseBody $releaseBody -actionSummary $actionSummary
     # write the content into the file
     Set-Content -Path $filePath -Value $content
 }
 
 function SanitizeContent {
     Param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$content
     )
 
     return $content.Replace(":", "").Replace("@", "").Replace("""", "").Replace("'", "")
 }
 
+function ConvertToSlug {
+    Param (
+        [Parameter(Mandatory = $true)]
+        [string]$text
+    )
+    
+    # Convert to lowercase
+    $slug = $text.ToLower()
+    
+    # Replace spaces and common separators with hyphens
+    $slug = $slug -replace '[\s_]+', '-'
+    
+    # Remove special characters, keeping only alphanumeric and hyphens
+    $slug = $slug -replace '[^a-z0-9\-]', ''
+    
+    # Remove multiple consecutive hyphens
+    $slug = $slug -replace '\-{2,}', '-'
+    
+    # Remove leading and trailing hyphens
+    $slug = $slug.Trim('-')
+    
+    return $slug
+}
+
 function GetContent {
     Param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [PSCustomObject]$update,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$dependentsNumber,
-        [Parameter(Mandatory=$true)]
-        [string]$releaseBody
+        [Parameter(Mandatory = $false)]
+        [string]$releaseBody,
+        [Parameter(Mandatory = $false)]
+        [string]$actionSummary
     )
 
     # write the content as a multiline array
     if ($dependentsNumber -eq "?") {
         $dependentsNumberString = "?"
-     }
-     else {
+    }
+    else {
         $dependentsNumberString = $dependentsNumber
     }
     $content = @(
@@ -159,9 +380,19 @@ function GetContent {
         "marketplace: $($update.Url)"
         "version: $(SanitizeContent $update.Version)"
         "dependentsNumber: ""$dependentsNumberString"""
-        "---"
-        ""
     )
+    if ($update.ActionType) {
+        $content += "actionType: $(SanitizeContent $update.ActionType)"
+    }
+    if ($update.NodeVersion) {
+        $content += "nodeVersion: $(SanitizeContent $update.NodeVersion)"
+    }
+    if ($actionSummary -and $actionSummary -ne "") {
+        $content += "actionSummary: |"
+        $content += "  $($actionSummary.Replace("`n", "`n  "))"
+    }
+    $content += "---"
+    $content += ""
     # add an empty line
     $content += ""
     # add the content of the update
@@ -173,16 +404,36 @@ function GetContent {
         $content += "- This publisher is shown as 'verified' by GitHub."
     }
     if ("" -ne $dependentsNumber) {
+        $content += ""
         $content += "- This action is used across all versions by **$dependentsNumber** repositories."
+    }
+    if ($update.ActionType) {
+        $content += ""
+        $content += "## Action Type"
+        $actionTypeInfo = "This is a **$($update.ActionType)** action"
+        if ($update.ActionType -eq "Node" -and $update.NodeVersion) {
+            $actionTypeInfo += " using Node version **$($update.NodeVersion)**"
+        }
+        $actionTypeInfo += "."
+        $content += $actionTypeInfo
     }
     $content += ""
     $content += "Go to the [GitHub Marketplace]($($update.Url)) to find the latest changes."
     $content += ""
-    if ($releaseBody -ne "") {
-        $content += "## Release notes"
+    
+    # Add action summary section if available (before release notes)
+    if ($actionSummary -and $actionSummary -ne "") {
+        $content += "## Action Summary"
         $content += ""
-        # convert the \r\n in the text to lines in the array
-        foreach ($line in $releaseBody.Split("\r\n")) {
+        $content += $actionSummary
+        $content += ""
+    }
+    
+    if ($releaseBody -ne "") {
+        $content += "## What's Changed"
+        $content += ""
+        # convert newlines in the text to lines in the array
+        foreach ($line in [System.Text.RegularExpressions.Regex]::Split($releaseBody, "`r`n|`n|`r")) {
             $content += $line
         }
     }
@@ -201,12 +452,14 @@ function GetContent {
 #     "Updated": "2020-12-09T17:25:39.0724078Z",
 #     "RepoUrl": "zzzze/webhook-trigger"
 #   }
+$counter = 0
 foreach ($update in $updates) {
     # create the file name
     try {
         CreateBlogPost -update $update
         # sleep 2 seconds
         Start-Sleep -Seconds 2
+        $counter++
     }
     catch {
         Write-Host "Error creating blog post for update [$update]"
@@ -214,17 +467,129 @@ foreach ($update in $updates) {
     }
 }
 
+# show what we did
+Write-Host "Created [$counter] blog posts"
+
 # use git porcelain to check if there are any changes
 $changes = git status --porcelain
 # if there are changes
 if ($changes) {
+    # Validate that token exists
+    if ([string]::IsNullOrEmpty($token)) {
+        throw 'Token is required for authentication'
+    }
+    
     # configure git user
-    git config --global user.email "bot@github-actions.com"
-    git config --global user.name "github-actions"
-    # add all changes
-    git add .
-    # commit the changes
-    git commit -m "Update blog posts for $(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")"
-    # push the changes
-    git push
+    git config --local user.email "bot@github-actions.com"
+    git config --local user.name "github-actions"
+    
+    # Configure git to use the PAT token for authentication via extraheader
+    # This is more secure than embedding in URL and doesn't persist to disk
+    # Using --local to limit scope to current repository only
+    $base64Token = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x:$token"))
+    git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic $base64Token"
+    
+    try {
+        # add all changes
+        git add .
+        # commit the changes and capture the output
+        $commitOutput = git commit -m "Update blog posts for $(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")" 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            $errorMessage = "Failed to commit blog posts. Exit code: $LASTEXITCODE`nCommit output: $commitOutput"
+            Write-Error $errorMessage
+            throw $errorMessage
+        }
+        Write-Host $commitOutput
+        
+        # push the changes
+        $pushOutput = git push 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            $errorMessage = "Failed to push blog posts to repository. Exit code: $LASTEXITCODE`nPush output: $pushOutput`nThis may be due to authentication failure or network issues."
+            Write-Error $errorMessage
+            throw $errorMessage
+        }
+        Write-Host "Successfully pushed blog posts to repository"
+    }
+    finally {
+        # Clean up authentication header after push (always executed)
+        git config --local --unset http.https://github.com/.extraheader
+        # Clear the base64 token from memory
+        Remove-Variable -Name base64Token -ErrorAction SilentlyContinue
+    }
+    
+    # Parse the commit output to extract created blog post files
+    $blogPostLinks = @()
+    $commitOutputLines = $commitOutput -split '\r?\n'
+    foreach ($line in $commitOutputLines) {
+        # Look for lines that start with "create mode" and contain blog post files
+        if ($line -match "create mode \d+ (content/posts/.+\.md)$") {
+            $filePath = $matches[1].Trim()
+            # Pattern: content/posts/yyyy/MM/dd-HH-owner-repo.md
+            # Hugo generates URLs based on the title field in front matter, not the filename
+            if ($filePath -match "content/posts/(\d{4})/(\d{2})/(\d{2})-\d{2}-(.+)\.md$") {
+                $year = $matches[1]
+                $month = $matches[2]
+                $day = $matches[3]
+                $fileNameSlug = $matches[4].ToLower()
+                $slug = $null
+                
+                # Read the file to extract the title from front matter
+                if (Test-Path $filePath) {
+                    try {
+                        $fileContent = Get-Content -Path $filePath -Raw
+                        # Extract title from front matter (format: "title: Title Text")
+                        if ($fileContent -match '(?m)^title:\s*(.+)$') {
+                            $title = $matches[1].Trim()
+                            # Remove any surrounding quotes that might be in the title
+                            $title = $title.Trim('"', "'")
+                            # Convert title to slug (same way Hugo does it)
+                            $slug = ConvertToSlug -text $title
+                        }
+                        else {
+                            # Title not found, will use fallback
+                            Write-Warning "Could not extract title from $filePath, using filename for URL"
+                        }
+                    }
+                    catch {
+                        # Error reading file, will use fallback
+                        Write-Warning "Error reading file $filePath : $_"
+                    }
+                }
+                else {
+                    # File doesn't exist (shouldn't happen but handle it)
+                    Write-Warning "File not found: $filePath, using filename for URL"
+                }
+                
+                # Use filename-based slug as fallback if title extraction failed
+                if (-not $slug) {
+                    $slug = $fileNameSlug
+                }
+                
+                # Generate the blog URL
+                $blogUrl = "https://devops-actions.github.io/github-actions-marketplace-news/blog/$year/$month/$day/$slug/"
+                $blogPostLinks += $blogUrl
+            }
+        }
+    }
+    
+    # Write to the step summary file
+    $summaryFile = $env:GITHUB_STEP_SUMMARY
+    if ($summaryFile -and (Test-Path -Path $summaryFile)) {
+        Add-Content -Path $summaryFile -Value "Created [$counter] blog posts"
+        Add-Content -Path $summaryFile -Value ""
+        if ($blogPostLinks.Count -gt 0) {
+            Add-Content -Path $summaryFile -Value "## Blog Post Links"
+            Add-Content -Path $summaryFile -Value ""
+            foreach ($link in $blogPostLinks) {
+                Add-Content -Path $summaryFile -Value "- $link"
+            }
+        }
+    }
+}
+else {
+    # Write to the step summary file even if no changes
+    $summaryFile = $env:GITHUB_STEP_SUMMARY
+    if ($summaryFile -and (Test-Path -Path $summaryFile)) {
+        Add-Content -Path $summaryFile -Value "Created [$counter] blog posts"
+    }
 }
