@@ -13,16 +13,12 @@ on:
 jobs:
   upgrade:
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
     runs-on: ubuntu-latest
     steps:
-      # Use PAT instead of GITHUB_TOKEN to allow this workflow to trigger other workflows
-      # PAT should have permissions: contents:write, pull-requests:write
-      # Scoped to this repository only
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          token: ${{ secrets.PAT }}
+          persist-credentials: false
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
@@ -49,6 +45,15 @@ jobs:
 
             # build the solution again to make sure it did not break
             dotnet build $GITHUB_WORKSPACE/AzDoExtensionNews/AzDoExtensionNews.sln
+
+            # A repository-scoped PAT with contents:write and pull-requests:write
+            # is needed here so the push and PR trigger the other workflows.
+            if [[ -z "$GH_TOKEN" ]]; then
+              echo "::error::PAT is required to push the upgrade branch and create its PR."
+              exit 1
+            fi
+            gh api user --silent
+            gh auth setup-git --hostname github.com --force
 
             echo "Committing changes to git and pushing to GitHub..."
             git checkout -b upgrade-dependencies
