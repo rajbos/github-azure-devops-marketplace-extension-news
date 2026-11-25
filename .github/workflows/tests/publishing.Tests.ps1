@@ -106,11 +106,13 @@ try {
     Set-Location $tempDirectory
     & $gitExecutable init --bare --quiet remote.git
     Assert ($LASTEXITCODE -eq 0) 'Could not initialize test remote.'
+    & $gitExecutable --git-dir remote.git config receive.shallowUpdate true
     & $gitExecutable init --quiet working
     Set-Location working
-    & $gitExecutable fetch --quiet $repositoryRoot HEAD
+    & $gitExecutable fetch --quiet --update-shallow $repositoryRoot HEAD
     Assert ($LASTEXITCODE -eq 0) 'Could not fetch existing commit for the local push test.'
     & $gitExecutable checkout --quiet -b publishing-regression FETCH_HEAD
+    Assert ($LASTEXITCODE -eq 0) 'Could not check out existing commit for the local push test.'
     & $gitExecutable remote add origin (Join-Path $tempDirectory 'remote.git')
     & $gitExecutable config push.default current
     PushNews -ValidateAccess
