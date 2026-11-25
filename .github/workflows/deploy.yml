@@ -10,6 +10,8 @@ on:
   workflow_dispatch:
 
   push:
+   branches:
+   - main
    paths:
    - .github/workflows/deploy.yml
    - .github/actions/character-to-run/*
@@ -220,10 +222,12 @@ jobs:
         shell: pwsh
         env:
           OLLAMA_MODEL: qwen2.5-coder:3b
+          NEWS_PUBLISH_TOKEN: ${{ secrets.PAT }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           ls
           cd .github/workflows/
           ls
 
           $filePath = Resolve-Path "..\..\ArtifactFolder\Actions-Updated-Overview.json"
-          .\createBlogPostsFromUpdates.ps1 -token ${{ secrets.PAT }} -filePath $filePath
+          .\createBlogPostsFromUpdates.ps1 -filePath $filePath

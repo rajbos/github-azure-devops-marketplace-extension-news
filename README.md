@@ -22,6 +22,15 @@ The posting to social media part has been disabled, as Twitter is no longer a sa
 
 Posting for the GitHub Actions news goes to https://devops-actions.github.io/github-actions-marketplace-news, which can be followed through an RSS feed. The source repository for that blog is here: https://github.com/devops-actions/github-actions-marketplace-news
 
+### News publishing credentials
+The `PostNews` job reads the repository Actions secret [`PAT`](https://github.com/rajbos/github-azure-devops-marketplace-extension-news/settings/secrets/actions/PAT) through the `NEWS_PUBLISH_TOKEN` environment variable. It must have Contents read/write access to `devops-actions/github-actions-marketplace-news`; a fine-grained token must select that repository and receive any required organization approval. Classic tokens need the appropriate repository scope and any required SSO authorization. The source workflow's `GITHUB_TOKEN` cannot grant write access to this separate repository; it is used only for release, commit, and README API reads.
+
+The public news repository is cloned without credentials. A dry-run push checks the Git write endpoint before generating posts, and missing credentials fail before cloning. Push authentication is supplied through process-only Git configuration, not command arguments, remote URLs, or `.git/config`. Do not interpolate secrets into PowerShell `run` blocks: error source-line rendering can expose them. If authentication fails, the repository owner must replace the `PAT` secret with a valid authorized credential. Secret update age alone does not prove token expiration. If a token has appeared in logs, treat it as compromised and rotate it; changing the scripts does not revoke it or remove historical logs.
+
+To eliminate the long-lived PAT, an owner can install a GitHub App on the news repository with Contents read/write permission and configure an App ID and private key for this workflow to mint short-lived installation tokens. That requires owner-managed App setup; the current workflow does not have that infrastructure.
+
+Run focused publishing regression checks with `pwsh -NoProfile -File .github/workflows/tests/publishing.Tests.ps1`. They use only synthetic credentials and a temporary local Git remote, without scraping, publishing news, or contacting GitHub.
+
 ### Organization Actions Scanning
 In addition to marketplace actions, the tool also scans specific GitHub organizations for actions that may not be published to the marketplace. This includes:
 - github

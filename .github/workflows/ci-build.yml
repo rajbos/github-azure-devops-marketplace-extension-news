@@ -18,6 +18,14 @@ permissions:
   contents: read
 
 jobs:
+  publishing-script-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: Test publishing authentication without network access
+      shell: pwsh
+      run: ./.github/workflows/tests/publishing.Tests.ps1
+
   ci-build:
     runs-on: ubuntu-latest
     # Run inside Microsoft's official Playwright .NET image, which already ships the exact
