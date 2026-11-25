@@ -1,17 +1,17 @@
 Param(
     [Parameter(Mandatory = $true)]
-    [string]$token,
-    [Parameter(Mandatory = $true)]
     [string]$filePath
 )
 
 # load the dependents functions
 . $PSScriptRoot/dependents.ps1
-Write-Host "Got a token with length $($token.Length)"
 Write-Host "Got this file path $($filePath)"
 Write-Host "We are running from this location: $PSScriptRoot"
 Get-Location
-$repositoryUrl = "https://x:$token@github.com/devops-actions/github-actions-marketplace-news.git"
+$repositoryUrl = "https://github.com/devops-actions/github-actions-marketplace-news.git"
+if ([string]::IsNullOrWhiteSpace($env:NEWS_PUBLISH_TOKEN)) {
+    throw "Set NEWS_PUBLISH_TOKEN to a credential with Contents write access to devops-actions/github-actions-marketplace-news."
+}
 
 # load the json file from disk
 $updates = Get-Content -Path $filePath | ConvertFrom-Json
@@ -30,12 +30,68 @@ if (Test-Path -Path $folderName) {
 # clone the git repository
 $cloneOutput = git clone $repositoryUrl 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "Failed to clone repository. Exit code: $LASTEXITCODE"
-    Write-Error "Clone output: $cloneOutput"
-    throw "Failed to clone repository. This may be due to authentication failure or network issues."
+    throw "Failed to clone the public news repository. Exit code: $LASTEXITCODE. Check repository availability and network connectivity."
 }
 # change into the repository
 Set-Location $folderName
+
+function PushNews {
+    Param([switch]$ValidateAccess)
+
+    if ([string]::IsNullOrWhiteSpace($env:NEWS_PUBLISH_TOKEN)) {
+        throw "Set NEWS_PUBLISH_TOKEN to a credential with Contents write access to devops-actions/github-actions-marketplace-news."
+    }
+    # Supply authentication only to the push process, never to arguments or .git/config.
+    $settings = @{
+        GIT_CONFIG_COUNT = '3'
+        GIT_CONFIG_KEY_0 = 'credential.helper'
+        GIT_CONFIG_VALUE_0 = ''
+        GIT_CONFIG_KEY_1 = 'http.https://github.com/devops-actions/github-actions-marketplace-news.git.extraheader'
+        GIT_CONFIG_VALUE_1 = ''
+        GIT_CONFIG_KEY_2 = 'http.https://github.com/devops-actions/github-actions-marketplace-news.git.extraheader'
+        GIT_CONFIG_VALUE_2 = "AUTHORIZATION: basic $([Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes("x:$env:NEWS_PUBLISH_TOKEN")))"
+        GIT_TERMINAL_PROMPT = '0'
+        GIT_TRACE_REDACT = '1'
+    }
+    $previous = @{}
+    try {
+        foreach ($name in $settings.Keys) {
+            $previous[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+            [Environment]::SetEnvironmentVariable($name, $settings[$name], 'Process')
+        }
+        try {
+            if ($ValidateAccess) {
+                $pushOutput = git push --dry-run 2>&1
+            }
+            else {
+                $pushOutput = git push 2>&1
+            }
+        }
+        catch {
+            throw "Could not execute the news publishing Git command. Check Git availability, repository access, and the repository Actions secret PAT."
+        }
+        if ($LASTEXITCODE -ne 0) {
+            $operation = if ($ValidateAccess) { 'validate news publishing access' } else { 'push blog posts' }
+            throw "Failed to $operation. Git exit code: $LASTEXITCODE. Check repository Actions secret PAT: it must be valid and have Contents write access to devops-actions/github-actions-marketplace-news (including any required organization approval or SSO authorization). Check network connectivity and remote branch changes as well."
+        }
+        if ($ValidateAccess) {
+            Write-Host "News publishing access validated"
+        }
+        else {
+            Write-Host "Successfully pushed blog posts to repository"
+        }
+    }
+    finally {
+        foreach ($name in $previous.Keys) {
+            if ($null -eq $previous[$name]) {
+                if (Test-Path "Env:\$name") { Remove-Item "Env:\$name" }
+            }
+            else {
+                [Environment]::SetEnvironmentVariable($name, $previous[$name], 'Process')
+            }
+        }
+    }
+}
 
 function GetBasicAuthenticationHeader() {
     Param (
@@ -61,7 +117,7 @@ function ApiCall {
         $headers.Add('User-Agent', 'rajbos')
     }
     $method = "GET"
-    $result = Invoke-WebRequest -Uri $url -Headers $headers -Method $method -ErrorVariable $errvar -ErrorAction Continue
+    $result = Invoke-WebRequest -Uri $url -Headers $headers -Method $method -ErrorAction Stop
     $response = $result.Content | ConvertFrom-Json
 
     return $response
@@ -79,7 +135,7 @@ function GetReleaseBody {
 
     $url = "https://api.github.com/repos/$owner/$repo/releases/tags/$tag"
     try {
-        $release = ApiCall -url $url -access_token $token
+        $release = ApiCall -url $url
         return $release.body
     }
     catch {
@@ -102,7 +158,7 @@ function GetCommitsForTag {
 
     try {
         $url = "https://api.github.com/repos/$owner/$repo/commits?sha=$tag&per_page=10"
-        $commits = ApiCall -url $url -access_token $token
+        $commits = ApiCall -url $url
 
         if ($null -eq $commits -or $commits.Count -eq 0) {
             Write-Warning "No commits found for repo [$repo] and tag [$tag]"
@@ -136,7 +192,7 @@ function GetReadmeContent {
 
     $url = "https://api.github.com/repos/$owner/$repo/readme"
     try {
-        $readme = ApiCall -url $url -access_token $token
+        $readme = ApiCall -url $url
         if ($readme.content) {
             # The content is base64 encoded, decode it
             $decodedContent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($readme.content))
@@ -442,6 +498,9 @@ function GetContent {
     return $content
 }
 
+# Check the Git write endpoint before generating posts; public clone success only proves read access.
+PushNews -ValidateAccess
+
 # loop through the updates
 # each entry will be in the following format:
 # {
@@ -474,48 +533,21 @@ Write-Host "Created [$counter] blog posts"
 $changes = git status --porcelain
 # if there are changes
 if ($changes) {
-    # Validate that token exists
-    if ([string]::IsNullOrEmpty($token)) {
-        throw 'Token is required for authentication'
-    }
-    
     # configure git user
     git config --local user.email "bot@github-actions.com"
     git config --local user.name "github-actions"
     
-    # Configure git to use the PAT token for authentication via extraheader
-    # This is more secure than embedding in URL and doesn't persist to disk
-    # Using --local to limit scope to current repository only
-    $base64Token = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x:$token"))
-    git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic $base64Token"
-    
-    try {
-        # add all changes
-        git add .
-        # commit the changes and capture the output
-        $commitOutput = git commit -m "Update blog posts for $(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")" 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            $errorMessage = "Failed to commit blog posts. Exit code: $LASTEXITCODE`nCommit output: $commitOutput"
-            Write-Error $errorMessage
-            throw $errorMessage
-        }
-        Write-Host $commitOutput
-        
-        # push the changes
-        $pushOutput = git push 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            $errorMessage = "Failed to push blog posts to repository. Exit code: $LASTEXITCODE`nPush output: $pushOutput`nThis may be due to authentication failure or network issues."
-            Write-Error $errorMessage
-            throw $errorMessage
-        }
-        Write-Host "Successfully pushed blog posts to repository"
+    # add all changes
+    git add .
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to stage blog posts. Git exit code: $LASTEXITCODE."
     }
-    finally {
-        # Clean up authentication header after push (always executed)
-        git config --local --unset http.https://github.com/.extraheader
-        # Clear the base64 token from memory
-        Remove-Variable -Name base64Token -ErrorAction SilentlyContinue
+    $commitOutput = git commit -m "Update blog posts for $(Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")" 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to commit blog posts. Git exit code: $LASTEXITCODE."
     }
+    Write-Host $commitOutput
+    PushNews
     
     # Parse the commit output to extract created blog post files
     $blogPostLinks = @()
