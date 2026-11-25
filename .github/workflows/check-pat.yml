@@ -1,0 +1,90 @@
+name: Check repository PAT
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        repository:
+          - rajbos/github-azure-devops-marketplace-extension-news
+          - devops-actions/github-actions-marketplace-news
+    env:
+      GH_TOKEN: ${{ secrets.PAT }}
+      CHECK_REPOSITORY: ${{ matrix.repository }}
+      GH_DEBUG: ''
+      GIT_TERMINAL_PROMPT: '0'
+      GIT_TRACE: '0'
+      GIT_TRACE_PACKET: '0'
+      GIT_TRACE_CURL: '0'
+      GIT_CURL_VERBOSE: '0'
+      GIT_TRACE_REDACT: '1'
+    steps:
+      - name: Validate stored PAT without changing repository data
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "::error::Repository Actions secret PAT is missing."
+            exit 1
+          fi
+          if ! response=$(gh api --include user 2>/dev/null); then
+            echo "::error::PAT authentication failed. Replace or authorize the repository Actions secret PAT."
+            exit 1
+          fi
+          scopes=$(printf '%s\n' "$response" | awk 'tolower($0) ~ /^x-oauth-scopes:/ { sub(/^[^:]*:[[:space:]]*/, ""); gsub(/[[:space:]]/, ""); print; exit }')
+          unset response
+          case ",$scopes," in
+            *,repo,*|*,public_repo,*) ;;
+            *)
+              echo "::error::Expected a classic PAT with repo or public_repo scope. No credential value or raw API response is logged."
+              exit 1
+              ;;
+          esac
+
+          if ! metadata=$(gh api "repos/$CHECK_REPOSITORY" --jq '[.default_branch, .private, .permissions.push] | @tsv' 2>/dev/null); then
+            echo "::error::PAT cannot read repository metadata. Check repository access and organization SSO authorization."
+            exit 1
+          fi
+          IFS=$'\t' read -r default_branch is_private can_push <<< "$metadata"
+          if [[ "$can_push" != "true" ]]; then
+            echo "::error::The PAT owner does not have push access to the target repository."
+            exit 1
+          fi
+          if [[ "$is_private" == "true" && ",$scopes," != *,repo,* ]]; then
+            echo "::error::Private repository access requires the classic repo scope."
+            exit 1
+          fi
+          if ! git check-ref-format "refs/heads/$default_branch" >/dev/null 2>&1; then
+            echo "::error::GitHub returned an invalid default branch."
+            exit 1
+          fi
+
+          repository_url="https://github.com/$CHECK_REPOSITORY.git"
+          checkout_path="$RUNNER_TEMP/pat-check"
+          if ! git -c credential.helper= -c http.https://github.com/.extraheader= clone --quiet --depth 1 --branch "$default_branch" -- "$repository_url" "$checkout_path" >/dev/null 2>&1; then
+            echo "::error::Could not clone the target repository without credentials. Check availability and network connectivity."
+            exit 1
+          fi
+          # Only the environment carries authorization; it never enters arguments or Git config files.
+          export PAT_CHECK_AUTHORIZATION="AUTHORIZATION: basic $(printf 'x:%s' "$GH_TOKEN" | base64 --wrap=0)"
+          if ! git -C "$checkout_path" -c credential.helper= -c http.https://github.com/.extraheader= -c "http.$repository_url.extraheader=" --config-env="http.$repository_url.extraheader=PAT_CHECK_AUTHORIZATION" push --dry-run origin "HEAD:refs/heads/$default_branch" >/dev/null 2>&1; then
+            echo "::error::PAT Git write-endpoint authentication failed. Check scope, repository access, organization approval/SSO, network connectivity, and branch rules."
+            exit 1
+          fi
+          unset PAT_CHECK_AUTHORIZATION GH_TOKEN scopes
+          {
+            echo "## $CHECK_REPOSITORY"
+            echo "- Stored PAT authentication and classic repository scope: passed."
+            echo "- Repository push access and unchanged default-branch dry-run: passed."
+            echo "- No commits, branches, pull requests, or repository content were created or changed."
+            echo "- Pull-request creation permission is inferred from classic scope and repository access, not exercised."
+            echo "- A dry-run does not prove a future changed commit will satisfy branch protection or other server-side rules."
+          } >> "$GITHUB_STEP_SUMMARY"

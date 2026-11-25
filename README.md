@@ -31,6 +31,8 @@ To eliminate the long-lived PAT, an owner can install a GitHub App on the news r
 
 Run focused publishing regression checks with `pwsh -NoProfile -File .github/workflows/tests/publishing.Tests.ps1`. They use only synthetic credentials and a temporary local Git remote, without scraping, publishing news, or contacting GitHub.
 
+To test the actual stored classic `PAT`, manually dispatch **Check repository PAT** on `main`. It checks authentication, classic repository scope, repository push access, and unchanged default-branch dry-run pushes to both repositories without scraping or modifying repository data. Pull-request creation permission is inferred from scope/access, not exercised; changed commits may still be rejected by branch rules.
+
 ### Organization Actions Scanning
 In addition to marketplace actions, the tool also scans specific GitHub organizations for actions that may not be published to the marketplace. This includes:
 - github
